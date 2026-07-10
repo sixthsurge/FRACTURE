@@ -5,35 +5,42 @@ import dev.irisshaders.aperture.api.renderer.*;
 import util.Flipper;
 
 public class Fracture implements ShaderPack {
-    @Override
-    public void configurePipeline(Screen screen, PipelineConfig pipeline) {
-        final var sceneTex 
-            = pipeline
-                .texture2D("tex_scene", TextureFormat.RG11B10_UFLOAT)
-                .renderSize()
-                .create();
+	@Override
+	public void configurePipeline(Screen screen, PipelineConfig pipeline) {
+		final var sceneTex
+			= pipeline.texture2D("tex_scene", TextureFormat.RG11B10_UFLOAT)
+				  .renderSize()
+				  .create();
 
-        final var packedGbufferDataTex 
-            = pipeline
-                .texture2D("tex_packed_gbuffer_data", TextureFormat.RG32_UINT)
-                .renderSize()
-                .create();
+		final var packedGbufferDataTex
+			= pipeline
+				  .texture2D("tex_packed_gbuffer_data", TextureFormat.RG32_UINT)
+				  .renderSize()
+				  .create();
 
-        pipeline.object(ProgramUsage.BASIC, "program/object/basic", "BasicObject")
-            .writes("packed_gbuffer_data", packedGbufferDataTex);
+		pipeline
+			.object(ProgramUsage.BASIC, "program/object/basic", "BasicObject")
+			.writes("packed_gbuffer_data", packedGbufferDataTex);
 
-        pipeline.stage(ProgramStage.PRE_RENDER)
-            .composite(
-                "deferred_shading", 
-                "program/pre_translucent/deferred_shading", 
-                "main"
-            ).writes("radiance", sceneTex) ;
+		pipeline.object(
+			ProgramUsage.SHADOW,
+			"program/object/shadow",
+			"ShadowObject"
+		);
 
-        pipeline.combinationPass("program/combination");
-    }
+		pipeline.stage(ProgramStage.PRE_RENDER)
+			.composite(
+				"deferred_shading",
+				"program/pre_translucent/deferred_shading",
+				"main"
+			)
+			.writes("radiance", sceneTex);
 
-    @Override
-    public void configureRenderer(RendererConfig rendererConfig) {
-        
-    }
+		pipeline.combinationPass("program/combination");
+	}
+
+	@Override
+	public void configureRenderer(RendererConfig rendererConfig) {
+		
+	}
 }
