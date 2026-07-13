@@ -17,11 +17,12 @@ float3 diagonal(float3x3 m) { return float3(m[0].x, m[1].y, m[2].z); }
 float4 diagonal(float4x4 m) { return float4(m[0].x, m[1].y, m[2].z, m[3].w); }
 
 float3 transform(float4x4 m, float3 pos) {
-	return mul(float3x3(m), pos) + m[3].xyz;
+	return mul(float3x3(m), pos) + float3(m[0].w, m[1].w, m[2].w);
 }
 
 float4 project(float4x4 m, float3 pos) {
-	return float4(m[0].x, m[1].y, m[2].zw) * pos.xyzz + m[3];
+	return float4(m[0].x, m[1].y, m[2].z, m[3].z) * pos.xyzz
+		+ float4(m[0].w, m[1].w, m[2].w, m[3].w);
 }
 
 float3 project_and_divide(float4x4 m, float3 pos) {
