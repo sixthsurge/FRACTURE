@@ -21,9 +21,13 @@ public class Fracture implements ShaderPack {
 		}
 	}
 
-	public record GlobalBufferData(Vector3f light_dir_view) {}
+	public record GlobalBufferData(Vector3f light_dir_world) {}
 
 	MappedBuffer<GlobalBufferData> globalBuffer;
+
+	int divideRoundingUp(int num, int denom) {
+		return (num + denom - 1) / denom;
+	}
 
 	@Override
 	public void configurePipeline(Screen screen, PipelineConfig pipeline) {
@@ -40,12 +44,28 @@ public class Fracture implements ShaderPack {
 				  .renderSize()
 				  .create();
 
+		final var hiZDepthTexWidth = (screen.renderWidth() + 1) / 2;
+		final var hiZDepthTexHeight = (screen.renderHeight() + 1) / 2;
+		final var hiZDepthTex
+			= pipeline.texture2D("tex_depth_hiz", TextureFormat.R16_SFLOAT)
+				  .size(hiZDepthTexWidth, hiZDepthTexHeight)
+				  .usesMipmaps()
+				  .create();
+
 		globalBuffer
 			= pipeline.mappedBuffer("buf_global", GlobalBufferData.class);
 
 		pipeline
 			.object(ProgramUsage.BASIC, "program/object/basic", "BasicObject")
 			.writes("packed_gbuffer_data", packedGbufferDataTex);
+
+		pipeline
+			.object(
+				ProgramUsage.TRANSLUCENT,
+				"program/object/translucent",
+				"TranslucentObject"
+			)
+			.writes("color", sceneTex);
 
 		if (settings.shadowEnabled) {
 			pipeline.object(
@@ -55,15 +75,27 @@ public class Fracture implements ShaderPack {
 			);
 		}
 
+		final var hiZMipCount = (int) Math.ceil(
+			Math.log(Math.min(hiZDepthTexWidth, hiZDepthTexHeight))
+			/ Math.log(2)
+		);
+		for (int dstLod = -1; dstLod < hiZMipCount; dstLod++) {
+			pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
+				.compute(
+					"hiz_downsample_" + dstLod,
+					"program/hiz_downsample",
+					"main"
+				)
+				.dispatch2D(
+					divideRoundingUp(hiZDepthTexWidth, 8),
+					divideRoundingUp(hiZDepthTexHeight, 8)
+				)
+				.exportInt("LOD_DST", dstLod);
+		}
+
 		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
-			.composite(
-				"deferred_shading",
-				"program/pre_translucent/deferred_shading",
-				"main"
-			)
-			.writes("radiance", sceneTex)
-			.exportBool("SHADOW_ENABLED", settings.shadowEnabled)
-			.exportInt("CASCADE_COUNT", settings.shadowCascadeCount);
+			.composite("deferred_shading", "program/deferred_shading", "main")
+			.writes("radiance", sceneTex);
 
 		pipeline.combinationPass("program/combination");
 	}

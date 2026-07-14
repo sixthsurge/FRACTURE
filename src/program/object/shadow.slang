@@ -18,7 +18,7 @@ struct ShadowObject : Shader<VertexOutput, FragmentOutput> {
 		if (let texture = object_data.albedo()) {
 			ap.discardCutout(texture.sampleTexture(input.uv));
 		}
-		return {};
+		return FragmentOutput();
 	}
 }
 

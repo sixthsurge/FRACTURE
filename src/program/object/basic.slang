@@ -1,8 +1,7 @@
 import aperture;
-import object_shader;
-
 import lib.gbuffer_packing;
 import lib.util.math;
+import object_shader;
 
 struct FragmentOutput {
 	uint2 packed_gbuffer_data;

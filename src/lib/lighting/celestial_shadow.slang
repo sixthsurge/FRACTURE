@@ -1,13 +1,10 @@
 public module celestial_shadow;
 
 import aperture;
-
 import lib.util.math;
+import settings;
 
-extern static const bool SHADOWS_ENABLED;
-extern static const int CASCADE_COUNT;
-
-static const float shadow_depth_bias = 0.0005;
+static const float SHADOW_DEPTH_BIAS = 0.0005;
 
 struct ShadowResult {
 	float3 visibility;
@@ -17,7 +14,8 @@ struct ShadowResult {
 
 // Get cascade and shadow screen space position from shadow view space position.
 Optional<Tuple<int, float3>> project_shadow(float3 pos_shadow_view) {
-	for (int cascade = 0; cascade < CASCADE_COUNT; ++cascade) {
+	for (int cascade = 0; cascade < userSettings.SHADOW_CASCADE_COUNT;
+		 ++cascade) {
 		float4 pos_shadow_clip
 			= project(ap.celestial.projection[cascade], pos_shadow_view);
 
@@ -38,6 +36,10 @@ Optional<Tuple<int, float3>> project_shadow(float3 pos_shadow_view) {
 }
 
 ShadowResult get_celestial_shadow(float3 pos_scene) {
+	if (!userSettings.SHADOW_ENABLED) {
+		return ShadowResult.no_hit();
+	}
+
 	float3 pos_shadow_view = transform(ap.celestial.view, pos_scene);
 
 	int cascade;
@@ -52,7 +54,7 @@ ShadowResult get_celestial_shadow(float3 pos_scene) {
 	return ShadowResult(float3(ap.opaqueShadow.compare(
 		pos_shadow_screen.xy,
 		cascade,
-		pos_shadow_screen.z - shadow_depth_bias
+		pos_shadow_screen.z - SHADOW_DEPTH_BIAS
 	)));
 }
 

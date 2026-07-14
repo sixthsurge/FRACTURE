@@ -1,7 +1,6 @@
 public module space_conversion;
 
 import aperture;
-
 import lib.util.math;
 
 float3
@@ -20,7 +19,7 @@ float screen_to_view_depth(
 
 float3 view_to_screen(float3 pos_view, float4x4 proj = ap.camera.projection) {
 	float3 pos_screen = project_and_divide(proj, pos_view);
-	pos_screen.xy = pos_screen.xy * 2.0 - 1.0;
+	pos_screen.xy = pos_screen.xy * 0.5 + 0.5;
 	return pos_screen;
 }
 

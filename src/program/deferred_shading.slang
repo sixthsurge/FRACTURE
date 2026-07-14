@@ -1,10 +1,9 @@
 import aperture;
-
-import buffer.global;
 import lib.gbuffer_packing;
 import lib.lighting.celestial_shadow;
 import lib.util.color;
 import lib.util.space_conversion;
+import settings;
 
 Texture2D<uint2> tex_packed_gbuffer_data;
 
@@ -13,18 +12,18 @@ struct FragmentOutput {
 }
 
 [shader("pixel")]
-FragmentOutput main(float2 pos: SV_Position) {
-	int2 ipos = int2(pos);
-	float2 npos = pos / float2(ap.game.renderSize);
+FragmentOutput main(float2 coord: SV_Position) {
+	int2 icoord = int2(coord);
+	float2 ncoord = coord / float2(ap.game.renderSize);
 
-	uint2 packed_gbuffer_data = tex_packed_gbuffer_data[ipos];
-	float depth = ap.opaqueDepth[ipos];
+	uint2 packed_gbuffer_data = tex_packed_gbuffer_data[icoord];
+	float depth = ap.opaqueDepth[icoord];
 
 	if (depth == 0.0) {
 		return FragmentOutput(float3(1.0, 0.25, 1.0));
 	}
 
-	float3 pos_screen = float3(npos, depth);
+	float3 pos_screen = float3(ncoord, depth);
 	float3 pos_view = screen_to_view(pos_screen);
 	float3 pos_scene = view_to_scene(pos_view);
 
