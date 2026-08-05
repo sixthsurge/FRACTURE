@@ -1,11 +1,14 @@
 import aperture;
 import lib.gbuffer_packing;
+import lib.sky_view_projection;
 import lib.lighting.celestial_shadow;
 import lib.util.color;
 import lib.util.space_conversion;
 import settings;
+import lib.atmosphere;
 
 Texture2D<uint2> tex_packed_gbuffer_data;
+Texture2D<float3> tex_atmosphere_sky_view;
 
 struct FragmentOutput {
 	float3 radiance;
@@ -19,15 +22,18 @@ FragmentOutput main(float2 coord: SV_Position) {
 	uint2 packed_gbuffer_data = tex_packed_gbuffer_data[icoord];
 	float depth = ap.opaqueDepth[icoord];
 
-	if (depth == 0.0) {
-		return FragmentOutput(float3(1.0, 0.25, 1.0));
-	}
-
 	float3 pos_screen = float3(ncoord, depth);
 	float3 pos_view = screen_to_view(pos_screen);
 	float3 pos_scene = view_to_scene(pos_view);
 
 	float3 dir_world = normalize(pos_scene);
+
+	if (depth == 0.0) {
+		return FragmentOutput(tex_atmosphere_sky_view.Sample(
+			apt_linearSampler,
+			project_sky_view(dir_world)
+		));
+	}
 
 	GbufferData gbuffer_data = GbufferData.unpack(packed_gbuffer_data);
 

@@ -10,6 +10,15 @@ static const float DEGREE = TAU / 360.0;
 static const float GOLDEN_RATIO = 0.5 + 0.5 * sqrt(5.0);
 static const float GOLDEN_ANGLE = TAU / GOLDEN_RATIO / GOLDEN_RATIO;
 
+vector<float, N> max0<uint N>(vector<float, N> x) { return max(0.0, x); }
+
+vector<float, N> min1<uint N>(vector<float, N> x) { return min(1.0, x); }
+
+T pow2<T>(T x)
+	where T : IArithmetic { return x * x; }
+T pow3<T>(T x)
+	where T : IArithmetic { return x * x * x; }
+
 float2 diagonal(float2x2 m) { return float2(m[0].x, m[1].y); }
 
 float3 diagonal(float3x3 m) { return float3(m[0].x, m[1].y, m[2].z); }
@@ -40,6 +49,23 @@ vector<float, N> linstep<uint N>(
 	vector<float, N> x,
 ) {
 	return saturate((x - min) / (max - min));
+}
+
+// Faster alternative to acos
+// Source:
+// https://seblagarde.wordpress.com/2014/12/01/inverse-trigonometric-functions-gpu-optimization-for-amd-gcn-architecture/#more-3316
+// Max relative error: 3.9 * 10^-4
+// Max absolute error: 6.1 * 10^-4
+// Polynomial degree: 2
+float fast_acos(float x) {
+	const float C0 = 1.57018;
+	const float C1 = -0.201877;
+	const float C2 = 0.0464619;
+
+	float res = (C2 * abs(x) + C1) * abs(x) + C0; // p(x)
+	res *= sqrt(1.0 - abs(x));
+
+	return x >= 0 ? res : PI - res; // Undo range reduction.
 }
 
 
