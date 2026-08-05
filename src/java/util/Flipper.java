@@ -8,6 +8,7 @@ public class Flipper<T> {
 	public Flipper(T first, T second) {
 		this.first = first;
 		this.second = second;
+		this.flipped = false;
 	}
 
 	public T front() { return this.flipped ? first : second; }

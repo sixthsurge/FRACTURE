@@ -1,7 +1,6 @@
 import aperture;
 import lib.gbuffer_packing;
 import lib.lighting.celestial_shadow;
-import lib.ssrt;
 import lib.util.color;
 import lib.util.math;
 import lib.util.space_conversion;
@@ -57,6 +56,7 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 				* max(0, dot(normal_world, buf_global.light_dir_world)) * 0.8
 			+ 0.2;
 
+		/*
 		float3 pos_view = scene_to_view(input.pos_scene);
 		float3 pos_screen = view_to_screen(pos_view);
 		float3 dir_view = normalize(pos_view);
@@ -66,12 +66,13 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 		float3 ray_dir_screen
 			= normalize(view_to_screen(pos_view + ray_dir_view) - pos_screen);
 
-		if (let hit = raymarch_depth_hiz(pos_screen, ray_dir_screen)) {
+		if (let hit = ssrt.raymarch_hiz(pos_screen, ray_dir_screen)) {
 			float3 hit_color
 				= tex_scene.Sample(apt_linearSampler, hit.pos_screen.xy);
 			radiance = hit_color;
 			opacity = 1;
 		}
+		*/
 
 		return FragmentOutput(float4(radiance, opacity));
 	}

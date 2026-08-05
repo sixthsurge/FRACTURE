@@ -33,23 +33,20 @@ public class Fracture implements ShaderPack {
 	public void configurePipeline(Screen screen, PipelineConfig pipeline) {
 		final var settings = new Settings(pipeline.settings());
 
-		final var sceneTex
-			= pipeline.texture2D("tex_scene", TextureFormat.RG11B10_UFLOAT)
+		final var sceneTexA
+			= pipeline.texture2D("tex_scene_a", TextureFormat.RG11B10_UFLOAT)
 				  .renderSize()
 				  .create();
+		final var sceneTexB
+			= pipeline.texture2D("tex_scene_b", TextureFormat.RG11B10_UFLOAT)
+				  .renderSize()
+				  .create();
+		final var sceneTex = new Flipper<>(sceneTexA, sceneTexB);
 
 		final var packedGbufferDataTex
 			= pipeline
 				  .texture2D("tex_packed_gbuffer_data", TextureFormat.RG32_UINT)
 				  .renderSize()
-				  .create();
-
-		final var hiZDepthTexWidth = (screen.renderWidth() + 1) / 2;
-		final var hiZDepthTexHeight = (screen.renderHeight() + 1) / 2;
-		final var hiZDepthTex
-			= pipeline.texture2D("tex_depth_hiz", TextureFormat.R16_SFLOAT)
-				  .size(hiZDepthTexWidth, hiZDepthTexHeight)
-				  .usesMipmaps()
 				  .create();
 
 		globalBuffer
@@ -59,14 +56,6 @@ public class Fracture implements ShaderPack {
 			.object(ProgramUsage.BASIC, "program/object/basic", "BasicObject")
 			.writes("packed_gbuffer_data", packedGbufferDataTex);
 
-		pipeline
-			.object(
-				ProgramUsage.TRANSLUCENT,
-				"program/object/translucent",
-				"TranslucentObject"
-			)
-			.writes("color", sceneTex);
-
 		if (settings.shadowEnabled) {
 			pipeline.object(
 				ProgramUsage.SHADOW,
@@ -75,29 +64,23 @@ public class Fracture implements ShaderPack {
 			);
 		}
 
-		final var hiZMipCount = (int) Math.ceil(
-			Math.log(Math.min(hiZDepthTexWidth, hiZDepthTexHeight))
-			/ Math.log(2)
-		);
-		for (int dstLod = -1; dstLod < hiZMipCount; dstLod++) {
-			pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
-				.compute(
-					"hiz_downsample_" + dstLod,
-					"program/hiz_downsample",
-					"main"
-				)
-				.dispatch2D(
-					divideRoundingUp(hiZDepthTexWidth, 8),
-					divideRoundingUp(hiZDepthTexHeight, 8)
-				)
-				.exportInt("LOD_DST", dstLod);
-		}
-
 		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
 			.composite("deferred_shading", "program/deferred_shading", "main")
-			.writes("radiance", sceneTex);
+			.writes("radiance", sceneTex.back());
 
-		pipeline.combinationPass("program/combination");
+		// Must have scene data in front and back for translucent passes to read and write sceneTex.
+		pipeline.stage(ProgramStage.PRE_TRANSLUCENT).copy(sceneTex.back(), sceneTex.front());
+
+		pipeline
+			.object(
+				ProgramUsage.TRANSLUCENT,
+				"program/object/translucent",
+				"TranslucentObject"
+			)
+			.writes("color", sceneTex.back()).overrideObject("tex_scene", sceneTex.front().name());
+		sceneTex.flip();
+
+		pipeline.combinationPass("program/combination").overrideObject("tex_scene", sceneTex.front().name());
 	}
 
 	@Override
