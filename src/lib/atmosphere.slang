@@ -8,6 +8,7 @@ import lib.phase_functions;
 import lib.util.math;
 import lib.util.ray_sphere_intersection;
 import lib.util.sampling;
+import lib.util.space_conversion;
 
 namespace atmosphere {
 struct AtmosphereParameters {
@@ -43,6 +44,20 @@ static const AtmosphereParameters EARTH_PARAMS = {
 	float3(0.65, 1.88, 0.085) * 1e-6, // Ozone extinction coefficient (m^-1)
 	float3(0.015, 0.02, 0.05), // Planet albedo
 };
+
+static const float AERIAL_PERSPECTIVE_DEPTH_SCALE
+	= 1e5; // meters divided by terrain scale.
+static const float AERIAL_PERSPECTIVE_TERRAIN_SCALE = 3.0;
+
+// Camera position in planet space.
+float3 camera_pos() {
+	return float3(
+		0.0,
+		EARTH_PARAMS.planet_radius
+			+ ap.camera.position.y * AERIAL_PERSPECTIVE_TERRAIN_SCALE + 10.0,
+		0.0
+	);
+}
 
 struct LightSource {
 	float3 irradiance;
@@ -108,6 +123,43 @@ float3 lookup_transmittance(
 		linstep(params.planet_radius, params.atmosphere_radius(), r)
 	);
 	return transmittance_lut.Sample(apt_linearSampler, uv);
+}
+
+float3 calculate_transmittance_between_points(
+	AtmosphereParameters params,
+	Texture2D<float3> transmittance_lut,
+	float3 a,
+	float3 b
+) {
+	// Imagine the line between A and B. One end of this line will always go
+	// into space.
+
+	float3 p1; // point further from space.
+	float3 p2; // point closer to space.
+	if (dot(b, b) > dot(a, a)) {
+		// A -> B -> space
+		p1 = a;
+		p2 = b;
+	} else {
+		// B -> A -> space
+		p1 = b;
+		p2 = a;
+	}
+
+	float3 dir_p1_to_p2 = normalize(p2 - p1);
+	float3 transmittance_p1_to_space = lookup_transmittance(
+		EARTH_PARAMS,
+		transmittance_lut,
+		p1,
+		dir_p1_to_p2
+	);
+	float3 transmittance_p2_to_space = lookup_transmittance(
+		EARTH_PARAMS,
+		transmittance_lut,
+		p2,
+		dir_p1_to_p2
+	);
+	return transmittance_p1_to_space / transmittance_p2_to_space;
 }
 
 float3 calculate_planet_radiance<int LightSourceCount>(
@@ -195,6 +247,7 @@ float2x3 calculate_2nd_order_scattering_and_f_ms(
 	float3 inscattered_light = scattering[0] * scattering_coeff[0]
 		+ scattering[1] * scattering_coeff[1];
 	radiance += inscattered_light * isotropic_phase;
+
 	radiance += transmittance
 		* calculate_planet_radiance<1>(
 					params,
@@ -269,9 +322,10 @@ float3 calculate_scattering<int LightSourceCount>(
 	Texture2D<float3> multiscatter_lut,
 	float3 ray_origin,
 	float3 ray_dir,
+	Optional<float> max_distance,
 	LightSource lights[LightSourceCount]
 ) {
-	const int step_count = 32;
+	const int step_count = 20;
 
 	float2 dists = intersect_spherical_shell(
 		ray_origin,
@@ -279,7 +333,13 @@ float3 calculate_scattering<int LightSourceCount>(
 		params.planet_radius,
 		params.atmosphere_radius()
 	);
+
 	float ray_length = dists.y - dists.x;
+	if (let d = max_distance) {
+		// Limit the total raymarch distance, for aerial perspective
+		// calculation.
+		ray_length = min(ray_length, d);
+	}
 	float step_length = ray_length / float(step_count);
 
 	float3 ray_step = ray_dir * step_length;
@@ -364,10 +424,54 @@ float3 calculate_scattering<int LightSourceCount>(
 
 		radiance += light.irradiance * inscattered_light;
 	}
-	radiance += transmittance
-		* calculate_planet_radiance(params, ray_origin, ray_dir, lights);
+	if (!max_distance.hasValue) {
+		// Don't render the planet when there is a max distance imposed, as this
+		// means we are rendering aerial perspective.
+		radiance += transmittance
+			* calculate_planet_radiance(params, ray_origin, ray_dir, lights);
+	}
 
 	return radiance;
+}
+
+float3 lookup_aerial_perspective_scattering(
+	Texture3D<float3> aerial_perspective_lut,
+	float3 pos_screen
+) {
+	int w, h, d;
+	aerial_perspective_lut.GetDimensions(w, h, d);
+
+	pos_screen.z = saturate(
+		screen_to_view_depth(pos_screen.z) / AERIAL_PERSPECTIVE_DEPTH_SCALE
+	);
+	pos_screen.z
+		= sqrt(sqrt(pos_screen.z)); // Focus precision towards the view.
+	pos_screen.z = get_uv_from_unit_range(pos_screen.z, d);
+	return aerial_perspective_lut.Sample(apt_linearSampler, pos_screen);
+}
+
+float3 apply_aerial_perspective(
+	Texture3D<float3> aerial_perspective_lut,
+	Texture2D<float3> transmittance_lut,
+	float3 pos_screen,
+	float3 pos_scene,
+	float3 radiance
+) {
+	float3 scattering = lookup_aerial_perspective_scattering(
+		aerial_perspective_lut,
+		pos_screen
+	);
+
+	float3 pos_planet
+		= camera_pos() + pos_scene * AERIAL_PERSPECTIVE_TERRAIN_SCALE;
+	float3 transmittance = calculate_transmittance_between_points(
+		EARTH_PARAMS,
+		transmittance_lut,
+		pos_planet,
+		camera_pos()
+	);
+
+	return radiance * transmittance + scattering;
 }
 } // namespace atmosphere
 

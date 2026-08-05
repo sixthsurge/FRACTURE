@@ -12,6 +12,8 @@ import settings;
 
 Texture2D<uint2> tex_packed_gbuffer_data;
 Texture2D<float3> tex_atmosphere_sky_view;
+Texture2D<float3> tex_atmosphere_transmittance_lut;
+Texture3D<float3> tex_atmosphere_aerial_perspective;
 
 ConstantBuffer<SkyShBuffer> buf_sky_sh;
 
@@ -57,6 +59,14 @@ FragmentOutput main(float2 coord: SV_Position) {
 					1.0
 				)
 		* pow2(gbuffer_data.lightmap.y) * brdf;
+
+	radiance = atmosphere.apply_aerial_perspective(
+		tex_atmosphere_aerial_perspective,
+		tex_atmosphere_transmittance_lut,
+		pos_screen,
+		pos_scene,
+		radiance
+	);
 
 	return FragmentOutput(radiance);
 }

@@ -66,6 +66,11 @@ public class Fracture implements ShaderPack {
 				  )
 				  .size(256, 128)
 				  .create();
+		
+			pipeline
+				  .texture3D("tex_atmosphere_aerial_perspective", TextureFormat.RG11B10_UFLOAT)
+				  .size(32, 32, 32)
+				  .create();
 
 		pipeline.texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
 			.size(256, 1)
@@ -112,6 +117,14 @@ public class Fracture implements ShaderPack {
 				"sky_view_main"
 			)
 			.writes("sky_radiance", atmosphereSkyViewTex);
+
+		pipeline.stage(ProgramStage.PRE_RENDER)
+			.compute(
+				"atmosphere/aerial_perspective",
+				"program/atmosphere",
+				"aerial_perspective_main"
+			)
+			.dispatch3D(32 / 8, 32 / 8, 32);
 
 		pipeline.stage(ProgramStage.PRE_RENDER)
 			.compute("gen_sky_sh", "program/lighting/gen_sky_sh", "main")

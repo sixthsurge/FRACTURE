@@ -2,11 +2,13 @@ import aperture;
 import lib.atmosphere;
 import lib.sky_view_projection;
 import lib.util.math;
+import lib.util.space_conversion;
 import settings;
 
 Texture2D<float3> tex_atmosphere_transmittance_lut;
 Texture2D<float3> tex_atmosphere_multiscatter_lut;
 Texture2D<float3> tex_atmosphere_sky_view;
+RWTexture3D<float3> tex_atmosphere_aerial_perspective;
 
 struct TransmittanceOutput {
 	float3 transmittance;
@@ -22,6 +24,15 @@ struct SkyViewOutput {
 
 static const atmosphere.AtmosphereParameters ATMOSPHERE_PARAMS
 	= atmosphere.EARTH_PARAMS;
+
+atmosphere.LightSource get_light_sources[2]() {
+	return {
+		atmosphere
+			.LightSource(buf_global.sun_radiosity, buf_global.sun_dir_world),
+		atmosphere
+			.LightSource(buf_global.moon_radiosity, buf_global.moon_dir_world),
+	};
+}
 
 [shader("fragment")]
 TransmittanceOutput transmittance_lut_main(float2 coord: SV_Position) {
@@ -77,25 +88,48 @@ SkyViewOutput sky_view_main(float2 coord: SV_Position) {
 	tex_atmosphere_sky_view.GetDimensions(w, h);
 	float2 ncoord = coord / float2(w, h);
 
-	float3 ray_origin
-		= float3(0.0, ATMOSPHERE_PARAMS.planet_radius + 1000.0, 0.0);
 	float3 ray_dir = unproject_sky_view(ncoord);
-
-	atmosphere.LightSource light_sources[2] = {
-		atmosphere
-			.LightSource(buf_global.sun_radiosity, buf_global.sun_dir_world),
-		atmosphere
-			.LightSource(buf_global.moon_radiosity, buf_global.moon_dir_world),
-	};
 
 	return SkyViewOutput(atmosphere.calculate_scattering(
 		ATMOSPHERE_PARAMS,
 		tex_atmosphere_transmittance_lut,
 		tex_atmosphere_multiscatter_lut,
-		ray_origin,
+		atmosphere.camera_pos(),
 		ray_dir,
-		light_sources
+		none,
+		get_light_sources()
 	));
+}
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void aerial_perspective_main(int3 icoord: SV_DispatchThreadID) {
+	float w, h, d;
+	tex_atmosphere_aerial_perspective.GetDimensions(w, h, d);
+
+	float3 ncoord = (float3(icoord) + 0.5) / float3(w, h, d);
+
+	float depth = get_unit_range_from_uv(ncoord.z, int(d));
+	depth = pow2(pow2(depth)); // Focus precision towards the view.
+	depth = view_to_screen_depth(
+		depth * atmosphere.AERIAL_PERSPECTIVE_DEPTH_SCALE
+	);
+	depth = min(depth, 1.0 - EPS);
+
+	float3 pos_screen = float3(ncoord.xy, depth);
+	float3 pos_view = screen_to_view(pos_screen);
+	float3 pos_scene = view_to_scene(pos_view);
+	float3 dir_world = normalize(pos_scene);
+
+	tex_atmosphere_aerial_perspective[icoord] = atmosphere.calculate_scattering(
+		ATMOSPHERE_PARAMS,
+		tex_atmosphere_transmittance_lut,
+		tex_atmosphere_multiscatter_lut,
+		atmosphere.camera_pos(),
+		dir_world,
+		length(pos_scene) * atmosphere.AERIAL_PERSPECTIVE_TERRAIN_SCALE,
+		get_light_sources()
+	);
 }
 
 

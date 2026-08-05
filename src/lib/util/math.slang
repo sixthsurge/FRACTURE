@@ -68,4 +68,12 @@ float fast_acos(float x) {
 	return x >= 0 ? res : PI - res; // Undo range reduction.
 }
 
+float get_uv_from_unit_range(float values, const int res) {
+	return values * (1.0 - 1.0 / float(res)) + (0.5 / float(res));
+}
+
+float get_unit_range_from_uv(float uv, const int res) {
+	return (uv - 0.5 / float(res)) / (1.0 - 1.0 / float(res));
+}
+
 

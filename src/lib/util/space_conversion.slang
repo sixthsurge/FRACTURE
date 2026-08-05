@@ -13,7 +13,8 @@ float screen_to_view_depth(
 	float depth,
 	float4x4 proj_inv = ap.camera.projectionInv,
 ) {
-	float2 zw = depth * proj_inv[2].zw + proj_inv[3].zw;
+	float2 zw = depth * float2(proj_inv[2].z, proj_inv[3].z)
+		+ float2(proj_inv[2].w, proj_inv[3].w);
 	return -zw.x / zw.y;
 }
 
@@ -24,7 +25,8 @@ float3 view_to_screen(float3 pos_view, float4x4 proj = ap.camera.projection) {
 }
 
 float view_to_screen_depth(float depth, float4x4 proj = ap.camera.projection) {
-	float2 zw = -depth * proj[2].zw + proj[3].zw;
+	float2 zw
+		= -depth * float2(proj[2].z, proj[3].z) + float2(proj[2].w, proj[3].w);
 	return zw.x / zw.y;
 }
 
