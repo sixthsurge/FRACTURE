@@ -8,7 +8,7 @@ namespace exposure {
 static const int HISTOGRAM_BIN_COUNT = 256;
 static const float MIN_LUMINANCE = 0.1;
 static const float MAX_LUMINANCE = 10.0;
-static const float BIAS = 0.0;
+static const float BIAS = -0.5;
 
 float luminance_to_exposure(float luminance) { return exp2(BIAS) / luminance; }
 

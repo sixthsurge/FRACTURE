@@ -42,9 +42,8 @@ FragmentOutput main(float2 coord: SV_Position) {
 	ShadowResult celestial_shadow = get_celestial_shadow(pos_scene);
 
 	radiance *= celestial_shadow.visibility
-			* max(0, dot(gbuffer_data.normal_world, buf_global.light_dir_world))
-			* 0.8
-		+ 0.2;
+		* max(0, dot(gbuffer_data.normal_world, buf_global.light_dir_world))
+		* buf_global.celestial_light_irradiance;
 
 	return FragmentOutput(radiance);
 }

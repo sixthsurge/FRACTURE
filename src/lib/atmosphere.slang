@@ -53,6 +53,7 @@ float3 calculate_density(AtmosphereParameters params, float r) {
 	float altitude = max0(r - params.planet_radius);
 	float2 rm = exp(-altitude / params.scale_heights);
 
+	// Source for ozone density curve: Jessie in shaderLABS.
 	float altitude_km = altitude * 1e-3;
 	float o1 = 12.5 * exp((1.0 / 8.0) * (0.0 - altitude_km));
 	float o2 = 30.0

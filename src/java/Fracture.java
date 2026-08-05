@@ -2,16 +2,21 @@ import dev.irisshaders.aperture.api.*;
 import dev.irisshaders.aperture.api.objects.*;
 import dev.irisshaders.aperture.api.pipeline.*;
 import dev.irisshaders.aperture.api.renderer.*;
-import dev.irisshaders.aperture.api.settings.SettingsManager;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
+import util.AtmosphereTransmittance;
 import util.Flipper;
 
 public class Fracture implements ShaderPack {
 	public record GlobalBufferData(
 		Vector3f light_dir_world,
 		Vector3f sun_dir_world,
-		Vector3f moon_dir_world
+		Vector3f moon_dir_world,
+		Vector3f celestial_light_irradiance
 	) {}
+
+	static final Vector3f SUN_RADIOSITY = new Vector3f(1.0f);
+	static final Vector3f MOON_RADIOSITY = new Vector3f(0.05f);
 
 	MappedBuffer<GlobalBufferData> globalBuffer;
 
@@ -172,13 +177,36 @@ public class Fracture implements ShaderPack {
 
 	@Override
 	public void onNewFrame(FrameState state) {
+		final var celestialLightRadiosity
+			= state.uniforms().getFloat("ap.celestial.angle") < 0.5
+			? SUN_RADIOSITY
+			: MOON_RADIOSITY;
+
 		globalBuffer.write(new GlobalBufferData(
 			state.uniforms().getFloat3("ap.celestial.position").normalize(),
 			state.uniforms().getFloat3("ap.celestial.sunPosition").normalize(),
 			state.uniforms()
 				.getFloat3("ap.celestial.sunPosition")
 				.negate()
-				.normalize()
+				.normalize(),
+			new Vector3f(celestialLightRadiosity).mul(vector3dToVector3f(
+				AtmosphereTransmittance.calculateTransmittance(
+					AtmosphereTransmittance.EARTH_PARAMS,
+					new Vector3d(
+						0.0,
+						AtmosphereTransmittance.EARTH_PARAMS.planetRadius()
+							+ 1.0,
+						0.0
+					),
+					new Vector3d(state.uniforms()
+									 .getFloat3("ap.celestial.position")
+									 .normalize())
+				)
+			))
 		));
+	}
+
+	private Vector3f vector3dToVector3f(Vector3d v) {
+		return new Vector3f((float) v.x, (float) v.y, (float) v.z);
 	}
 }
