@@ -85,7 +85,8 @@ public class AtmosphereTransmittance {
 			)
 				  .y;
 
-		Vector3d rayStep = new Vector3d(rayDir).mul(rayLength / (stepCount - 1));
+		Vector3d rayStep
+			= new Vector3d(rayDir).mul(rayLength / (stepCount - 1));
 		Vector3d rayPos = rayOrigin;
 
 		// Integrating extinction using trapezium rule.
@@ -99,9 +100,11 @@ public class AtmosphereTransmittance {
 		}
 		airmass.mul(rayLength / (double) (stepCount - 1));
 
-		Vector3d extinction = new Vector3d(params.rayleighCoeff).mul(airmass.x)
-								  .add(new Vector3d(params.mieCoeff).mul(airmass.y))
-								  .add(new Vector3d(params.ozoneCoeff).mul(airmass.z));
+		Vector3d extinction
+			= new Vector3d(params.rayleighCoeff)
+				  .mul(airmass.x)
+				  .add(new Vector3d(params.mieCoeff).mul(airmass.y))
+				  .add(new Vector3d(params.ozoneCoeff).mul(airmass.z));
 
 		return new Vector3d(
 			Math.exp(-extinction.x),

@@ -1,14 +1,19 @@
 import aperture;
+import lib.atmosphere;
+import lib.buffer.sky_sh;
 import lib.gbuffer_packing;
 import lib.sky_view_projection;
 import lib.lighting.celestial_shadow;
 import lib.util.color;
+import lib.util.math;
 import lib.util.space_conversion;
+import lib.util.spherical_harmonics;
 import settings;
-import lib.atmosphere;
 
 Texture2D<uint2> tex_packed_gbuffer_data;
 Texture2D<float3> tex_atmosphere_sky_view;
+
+ConstantBuffer<SkyShBuffer> buf_sky_sh;
 
 struct FragmentOutput {
 	float3 radiance;
@@ -37,13 +42,21 @@ FragmentOutput main(float2 coord: SV_Position) {
 
 	GbufferData gbuffer_data = GbufferData.unpack(packed_gbuffer_data);
 
-	float3 radiance = srgb_eotf_inv(gbuffer_data.albedo);
+	float3 albedo = srgb_eotf_inv(gbuffer_data.albedo);
+	float3 brdf = albedo / PI;
 
 	ShadowResult celestial_shadow = get_celestial_shadow(pos_scene);
 
-	radiance *= celestial_shadow.visibility
-		* max(0, dot(gbuffer_data.normal_world, buf_global.light_dir_world))
-		* buf_global.celestial_light_irradiance;
+	float3 radiance = celestial_shadow.visibility
+		* saturate(dot(gbuffer_data.normal_world, buf_global.light_dir_world))
+		* buf_global.celestial_light_irradiance * brdf;
+
+	radiance += sh_evaluate_irradiance(
+					buf_sky_sh.coeff,
+					gbuffer_data.normal_world,
+					1.0
+				)
+		* pow2(gbuffer_data.lightmap.y) * brdf;
 
 	return FragmentOutput(radiance);
 }

@@ -12,6 +12,8 @@ public class Fracture implements ShaderPack {
 		Vector3f light_dir_world,
 		Vector3f sun_dir_world,
 		Vector3f moon_dir_world,
+		Vector3f sun_radiosity,
+		Vector3f moon_radiosity,
 		Vector3f celestial_light_irradiance
 	) {}
 
@@ -62,7 +64,7 @@ public class Fracture implements ShaderPack {
 					  "tex_atmosphere_sky_view",
 					  TextureFormat.RG11B10_UFLOAT
 				  )
-				  .size(512, 256)
+				  .size(256, 128)
 				  .create();
 
 		pipeline.texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
@@ -72,7 +74,8 @@ public class Fracture implements ShaderPack {
 		globalBuffer
 			= pipeline.mappedBuffer("buf_global", GlobalBufferData.class);
 
-		pipeline.buffer("buf_exposure", 12);
+		pipeline.buffer("buf_exposure", 4 * 3); // float, float, int
+		pipeline.buffer("buf_sky_sh", 10 * 4 * 4); // float3[9], float3
 
 		pipeline
 			.object(ProgramUsage.BASIC, "program/object/basic", "BasicObject")
@@ -110,8 +113,16 @@ public class Fracture implements ShaderPack {
 			)
 			.writes("sky_radiance", atmosphereSkyViewTex);
 
+		pipeline.stage(ProgramStage.PRE_RENDER)
+			.compute("gen_sky_sh", "program/lighting/gen_sky_sh", "main")
+			.dispatch1D(1);
+
 		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
-			.composite("deferred_shading", "program/deferred_shading", "main")
+			.composite(
+				"deferred_shading",
+				"program/lighting/deferred_shading",
+				"main"
+			)
 			.writes("radiance", sceneTex.back());
 
 		// Must have scene data in front and back for translucent passes to read
@@ -189,20 +200,23 @@ public class Fracture implements ShaderPack {
 				.getFloat3("ap.celestial.sunPosition")
 				.negate()
 				.normalize(),
-			new Vector3f(celestialLightRadiosity).mul(vector3dToVector3f(
-				AtmosphereTransmittance.calculateTransmittance(
-					AtmosphereTransmittance.EARTH_PARAMS,
-					new Vector3d(
-						0.0,
-						AtmosphereTransmittance.EARTH_PARAMS.planetRadius()
-							+ 1.0,
-						0.0
-					),
-					new Vector3d(state.uniforms()
-									 .getFloat3("ap.celestial.position")
-									 .normalize())
-				)
-			))
+			SUN_RADIOSITY,
+			MOON_RADIOSITY,
+			new Vector3f(celestialLightRadiosity)
+				.mul(vector3dToVector3f(
+					AtmosphereTransmittance.calculateTransmittance(
+						AtmosphereTransmittance.EARTH_PARAMS,
+						new Vector3d(
+							0.0,
+							AtmosphereTransmittance.EARTH_PARAMS.planetRadius()
+								+ 1.0,
+							0.0
+						),
+						new Vector3d(state.uniforms()
+										 .getFloat3("ap.celestial.position")
+										 .normalize())
+					)
+				))
 		));
 	}
 

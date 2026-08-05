@@ -82,8 +82,10 @@ SkyViewOutput sky_view_main(float2 coord: SV_Position) {
 	float3 ray_dir = unproject_sky_view(ncoord);
 
 	atmosphere.LightSource light_sources[2] = {
-		atmosphere.LightSource(float3(10.0), buf_global.sun_dir_world),
-		atmosphere.LightSource(float3(0.25), buf_global.moon_dir_world),
+		atmosphere
+			.LightSource(buf_global.sun_radiosity, buf_global.sun_dir_world),
+		atmosphere
+			.LightSource(buf_global.moon_radiosity, buf_global.moon_dir_world),
 	};
 
 	return SkyViewOutput(atmosphere.calculate_scattering(

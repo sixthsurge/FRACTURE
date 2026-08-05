@@ -141,7 +141,7 @@ float2x3 calculate_2nd_order_scattering_and_f_ms(
 	float3 ray_dir,
 	float3 light_dir
 ) {
-	const int step_count = 16;
+	const int step_count = 8;
 
 	float2 dists = intersect_spherical_shell(
 		ray_origin,
@@ -212,7 +212,7 @@ float3 calculate_multiscatter_energy(
 	float r,
 	float cos_light_zenith_angle
 ) {
-	const int sqrt_direction_samples = 8;
+	const int sqrt_direction_samples = 5;
 
 	float3 ray_origin = float3(0.0, r, 0.0);
 	float3 light_dir = float3(
