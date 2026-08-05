@@ -1,5 +1,7 @@
 public module color;
 
+static const float3 luminance_weights_rec709 = float3(0.2126, 0.7152, 0.0722);
+
 // Approx. convert linear -> sRGB.
 // Source: Jodie in shaderLABS #snippets.
 float3 srgb_eotf(float3 linear) {

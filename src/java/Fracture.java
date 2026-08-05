@@ -7,20 +7,6 @@ import org.joml.Vector3f;
 import util.Flipper;
 
 public class Fracture implements ShaderPack {
-	class Settings {
-		boolean shadowEnabled;
-		int shadowCascadeCount;
-		int shadowResolution;
-		int shadowDistance;
-
-		Settings(SettingsManager settings) {
-			shadowEnabled = settings.getBoolValue("SHADOW_ENABLED");
-			shadowCascadeCount = settings.getIntValue("SHADOW_CASCADE_COUNT");
-			shadowResolution = settings.getIntValue("SHADOW_RESOLUTION");
-			shadowDistance = settings.getIntValue("SHADOW_DISTANCE");
-		}
-	}
-
 	public record GlobalBufferData(
 		Vector3f light_dir_world,
 		Vector3f sun_dir_world,
@@ -29,14 +15,8 @@ public class Fracture implements ShaderPack {
 
 	MappedBuffer<GlobalBufferData> globalBuffer;
 
-	int divideRoundingUp(int num, int denom) {
-		return (num + denom - 1) / denom;
-	}
-
 	@Override
 	public void configurePipeline(Screen screen, PipelineConfig pipeline) {
-		final var settings = new Settings(pipeline.settings());
-
 		final var sceneTexA
 			= pipeline.texture2D("tex_scene_a", TextureFormat.RG11B10_UFLOAT)
 				  .renderSize()
@@ -80,14 +60,20 @@ public class Fracture implements ShaderPack {
 				  .size(512, 256)
 				  .create();
 
+		pipeline.texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
+			.size(256, 1)
+			.create();
+
 		globalBuffer
 			= pipeline.mappedBuffer("buf_global", GlobalBufferData.class);
+
+		pipeline.buffer("buf_exposure", 12);
 
 		pipeline
 			.object(ProgramUsage.BASIC, "program/object/basic", "BasicObject")
 			.writes("packed_gbuffer_data", packedGbufferDataTex);
 
-		if (settings.shadowEnabled) {
+		if (pipeline.settings().getBoolValue("SHADOW_ENABLED")) {
 			pipeline.object(
 				ProgramUsage.SHADOW,
 				"program/object/shadow",
@@ -138,17 +124,49 @@ public class Fracture implements ShaderPack {
 			.overrideObject("tex_scene", sceneTex.front().name());
 		sceneTex.flip();
 
+		pipeline.stage(ProgramStage.POST_RENDER)
+			.compute(
+				"exposure/clear_histogram",
+				"program/exposure/clear_histogram",
+				"main"
+			)
+			.dispatch1D(1);
+
+		pipeline.stage(ProgramStage.POST_RENDER)
+			.compute(
+				"exposure/build_histogram",
+				"program/exposure/build_histogram",
+				"main"
+			)
+			.dispatch2D(
+				Math.ceilDiv(screen.renderWidth(), 32),
+				Math.ceilDiv(screen.renderHeight(), 32)
+			)
+			.overrideObject("tex_scene", sceneTex.front().name());
+
+		pipeline.stage(ProgramStage.POST_RENDER)
+			.compute(
+				"exposure/calculate_exposure",
+				"program/exposure/calculate_exposure",
+				"main"
+			)
+			.dispatch1D(1);
+
 		pipeline.combinationPass("program/combination")
 			.overrideObject("tex_scene", sceneTex.front().name());
 	}
 
 	@Override
 	public void configureRenderer(RendererConfig rendererConfig) {
-		final var settings = new Settings(rendererConfig.getSettings());
-
-		rendererConfig.setShadowCascades(settings.shadowCascadeCount);
-		rendererConfig.setShadowDistance(settings.shadowDistance);
-		rendererConfig.setShadowResolution(settings.shadowResolution);
+		rendererConfig.setShadowCascades(
+			rendererConfig.getSettings().getIntValue("SHADOW_CASCADE_COUNT")
+		);
+		rendererConfig.setShadowDistance(
+			rendererConfig.getSettings().getIntValue("SHADOW_DISTANCE")
+		);
+		rendererConfig.setShadowResolution(
+			rendererConfig.getSettings().getIntValue("SHADOW_RESOLUTION")
+		);
 		rendererConfig.setSunPathRotation(30);
 	}
 
