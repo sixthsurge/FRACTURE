@@ -1,4 +1,4 @@
-public module celestial_shadow;
+public module shadow;
 
 import aperture;
 import lib.util.math;
@@ -35,7 +35,7 @@ Optional<Tuple<int, float3>> project_shadow(float3 pos_shadow_view) {
 	return none;
 }
 
-ShadowResult get_celestial_shadow(float3 pos_scene) {
+ShadowResult calculate_shadow(float3 pos_scene) {
 	if (!userSettings.SHADOW_ENABLED) {
 		return ShadowResult.no_hit();
 	}
