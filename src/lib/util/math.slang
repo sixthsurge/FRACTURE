@@ -18,6 +18,16 @@ T pow2<T>(T x)
 	where T : IArithmetic { return x * x; }
 T pow3<T>(T x)
 	where T : IArithmetic { return x * x * x; }
+T pow4<T>(T x)
+	where T : IArithmetic {
+	x = x * x;
+	return x * x;
+}
+T pow5<T>(T x)
+	where T : IArithmetic {
+	T x2 = x * x;
+	return x2 * x2 * x;
+}
 
 float2 diagonal(float2x2 m) { return float2(m[0].x, m[1].y); }
 

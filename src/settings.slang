@@ -8,6 +8,7 @@ struct GlobalBufferData {
     float3 sun_radiosity;
     float3 moon_radiosity;
     float3 celestial_light_irradiance;
+    float celestial_light_angular_radius;
 };
 
 

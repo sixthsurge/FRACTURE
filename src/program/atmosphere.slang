@@ -102,7 +102,7 @@ SkyViewOutput sky_view_main(float2 coord: SV_Position) {
 }
 
 [shader("compute")]
-[numthreads(8, 8, 1)]
+[numthreads(16, 16, 1)]
 void aerial_perspective_main(int3 icoord: SV_DispatchThreadID) {
 	float w, h, d;
 	tex_atmosphere_aerial_perspective.GetDimensions(w, h, d);
