@@ -20,7 +20,8 @@ float4 main(float2 coord: SV_Position) {
 		color *= userSettings.MANUAL_EXPOSURE_VALUE;
 	}
 
-	color = tonemap_hejl_burgess(color);
+	color = tonemap_agx(color);
+
 	// NB: do not need to apply sRGB EOTF as this is built into Hejl-Burgess.
 
 	if (userSettings.DISPLAY_LUMINANCE_HISTOGRAM) {

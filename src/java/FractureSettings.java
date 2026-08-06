@@ -42,5 +42,57 @@ public class FractureSettings implements PackSettings {
 			OptionType.boolType(false),
 			false
 		);
+
+		final var screenAgx = screen.child("agx");
+		screenAgx.option(
+			"AGX_OFFSET_R",
+			OptionType.floatType(-1.0f, 1.0f, 0.01f, 0.0f),
+			true
+		);
+		screenAgx.option(
+			"AGX_OFFSET_G",
+			OptionType.floatType(-1.0f, 1.0f, 0.01f, 0.0f),
+			true
+		);
+		screenAgx.option(
+			"AGX_OFFSET_B",
+			OptionType.floatType(-1.0f, 1.0f, 0.01f, 0.0f),
+			true
+		);
+		screenAgx.option(
+			"AGX_SLOPE_R",
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			true
+		);
+		screenAgx.option(
+			"AGX_SLOPE_G",
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			true
+		);
+		screenAgx.option(
+			"AGX_SLOPE_B",
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			true
+		);
+		screenAgx.option(
+			"AGX_POWER_R",
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			true
+		);
+		screenAgx.option(
+			"AGX_POWER_G",
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			true
+		);
+		screenAgx.option(
+			"AGX_POWER_B",
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			true
+		);
+		screenAgx.option(
+			"AGX_SAT",
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			true
+		);
 	}
 }

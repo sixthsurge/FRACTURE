@@ -21,6 +21,16 @@ extern static const bool value_SHADOW_ENABLED;
 extern static const int value_SHADOW_RESOLUTION;
 
 struct Settings {
+    float AGX_OFFSET_B;
+    float AGX_OFFSET_G;
+    float AGX_OFFSET_R;
+    float AGX_POWER_B;
+    float AGX_POWER_G;
+    float AGX_POWER_R;
+    float AGX_SAT;
+    float AGX_SLOPE_B;
+    float AGX_SLOPE_G;
+    float AGX_SLOPE_R;
     float EXPOSURE_TARGET;
     float MANUAL_EXPOSURE_VALUE;
     static const bool AUTO_EXPOSURE_ENABLED = value_AUTO_EXPOSURE_ENABLED;
