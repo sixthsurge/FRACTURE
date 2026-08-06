@@ -8,7 +8,7 @@ import resources.Textures;
 public class PreRenderPasses {
 	public static void
 	setup(PipelineConfig pipeline, Screen screen, Textures textures) {
-		setupAtmospherePasses(pipeline, textures);
+		setupAtmosphere(pipeline, textures);
 
 		pipeline.stage(ProgramStage.PRE_RENDER)
 			.compute("gen_sky_sh", "program/lighting/gen_sky_sh", "main")
@@ -16,7 +16,7 @@ public class PreRenderPasses {
 	}
 
 	private static void
-	setupAtmospherePasses(PipelineConfig pipeline, Textures textures) {
+	setupAtmosphere(PipelineConfig pipeline, Textures textures) {
 		pipeline.stage(ProgramStage.PRE_RENDER)
 			.composite(
 				"atmosphere/transmittance_lut",

@@ -24,12 +24,21 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
+		final var screenBloom = screen.child("bloom");
+		screenBloom.option(
+			"BLOOM_INTENSITY",
+			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.10f),
+			true
+		);
+		screenBloom
+			.option("BLOOM_TILE_COUNT", OptionType.intType(1, 12, 1, 7), false);
+
 		final var screenExposure = screen.child("exposure");
 		screenExposure
 			.option("AUTO_EXPOSURE_ENABLED", OptionType.boolType(true), false);
 		screenExposure.option(
 			"EXPOSURE_TARGET",
-			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.5f),
+			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.75f),
 			true
 		);
 		screenExposure.option(

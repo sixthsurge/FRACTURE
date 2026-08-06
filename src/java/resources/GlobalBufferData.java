@@ -50,7 +50,10 @@ public record GlobalBufferData(
 					  )
 				  ));
 
-		float celestialLightAngularRadius = state.uniforms().getFloat("ap.celestial.angle") > 0.5f ? 0.004f : 0.008f;
+		float celestialLightAngularRadius
+			= state.uniforms().getFloat("ap.celestial.angle") > 0.5f
+			? 0.004f
+			: 0.008f;
 
 		return new GlobalBufferData(
 			lightDirWorld,

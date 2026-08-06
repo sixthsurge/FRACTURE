@@ -57,13 +57,19 @@ float3 calculate_outgoing_radiance(
 			* buf_global.celestial_light_irradiance;
 	}
 
-	// Skylight
+	// Ambient light
 
 	float3 ambient_irradiance
 		= sh_evaluate_irradiance(buf_sky_sh.coeff, flat_normal_world, 1.0)
 		* pow2(lightmap.y);
 
+	ambient_irradiance += pow3(lightmap.x) * float3(0.05, 0.02, 0.02);
+
 	radiance += ambient_irradiance * material.albedo / PI;
+
+	// Emission
+
+	radiance += material.emission * 0.25;
 
 	return radiance;
 }

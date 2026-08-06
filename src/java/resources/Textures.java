@@ -1,13 +1,13 @@
 package resources;
 
 import dev.irisshaders.aperture.api.objects.Texture2D;
-import dev.irisshaders.aperture.api.objects.Texture3D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import util.Flipper;
 
 public class Textures {
 	public final Flipper<Texture2D> scene;
+	public final Flipper<Texture2D> bloom;
 	public final Texture2D packedGbufferData;
 	public final Texture2D atmosphereTransmittanceLut;
 	public final Texture2D atmosphereMultiscatterLut;
@@ -26,9 +26,24 @@ public class Textures {
 				  .create();
 		scene = new Flipper<>(sceneTexA, sceneTexB);
 
+		final var bloomA
+			= pipeline.texture2D("tex_bloom_a", TextureFormat.RG11B10_UFLOAT)
+				  .renderSize()
+				  .usesMipmaps()
+				  .create();
+		final var bloomB
+			= pipeline.texture2D("tex_bloom_b", TextureFormat.RG11B10_UFLOAT)
+				  .renderSize()
+				  .usesMipmaps()
+				  .create();
+		bloom = new Flipper<Texture2D>(bloomA, bloomB);
+
 		packedGbufferData
 			= pipeline
-				  .texture2D("tex_packed_gbuffer_data", TextureFormat.RGBA32_UINT)
+				  .texture2D(
+					  "tex_packed_gbuffer_data",
+					  TextureFormat.RGBA32_UINT
+				  )
 				  .renderSize()
 				  .create();
 
@@ -59,17 +74,16 @@ public class Textures {
 				  .size(256, 128)
 				  .create();
 
-			pipeline
-				  .texture3D(
-					  "tex_atmosphere_aerial_perspective",
-					  TextureFormat.RG11B10_UFLOAT
-				  )
-				  .size(32, 32, 32)
-				  .create();
+		pipeline
+			.texture3D(
+				"tex_atmosphere_aerial_perspective",
+				TextureFormat.RG11B10_UFLOAT
+			)
+			.size(32, 32, 32)
+			.create();
 
-			pipeline
-				  .texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
-				  .size(256, 1)
-				  .create();
+		pipeline.texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
+			.size(256, 1)
+			.create();
 	}
 }
