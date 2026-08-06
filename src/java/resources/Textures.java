@@ -12,10 +12,10 @@ public class Textures {
 	public final Texture2D atmosphereTransmittanceLut;
 	public final Texture2D atmosphereMultiscatterLut;
 	public final Texture2D atmosphereSkyView;
-	public final Texture3D atmosphereAerialPerspectiveLut;
-	public final Texture2D exposureHistogram;
 
 	public Textures(PipelineConfig pipeline) {
+		pipeline.loadPNGTexture("tex_blue_noise", "texture/blue_noise.png");
+
 		final var sceneTexA
 			= pipeline.texture2D("tex_scene_a", TextureFormat.RG11B10_UFLOAT)
 				  .renderSize()
@@ -59,8 +59,7 @@ public class Textures {
 				  .size(256, 128)
 				  .create();
 
-		atmosphereAerialPerspectiveLut
-			= pipeline
+			pipeline
 				  .texture3D(
 					  "tex_atmosphere_aerial_perspective",
 					  TextureFormat.RG11B10_UFLOAT
@@ -68,8 +67,7 @@ public class Textures {
 				  .size(32, 32, 32)
 				  .create();
 
-		exposureHistogram
-			= pipeline
+			pipeline
 				  .texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
 				  .size(256, 1)
 				  .create();

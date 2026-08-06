@@ -6,9 +6,9 @@ import settings;
 namespace exposure {
 // Exposure controls.
 static const int HISTOGRAM_BIN_COUNT = 256;
-static const float MIN_LUMINANCE = 0.03;
+static const float MIN_LUMINANCE = 0.003;
 static const float MAX_LUMINANCE = 10.0;
-static const float BIAS = -0.5;
+static const float BIAS = -2.0;
 
 float luminance_to_exposure(float luminance) { return exp2(BIAS) / luminance; }
 

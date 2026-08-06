@@ -25,7 +25,7 @@ public record GlobalBufferData(
 							   .negate()
 							   .normalize();
 		var sunRadiosity = new Vector3f(1.0f);
-		var moonRadiosity = new Vector3f(0.05f);
+		var moonRadiosity = new Vector3f(0.01f);
 
 		final var celestialLightRadiosity
 			= state.uniforms().getFloat("ap.celestial.angle") < 0.5

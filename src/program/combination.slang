@@ -1,9 +1,11 @@
 import aperture;
 import lib.buffer.exposure;
 import lib.post.tonemapping;
+import lib.util.dithering;
 import settings;
 
 Texture2D tex_scene;
+Texture2D<float> tex_blue_noise;
 
 ConstantBuffer<ExposureBuffer> buf_exposure;
 Texture2D<uint> tex_exposure_histogram;
@@ -13,6 +15,7 @@ float4 main(float2 coord: SV_Position) {
 	int2 icoord = int2(coord);
 
 	float3 color = tex_scene[icoord].rgb;
+	float dither = tex_blue_noise[icoord & 511];
 
 	if (userSettings.AUTO_EXPOSURE_ENABLED) {
 		color *= buf_exposure.value;
@@ -21,6 +24,8 @@ float4 main(float2 coord: SV_Position) {
 	}
 
 	color = tonemap_agx(color);
+
+	color = dither_8bit(color, dither);
 
 	// NB: do not need to apply sRGB EOTF as this is built into Hejl-Burgess.
 
