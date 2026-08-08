@@ -3,6 +3,7 @@ public module shadow;
 import aperture;
 import lib.util.math;
 import lib.util.sampling;
+import lib.util.random;
 import settings;
 
 internal Texture2DArray<float3> tex_shadow_color;
@@ -55,7 +56,8 @@ float3
 pcf(float3 pos_shadow_screen, int cascade, float penumbra_size, float dither) {
 	// penumbra_size > max_filter_radius: blur
 	// penumbra_size < min_filter_radius: anti-alias (blur then sharpen)
-	const int STEP_COUNT = 12;
+	const int INITIAL_STEPS = 4;
+	const int EXTRA_STEPS = 8;
 	const float MIN_FILTER_RADIUS = 1.0 / userSettings.SHADOW_RESOLUTION;
 
 	float filter_radius = max(penumbra_size, MIN_FILTER_RADIUS);
@@ -65,9 +67,8 @@ pcf(float3 pos_shadow_screen, int cascade, float penumbra_size, float dither) {
 	float3 color = float3(0.0);
 
 	// Perform the first 4 iterations and filter shadow color.
-	for (int i = 0; i < 4; ++i) {
-		float2 offset
-			= sample_vogel_disc(i, STEP_COUNT, dither * TAU) * filter_radius;
+	for (int i = 0; i < INITIAL_STEPS; ++i) {
+		float2 offset = sample_vogel_disc(i, 4, dither * TAU) * filter_radius;
 
 		float2 uv = pos_shadow_screen.xy + offset;
 
@@ -83,17 +84,24 @@ pcf(float3 pos_shadow_screen, int cascade, float penumbra_size, float dither) {
 		);
 	}
 
-	// Exit early if we are not on a penumbra.
-	if (shadow > 4.0 - EPS) {
-		return color * 0.25;
+	color /= INITIAL_STEPS;
+
+	// Exit early if all the samples were the same, as we can assume we are not
+	// on a penumbra.
+	if (shadow > INITIAL_STEPS - EPS) {
+		return color;
 	} else if (shadow < EPS) {
 		return float3(0.0);
 	}
 
+	// Move the dither using R1 to make sure we don't sample the same points
+	// again.
+	dither = r1_next(dither);
+
 	// Perform remaining iterations on shadow colour only.
-	for (int i = 4; i < STEP_COUNT; ++i) {
+	for (int i = 0; i < EXTRA_STEPS; ++i) {
 		float2 offset
-			= sample_vogel_disc(i, STEP_COUNT, dither * TAU) * filter_radius;
+			= sample_vogel_disc(i, EXTRA_STEPS, dither * TAU) * filter_radius;
 
 		shadow += ap.opaqueShadow.compare(
 			pos_shadow_screen.xy + offset,
@@ -102,14 +110,14 @@ pcf(float3 pos_shadow_screen, int cascade, float penumbra_size, float dither) {
 		);
 	}
 
-	shadow /= STEP_COUNT;
+	shadow /= INITIAL_STEPS + EXTRA_STEPS;
 
 	// Sharpen shadow for small penumbra sizes.
 	float sharpening_threshold
 		= 0.4 * max0((MIN_FILTER_RADIUS - penumbra_size) / MIN_FILTER_RADIUS);
 	shadow = linstep(sharpening_threshold, 1.0 - sharpening_threshold, shadow);
 
-	return shadow * color * 0.25;
+	return shadow * color;
 }
 
 struct PositionAndCascade {

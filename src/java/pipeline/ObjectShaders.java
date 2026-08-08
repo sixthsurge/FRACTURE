@@ -39,8 +39,17 @@ public class ObjectShaders {
 					ProgramUsage.SHADOW,
 					"program/object/shadow",
 					"ShadowObject"
-				)
-				.writes("color", textures.shadowColor);
+				);
+
+			final var translucentShadowUsages = new ProgramUsage[]{ ProgramUsage.SHADOW_TERRAIN_TRANSLUCENT, ProgramUsage.SHADOW_ENTITY_TRANSLUCENT, ProgramUsage.SHADOW_BLOCK_ENTITY_TRANSLUCENT, ProgramUsage.SHADOW_PARTICLES_TRANSLUCENT };
+			for (var usage : translucentShadowUsages) {
+			pipeline
+				.object(
+					usage,
+					"program/object/shadow_translucent",
+					"ShadowObject"
+				).writes("color", textures.shadowColor);
+			}
 		}
 	}
 }
