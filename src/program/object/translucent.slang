@@ -1,5 +1,6 @@
 import aperture;
 import lib.block_ids;
+import lib.lighting.brdf;
 import lib.lighting.main_lighting;
 import lib.lighting.material;
 import lib.sky_view_projection;
@@ -38,7 +39,8 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 		output.lightmap
 			= linstep(float2(1.0 / 32.0), float2(31.0 / 32.0), v.lightCoord());
 		output.pos_scene = pos_scene.xyz;
-		output.id = v.blockID().orElse(WorldBlock(0)).id;
+		output.id
+			= select(v.blockID().hasValue, v.blockID().value.data.customId, 0);
 		output.color_packed = packUnorm4x8(v.color());
 		output.normal_packed
 			= packUnorm4x8(float4(normal_world * 0.5 + 0.5, 1.0));
@@ -81,12 +83,15 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 			ray_dir_view
 		);
 		Ray ray = Ray(pos_screen, ray_dir_screen);
-		float ray_length = ssrt.screen_space_ray_length(ray);
 
 		if (input.id == BLOCK_WATER) {
 			float3 reflected_radiance;
-			if (let hit = ssrt.trace_hiz(ap.opaqueDepth, ray, ray_length)) {
-				reflected_radiance = tex_scene.sampleNearest(hit.pos_screen.xy);
+			if (let hit_pos = ssrt.trace_hiz(
+					ray,
+					ssrt.screen_space_ray_length(ray),
+					ssrt.thickness_heuristic(pos_view, ray_dir_screen)
+				)) {
+				reflected_radiance = tex_scene.sampleLinear(hit_pos.xy);
 			} else {
 				reflected_radiance
 					= tex_atmosphere_sky_view.sampleLinear(project_sky_view(

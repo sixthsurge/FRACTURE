@@ -14,6 +14,7 @@ struct VertexOutput {
 	float2 uv : TEXCOORD;
 	float2 lightmap;
 
+	nointerpolation uint id;
 	nointerpolation uint color_packed;
 	nointerpolation uint normal_packed;
 	nointerpolation uint tangent_packed;
@@ -30,6 +31,8 @@ struct TerrainObject : Shader<VertexOutput, FragmentOutput> {
 		output.uv = v.uv();
 		output.lightmap
 			= linstep(float2(1.0 / 32.0), float2(31.0 / 32.0), v.lightCoord());
+		output.id
+			= select(v.blockID().hasValue, v.blockID().value.data.customId, 0);
 		output.color_packed = packUnorm4x8(v.color());
 		output.normal_packed
 			= packUnorm4x8(float4(normal_world * 0.5 + 0.5, 1.0));

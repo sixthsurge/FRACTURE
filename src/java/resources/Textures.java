@@ -1,5 +1,6 @@
 package resources;
 
+import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.Texture2D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
@@ -9,11 +10,12 @@ public class Textures {
 	public final Flipper<Texture2D> scene;
 	public final Flipper<Texture2D> bloom;
 	public final Texture2D packedGbufferData;
+	public final Texture2D depthHizMinMax;
 	public final Texture2D atmosphereTransmittanceLut;
 	public final Texture2D atmosphereMultiscatterLut;
 	public final Texture2D atmosphereSkyView;
 
-	public Textures(PipelineConfig pipeline) {
+	public Textures(PipelineConfig pipeline, Screen screen) {
 		pipeline.loadPNGTexture("tex_blue_noise", "texture/blue_noise.png");
 
 		final var sceneTexA
@@ -45,6 +47,13 @@ public class Textures {
 					  TextureFormat.RGBA32_UINT
 				  )
 				  .renderSize()
+				  .create();
+
+		depthHizMinMax
+			= pipeline
+				  .texture2D("tex_depth_hiz_min_max", TextureFormat.RG32_SFLOAT)
+				  .size(screen.renderWidth() / 2, screen.renderHeight() / 2)
+				  .usesMipmaps()
 				  .create();
 
 		atmosphereTransmittanceLut

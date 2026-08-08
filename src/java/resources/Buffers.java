@@ -13,6 +13,9 @@ public class Buffers {
 
 		pipeline.buffer("buf_exposure", 4 * 3); // float, float, int
 		pipeline.buffer("buf_sky_sh", 10 * 4 * 4); // float3[9], float3
+
+		// For FidelityFX-SPD.
+		pipeline.buffer("spdGlobalAtomic", 4);
 	}
 
 	public void update(FrameState frame) {

@@ -15,8 +15,17 @@ public class Fracture implements ShaderPack {
 
 	@Override
 	public void configurePipeline(Screen screen, PipelineConfig pipeline) {
-		textures = new Textures(pipeline);
+		textures = new Textures(pipeline, screen);
 		buffers = new Buffers(pipeline);
+
+		// Zero spdGlobalAtomic for FidelityFX SPD.
+		pipeline.stage(ProgramStage.SCREEN_SETUP)
+			.compute(
+				"zero_spd_global_atomic",
+				"program/hiz_downsample",
+				"zero_spd_global_atomic"
+			)
+			.dispatch1D(1);
 
 		ObjectShaders.setupShadow(pipeline, textures);
 		PreRenderPasses.setup(pipeline, screen, textures);
