@@ -13,7 +13,7 @@ RWStructuredBuffer<SkyShBuffer> buf_sky_sh;
 Texture2D<float3> tex_atmosphere_sky_view;
 
 [shader("compute")]
-[numthreads(16, 16)]
+[numthreads(256)]
 void main(int i: SV_GroupIndex) {
 	static const int THREAD_COUNT = 256;
 
@@ -24,9 +24,10 @@ void main(int i: SV_GroupIndex) {
 	// Sample radiance in a random direction.
 	float3 direction = sample_uniform_hemisphere(float3(0.0, 1.0, 0.0), r2(i));
 
-	float3 radiance = tex_atmosphere_sky_view.Sample(
+	float3 radiance = tex_atmosphere_sky_view.SampleLevel(
 		apt_linearSampler,
-		project_sky_view(direction)
+		project_sky_view(direction),
+		0,
 	);
 
 	// Project into SH.

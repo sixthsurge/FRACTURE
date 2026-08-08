@@ -1,6 +1,7 @@
 package resources;
 
 import dev.irisshaders.aperture.api.objects.Screen;
+import dev.irisshaders.aperture.api.objects.ShadowTexture;
 import dev.irisshaders.aperture.api.objects.Texture2D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
@@ -14,6 +15,7 @@ public class Textures {
 	public final Texture2D atmosphereTransmittanceLut;
 	public final Texture2D atmosphereMultiscatterLut;
 	public final Texture2D atmosphereSkyView;
+	public final ShadowTexture shadowColor;
 
 	public Textures(PipelineConfig pipeline, Screen screen) {
 		pipeline.loadPNGTexture("tex_blue_noise", "texture/blue_noise.png");
@@ -94,5 +96,10 @@ public class Textures {
 		pipeline.texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
 			.size(256, 1)
 			.create();
+
+		shadowColor = pipeline.shadowTexture(
+			"tex_shadow_color",
+			TextureFormat.RGBA8_UNORM
+		);
 	}
 }

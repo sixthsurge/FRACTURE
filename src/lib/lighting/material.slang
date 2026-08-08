@@ -1,5 +1,6 @@
 public module material;
 
+import lib.mat_ids;
 import lib.util.math;
 
 static const float AIR_IOR = 1.000293; // for 0°C and 1 atm
@@ -17,7 +18,7 @@ struct Material {
 	bool is_hardcoded_metal;
 
 	// Create material with default values.
-	static Material get(float3 albedo) {
+	static Material get(float3 albedo, uint mat_id) {
 		Material material;
 		material.albedo = albedo;
 		material.emission = float3(0.0);
@@ -28,6 +29,12 @@ struct Material {
 		material.porosity = 0.0;
 		material.is_metal = false;
 		material.is_hardcoded_metal = false;
+
+		if (mat_id == MAT_PLANTS) {
+			material.sss_amount = 0.5;
+		} else if (mat_id == MAT_LEAVES) {
+			material.sss_amount = 1.0;
+		}
 
 		return material;
 	}

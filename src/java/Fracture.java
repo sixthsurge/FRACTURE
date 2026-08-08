@@ -60,6 +60,12 @@ public class Fracture implements ShaderPack {
 		if (id.path() == "water") {
 			return 1;
 		}
+		if (block.hasTag("replaceable_by_trees") || block.hasTag("saplings") || block.hasTag("flowers")) {
+			return 2;
+		}
+		if (block.hasTag("leaves")) {
+			return 3;
+		}
 		return 0;
 	}
 }

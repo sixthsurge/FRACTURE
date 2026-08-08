@@ -16,7 +16,7 @@ void add_to_histogram(float luminance) {
 }
 
 float fetch_luminance(int2 p) {
-	return max0(dot(tex_scene[p], luminance_weights_rec709));
+	return max0(dot(tex_scene[p], LUMINANCE_WEIGHTS_REC709));
 }
 
 [shader("compute")]

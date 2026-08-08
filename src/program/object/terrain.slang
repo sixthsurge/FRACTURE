@@ -72,7 +72,7 @@ struct TerrainObject : Shader<VertexOutput, FragmentOutput> {
 				albedo.rgb,
 				flat_normal_world,
 				input.lightmap,
-				0,
+				input.id,
 				detail_normal_world,
 				specular_map
 			)

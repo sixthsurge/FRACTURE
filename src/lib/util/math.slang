@@ -10,9 +10,11 @@ static const float DEGREE = TAU / 360.0;
 static const float GOLDEN_RATIO = 0.5 + 0.5 * sqrt(5.0);
 static const float GOLDEN_ANGLE = TAU / GOLDEN_RATIO / GOLDEN_RATIO;
 
-vector<float, N> max0<uint N>(vector<float, N> x) { return max(0.0, x); }
+T max0<T>(T x)
+	where T : IArithmetic { return max(T(0), x); }
 
-vector<float, N> min1<uint N>(vector<float, N> x) { return min(1.0, x); }
+T min1<T>(T x)
+	where T : IArithmetic { return min(T(1), x); }
 
 T min_of<T>(vector<T, 2> v)
 	where T : IArithmetic { return min(v.x, v.y); }
@@ -43,6 +45,8 @@ T pow5<T>(T x)
 	return x2 * x2 * x;
 }
 
+float pow_3_over_2(float x) { return x * sqrt(x); }
+
 float2 diagonal(float2x2 m) { return float2(m[0].x, m[1].y); }
 
 float3 diagonal(float3x3 m) { return float3(m[0].x, m[1].y, m[2].z); }
@@ -67,14 +71,6 @@ float3 project_ortho(float4x4 m, float3 pos) {
 	return diagonal(m).xyz * pos + m[3].xyz;
 }
 
-vector<float, N> linstep<uint N>(
-	vector<float, N> min,
-	vector<float, N> max,
-	vector<float, N> x,
-) {
-	return saturate((x - min) / (max - min));
-}
-
 // Faster alternative to acos
 // Source:
 // https://seblagarde.wordpress.com/2014/12/01/inverse-trigonometric-functions-gpu-optimization-for-amd-gcn-architecture/#more-3316
@@ -91,6 +87,41 @@ float fast_acos(float x) {
 
 	return x >= 0 ? res : PI - res; // Undo range reduction.
 }
+
+vector<float, N> linstep<uint N>(
+	vector<float, N> min,
+	vector<float, N> max,
+	vector<float, N> x,
+) {
+	return saturate((x - min) / (max - min));
+}
+
+// Can be used similarly to sqrt() to shape a signal on [0, 1]
+T dampen<T>(T x)
+	where T : IArithmetic {
+	x = min(max(x, T(0)), T(1));
+	return x * (T(2) - x);
+}
+
+// Can be used similarly to pow() to shape a signal
+//
+// amount := lifting amount [-1.0, inf]
+//
+// amount = 0 -> identity
+// amount < 0 -> increase signal contrast (power > 1)
+// amount > 0 -> reduce signal contrast (power < 1)
+T lift<T>(T x, T amount)
+	where T : IArithmetic { return (x + x * amount) / (T(1) + x * amount); }
+
+// Smoothing function used by smoothstep.
+// Zero derivative at zero and one.
+T cubic_smooth<T>(T x)
+	where T : IArithmetic { return pow2(x) * (T(3) - T(2) * x); }
+
+// Similar to the above, but even smoother with a zero second derivative at zero
+// and one.
+T quintic_smooth<T>(T x)
+	where T : IArithmetic { return pow3(x) * (x * (x * T(6) - T(15)) + T(10)); }
 
 float get_uv_from_unit_range(float values, const int res) {
 	return values * (1.0 - 1.0 / float(res)) + (0.5 / float(res));

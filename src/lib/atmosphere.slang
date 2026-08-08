@@ -4,8 +4,8 @@
 public module atmosphere;
 
 import aperture;
-import lib.phase_functions;
 import lib.util.math;
+import lib.util.phase_functions;
 import lib.util.ray_sphere_intersection;
 import lib.util.sampling;
 import lib.util.space_conversion;
@@ -246,7 +246,7 @@ float2x3 calculate_2nd_order_scattering_and_f_ms(
 
 	float3 inscattered_light = scattering[0] * scattering_coeff[0]
 		+ scattering[1] * scattering_coeff[1];
-	radiance += inscattered_light * isotropic_phase;
+	radiance += inscattered_light * ISOTROPIC_PHASE;
 
 	radiance += transmittance
 		* calculate_planet_radiance<1>(

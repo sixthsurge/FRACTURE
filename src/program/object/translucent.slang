@@ -1,5 +1,5 @@
 import aperture;
-import lib.block_ids;
+import lib.mat_ids;
 import lib.lighting.brdf;
 import lib.lighting.main_lighting;
 import lib.lighting.material;
@@ -7,12 +7,14 @@ import lib.sky_view_projection;
 import lib.ssrt;
 import lib.util.color;
 import lib.util.math;
+import lib.util.random;
 import lib.util.space_conversion;
 import object_shader;
 import settings;
 
 Texture2D<float3> tex_scene;
 Texture2D<float3> tex_atmosphere_sky_view;
+Texture2D<float> tex_blue_noise;
 
 struct FragmentOutput {
 	float4 color;
@@ -48,6 +50,14 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 
 	static FragmentOutput
 	shadeSurface(PixelData object_data, VertexOutput input) {
+		float3 pos_view = scene_to_view(input.pos_scene);
+		float3 pos_screen = view_to_screen(pos_view);
+		int2 icoord = int2(pos_screen.xy * ap.game.renderSize);
+		float2 dither = float2(
+			tex_blue_noise[icoord & 511],
+			tex_blue_noise[(icoord + int2(93, 41)) & 511]
+		);
+
 		var albedo = unpackUnorm4x8ToFloat(input.color_packed);
 		if (let albedo_tex = object_data.albedo()) {
 			albedo *= albedo_tex.sampleTexture(input.uv);
@@ -59,7 +69,7 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 
 		albedo.rgb = srgb_eotf_inv(albedo.rgb);
 
-		Material material = Material.get(albedo.rgb);
+		Material material = Material.get(albedo.rgb, input.id);
 
 		float3 radiance = calculate_outgoing_radiance(
 			material,
@@ -67,11 +77,10 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 			normalize(input.pos_scene),
 			normal_world,
 			normal_world,
-			input.lightmap
+			input.lightmap,
+			dither
 		);
 
-		float3 pos_view = scene_to_view(input.pos_scene);
-		float3 pos_screen = view_to_screen(pos_view);
 		float3 dir_view = normalize(pos_view);
 		float3 dir_world = normalize(input.pos_scene);
 		float3 ray_dir_view
@@ -84,7 +93,7 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 		);
 		Ray ray = Ray(pos_screen, ray_dir_screen);
 
-		if (input.id == BLOCK_WATER) {
+		if (input.id == MAT_WATER) {
 			float3 reflected_radiance;
 			if (let hit_pos = ssrt.trace_hiz(
 					ray,

@@ -34,11 +34,13 @@ public class ObjectShaders {
 
 	public static void setupShadow(PipelineConfig pipeline, Textures textures) {
 		if (pipeline.settings().getBoolValue("SHADOW_ENABLED")) {
-			pipeline.object(
-				ProgramUsage.SHADOW,
-				"program/object/shadow",
-				"ShadowObject"
-			);
+			pipeline
+				.object(
+					ProgramUsage.SHADOW,
+					"program/object/shadow",
+					"ShadowObject"
+				)
+				.writes("color", textures.shadowColor);
 		}
 	}
 }

@@ -6,7 +6,7 @@ struct GbufferData {
 	float3 albedo;
 	float3 flat_normal_world;
 	float2 lightmap;
-	uint block_id;
+	uint mat_id;
 	float3 detail_normal_world;
 	float4 specular_map;
 
@@ -16,7 +16,7 @@ struct GbufferData {
 
 		GbufferData data;
 		data.albedo = unpacked0.xyz;
-		data.block_id = uint(unpacked0.w * 255.0);
+		data.mat_id = uint(unpacked0.w * 255.0);
 		data.flat_normal_world = decode_octahedral(unpacked1.xy);
 		data.lightmap = unpacked1.zw;
 		data.detail_normal_world
@@ -27,7 +27,7 @@ struct GbufferData {
 
 	uint4 pack() {
 		return uint4(
-			packUnorm4x8(float4(albedo, float(block_id) / 255.0)),
+			packUnorm4x8(float4(albedo, float(mat_id) / 255.0)),
 			packUnorm4x8(
 				float4(encode_octahedral(flat_normal_world), lightmap)
 			),
