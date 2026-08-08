@@ -18,6 +18,10 @@ public class PostRenderPasses {
 
 	private static void
 	setupExposure(PipelineConfig pipeline, Screen screen, Textures textures) {
+		if (!pipeline.settings().getBoolValue("AUTO_EXPOSURE_ENABLED")) {
+			return;
+		}
+
 		pipeline.stage(ProgramStage.POST_RENDER)
 			.compute(
 				"exposure/clear_histogram",
@@ -53,6 +57,10 @@ public class PostRenderPasses {
 		Textures textures,
 		Texture2D sourceTexture
 	) {
+		if (!pipeline.settings().getBoolValue("BLOOM_ENABLED")) {
+			return;
+		}
+
 		final var maxLod = (int) Math.ceil(
 			Math.log(Math.max(screen.windowWidth(), screen.windowHeight()))
 			/ Math.log(2.0)

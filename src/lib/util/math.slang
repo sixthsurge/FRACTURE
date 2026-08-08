@@ -14,6 +14,20 @@ vector<float, N> max0<uint N>(vector<float, N> x) { return max(0.0, x); }
 
 vector<float, N> min1<uint N>(vector<float, N> x) { return min(1.0, x); }
 
+T min_of<T>(vector<T, 2> v)
+	where T : IArithmetic { return min(v.x, v.y); }
+T min_of<T>(vector<T, 3> v)
+	where T : IArithmetic { return min(v.x, min(v.y, v.z)); }
+T min_of<T>(vector<T, 4> v)
+	where T : IArithmetic { return min(v.x, min(v.y, min(v.z, v.w))); }
+
+T max_of<T>(vector<T, 2> v)
+	where T : IArithmetic { return max(v.x, v.y); }
+T max_of<T>(vector<T, 3> v)
+	where T : IArithmetic { return max(v.x, max(v.y, v.z)); }
+T max_of<T>(vector<T, 4> v)
+	where T : IArithmetic { return max(v.x, max(v.y, max(v.z, v.w))); }
+
 T pow2<T>(T x)
 	where T : IArithmetic { return x * x; }
 T pow3<T>(T x)
@@ -84,6 +98,13 @@ float get_uv_from_unit_range(float values, const int res) {
 
 float get_unit_range_from_uv(float uv, const int res) {
 	return (uv - 0.5 / float(res)) / (1.0 - 1.0 / float(res));
+}
+
+struct Ray {
+	float3 o;
+	float3 d;
+
+	float3 at(float t) { return o + d * t; }
 }
 
 

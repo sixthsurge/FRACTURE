@@ -25,6 +25,7 @@ public class FractureSettings implements PackSettings {
 		);
 
 		final var screenBloom = screen.child("bloom");
+		screenBloom.option("BLOOM_ENABLED", OptionType.boolType(true), false);
 		screenBloom.option(
 			"BLOOM_INTENSITY",
 			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.10f),

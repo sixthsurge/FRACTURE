@@ -15,6 +15,7 @@ struct GlobalBufferData {
 ConstantBuffer<GlobalBufferData, ScalarDataLayout> buf_global;
 
 extern static const bool value_AUTO_EXPOSURE_ENABLED;
+extern static const bool value_BLOOM_ENABLED;
 extern static const int value_BLOOM_TILE_COUNT;
 extern static const bool value_DISPLAY_LUMINANCE_HISTOGRAM;
 extern static const int value_SHADOW_CASCADE_COUNT;
@@ -37,6 +38,7 @@ struct Settings {
     float EXPOSURE_TARGET;
     float MANUAL_EXPOSURE_VALUE;
     static const bool AUTO_EXPOSURE_ENABLED = value_AUTO_EXPOSURE_ENABLED;
+    static const bool BLOOM_ENABLED = value_BLOOM_ENABLED;
     static const int BLOOM_TILE_COUNT = value_BLOOM_TILE_COUNT;
     static const bool DISPLAY_LUMINANCE_HISTOGRAM = value_DISPLAY_LUMINANCE_HISTOGRAM;
     static const int SHADOW_CASCADE_COUNT = value_SHADOW_CASCADE_COUNT;

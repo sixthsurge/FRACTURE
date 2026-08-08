@@ -44,4 +44,13 @@ public class Fracture implements ShaderPack {
 	public void onNewFrame(FrameState state) {
 		buffers.update(state);
 	}
+
+	@Override
+	public int setBlockId(IBlockState block) {
+		final var id = block.getBlockId();
+		if (id.path() == "water") {
+			return 1;
+		}
+		return 0;
+	}
 }

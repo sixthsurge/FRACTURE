@@ -12,12 +12,16 @@ Texture2D<float> tex_blue_noise;
 ConstantBuffer<ExposureBuffer> buf_exposure;
 Texture2D<uint> tex_exposure_histogram;
 
-float3 get_bloom(int2 icoord, float2 ncoord) {
+float3 apply_bloom(int2 icoord, float2 ncoord, float3 input) {
 	// Final upsampling step from lod 1 to lod 0
 	// Blurred lod 0 in bloom_tiles_a
 	// Blurred lod 1 in:
 	//   Even tile count => bloom_tiles_tex_a
 	//   Odd  tile count => bloom_tiles_tex_b
+
+	if (!userSettings.BLOOM_ENABLED) {
+		return input;
+	}
 
 	float3 bloom_0 = tex_bloom_a[icoord];
 	float3 bloom_1;
@@ -27,7 +31,8 @@ float3 get_bloom(int2 icoord, float2 ncoord) {
 		bloom_1 = tex_bloom_a.sampleLinearLevel(ncoord, 1);
 	}
 
-	return (bloom_0 + bloom_1) / userSettings.BLOOM_TILE_COUNT;
+	float3 bloom = (bloom_0 + bloom_1) / userSettings.BLOOM_TILE_COUNT;
+	return lerp(input, bloom, userSettings.BLOOM_INTENSITY);
 }
 
 [shader("pixel")]
@@ -38,8 +43,7 @@ float4 main(float2 coord: SV_Position) {
 	float3 color = tex_scene[icoord];
 	float dither = tex_blue_noise[icoord & 511];
 
-	color
-		= lerp(color, get_bloom(icoord, ncoord), userSettings.BLOOM_INTENSITY);
+	color = apply_bloom(icoord, ncoord, color);
 
 	if (userSettings.AUTO_EXPOSURE_ENABLED) {
 		color *= buf_exposure.value;
