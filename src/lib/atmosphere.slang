@@ -242,16 +242,6 @@ float2x3 calculate_2nd_order_scattering_and_f_ms(
 			ray_pos,
 			light_dir
 		);
-		light_transmittance
-			*= intersect_sphere(
-				   ray_pos,
-				   light_dir,
-				   params.planet_radius * (1.0 - EPS)
-			   )
-					.x
-				>= 0
-			? 0.0
-			: 1.0;
 
 		scattering[0] += airmass.x * visible_scattering * light_transmittance;
 		scattering[1] += airmass.y * visible_scattering * light_transmittance;
@@ -407,16 +397,6 @@ float3 calculate_scattering<int LightSourceCount>(
 				ray_pos,
 				light.direction
 			);
-			light_transmittance
-				*= intersect_sphere(
-					   ray_pos,
-					   light.direction,
-					   params.planet_radius
-				   )
-						.x
-					>= 0
-				? 0.0
-				: 1.0;
 
 			float3 multiscatter_energy = lookup_multiscatter_energy(
 				params,
