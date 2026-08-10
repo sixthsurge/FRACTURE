@@ -1,6 +1,6 @@
 import aperture;
+import lib.atmosphere;
 import lib.buffer.sky_sh;
-import lib.sky_view_projection;
 import lib.util.math;
 import lib.util.random;
 import lib.util.sampling;
@@ -24,11 +24,8 @@ void main(int i: SV_GroupIndex) {
 	// Sample radiance in a random direction.
 	float3 direction = sample_uniform_hemisphere(float3(0.0, 1.0, 0.0), r2(i));
 
-	float3 radiance = tex_atmosphere_sky_view.SampleLevel(
-		apt_linearSampler,
-		project_sky_view(direction),
-		0,
-	);
+	float3 radiance
+		= atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, direction);
 
 	// Project into SH.
 	float coeff[9] = sh_coeff_order_2(direction);

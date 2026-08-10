@@ -111,4 +111,22 @@ static const Material WATER_MATERIAL = Material(
 	false
 );
 
+struct NormalMapData {
+	float3 normal_tangent;
+	float texture_ao;
+	float heightmap;
+
+	// Unpack labPBR normal map.
+	static NormalMapData unpack(float4 normal_map) {
+		NormalMapData data;
+		data.normal_tangent.xy = normal_map.xy * 2.0 - 1.0;
+		data.normal_tangent.z = sqrt(
+			saturate(1.0 - dot(data.normal_tangent.xy, data.normal_tangent.xy))
+		);
+		data.texture_ao = normal_map.z;
+		data.heightmap = normal_map.w;
+		return data;
+	}
+}
+
 

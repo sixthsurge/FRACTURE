@@ -1,7 +1,6 @@
 import aperture;
 import lib.atmosphere;
 import lib.gbuffer_packing;
-import lib.sky_view_projection;
 import lib.lighting.main_lighting;
 import lib.lighting.material;
 import lib.util.color;
@@ -40,7 +39,7 @@ FragmentOutput main(float2 coord: SV_Position) {
 
 	if (depth == 0.0) {
 		return FragmentOutput(
-			tex_atmosphere_sky_view.sampleLinear(project_sky_view(dir_world))
+			atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, dir_world)
 		);
 	}
 

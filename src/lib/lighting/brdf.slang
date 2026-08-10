@@ -43,10 +43,10 @@ float3 fresnel_dielectric_n(float cos_theta, float n) {
 	float a = g - cos_theta;
 	float b = g + cos_theta;
 
-	return float3(
+	return saturate(float3(
 		0.5 * pow2(a / b)
 		* (1.0 + pow2((b * cos_theta - 1.0) / (a * cos_theta + 1.0)))
-	);
+	));
 }
 
 float3 fresnel_dielectric(float cos_theta, float f0) {

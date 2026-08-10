@@ -86,22 +86,22 @@ public class FractureSettings implements PackSettings {
 		);
 		screenAgx.option(
 			"AGX_POWER_R",
-			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.1f),
 			true
 		);
 		screenAgx.option(
 			"AGX_POWER_G",
-			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.1f),
 			true
 		);
 		screenAgx.option(
 			"AGX_POWER_B",
-			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.1f),
 			true
 		);
 		screenAgx.option(
 			"AGX_SAT",
-			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.1f),
 			true
 		);
 	}

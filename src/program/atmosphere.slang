@@ -1,6 +1,5 @@
 import aperture;
 import lib.atmosphere;
-import lib.sky_view_projection;
 import lib.util.math;
 import lib.util.space_conversion;
 import settings;
@@ -39,6 +38,7 @@ TransmittanceOutput transmittance_lut_main(float2 coord: SV_Position) {
 	float w, h;
 	tex_atmosphere_transmittance_lut.GetDimensions(w, h);
 	float2 ncoord = coord / float2(w, h);
+	ncoord = get_unit_range_from_uv(ncoord, float2(w, h));
 
 	float cos_zenith_angle = ncoord.x * 2.0 - 1.0;
 	float r = lerp(
@@ -66,6 +66,7 @@ MultiscatterOutput multiscatter_lut_main(float2 coord: SV_Position) {
 	float w, h;
 	tex_atmosphere_multiscatter_lut.GetDimensions(w, h);
 	float2 ncoord = coord / float2(w, h);
+	ncoord = get_unit_range_from_uv(ncoord, float2(w, h));
 
 	float cos_sun_zenith_angle = ncoord.x * 2.0 - 1.0;
 	float r = lerp(
@@ -87,8 +88,9 @@ SkyViewOutput sky_view_main(float2 coord: SV_Position) {
 	float w, h;
 	tex_atmosphere_sky_view.GetDimensions(w, h);
 	float2 ncoord = coord / float2(w, h);
+	ncoord = get_unit_range_from_uv(ncoord, float2(w, h));
 
-	float3 ray_dir = unproject_sky_view(ncoord);
+	float3 ray_dir = atmosphere.unproject_sky_view(ncoord);
 
 	return SkyViewOutput(atmosphere.calculate_scattering(
 		ATMOSPHERE_PARAMS,

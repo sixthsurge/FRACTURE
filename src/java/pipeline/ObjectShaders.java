@@ -9,14 +9,6 @@ public class ObjectShaders {
 		pipeline
 			.object(ProgramUsage.BASIC, "program/object/basic", "BasicObject")
 			.writes("packed_gbuffer_data", textures.packedGbufferData);
-
-		pipeline
-			.object(
-				ProgramUsage.TERRAIN_SOLID,
-				"program/object/terrain",
-				"TerrainObject"
-			)
-			.writes("packed_gbuffer_data", textures.packedGbufferData);
 	}
 
 	public static void

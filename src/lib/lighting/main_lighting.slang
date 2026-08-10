@@ -39,7 +39,7 @@ internal float3 calculate_sss(
 		* henyey_greenstein_phase(-LoV, 0.5) * linstep(-0.8, -0.2, -LoV);
 	sss += sheen * sheen_amount * 0.1;
 
-	return sss * albedo * SCALE;
+	return max0(sss) * albedo * SCALE;
 }
 
 internal float3 calculate_direct_celestial_light(

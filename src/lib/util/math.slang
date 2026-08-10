@@ -123,12 +123,14 @@ T cubic_smooth<T>(T x)
 T quintic_smooth<T>(T x)
 	where T : IArithmetic { return pow3(x) * (x * (x * T(6) - T(15)) + T(10)); }
 
-float get_uv_from_unit_range(float values, const int res) {
-	return values * (1.0 - 1.0 / float(res)) + (0.5 / float(res));
+T get_uv_from_unit_range<T>(T values, T res)
+	where T : IArithmetic {
+	return values * (T(1) - T(1) / res) + ((T(1) / T(2)) / res);
 }
 
-float get_unit_range_from_uv(float uv, const int res) {
-	return (uv - 0.5 / float(res)) / (1.0 - 1.0 / float(res));
+T get_unit_range_from_uv<T>(T uv, T res)
+	where T : IArithmetic {
+	return (uv - (T(1) / T(2)) / res) / (T(1) - T(1) / res);
 }
 
 struct Ray {

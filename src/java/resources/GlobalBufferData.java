@@ -15,20 +15,21 @@ public record GlobalBufferData(
 	float celestial_light_angular_radius
 ) {
 	public static GlobalBufferData get(FrameState state) {
-		var lightDirWorld
+		final var lightDirWorld
 			= state.uniforms().getFloat3("ap.celestial.position").normalize();
-		var sunDirWorld = state.uniforms()
+		final var sunDirWorld = state.uniforms()
 							  .getFloat3("ap.celestial.sunPosition")
 							  .normalize();
-		var moonDirWorld = state.uniforms()
+		final var moonDirWorld = state.uniforms()
 							   .getFloat3("ap.celestial.sunPosition")
 							   .negate()
 							   .normalize();
-		var sunRadiosity = new Vector3f(1.0f);
-		var moonRadiosity = new Vector3f(0.01f);
+		final var sunRadiosity = new Vector3f(1.0f);
+		final var moonRadiosity = new Vector3f(0.01f);
+		final boolean isNight = lightDirWorld.dot(moonDirWorld) < 0.0;
 
 		final var celestialLightRadiosity
-			= state.uniforms().getFloat("ap.celestial.angle") < 0.5
+			= isNight
 			? sunRadiosity
 			: moonRadiosity;
 

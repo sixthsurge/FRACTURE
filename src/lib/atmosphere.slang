@@ -90,7 +90,12 @@ float3 calculate_transmittance(
 	const int step_count = 32;
 
 	float planet_dist
-		= intersect_sphere(ray_origin, ray_dir, params.planet_radius).x;
+		= intersect_sphere(
+			  ray_origin,
+			  ray_dir,
+			  params.planet_radius * (1.0 - EPS)
+		)
+			  .x;
 	if (planet_dist >= 0.0) return float3(0.0);
 	float ray_length
 		= intersect_sphere(ray_origin, ray_dir, params.atmosphere_radius()).y;
@@ -116,13 +121,17 @@ float3 lookup_transmittance(
 	float3 ray_origin,
 	float3 ray_dir
 ) {
+	int w, h;
+	transmittance_lut.GetDimensions(w, h);
+
 	float r = length(ray_origin);
 	float cos_zenith_angle = dot(ray_origin, ray_dir) / r;
 	float2 uv = float2(
 		cos_zenith_angle * 0.5 + 0.5,
 		linstep(params.planet_radius, params.atmosphere_radius(), r)
 	);
-	return transmittance_lut.Sample(apt_linearSampler, uv);
+	uv = get_uv_from_unit_range(uv, float2(w, h));
+	return transmittance_lut.sampleLinear(uv);
 }
 
 float3 calculate_transmittance_between_points(
@@ -170,7 +179,12 @@ float3 calculate_planet_radiance<int LightSourceCount>(
 ) {
 	// Treat planet as uniform lambertian sphere, only considering direct light.
 	float planet_dist
-		= intersect_sphere(ray_origin, ray_dir, params.planet_radius).x;
+		= intersect_sphere(
+			  ray_origin,
+			  ray_dir,
+			  params.planet_radius * (1.0 - EPS)
+		)
+			  .x;
 	if (planet_dist < 0.0) {
 		return float3(0.0);
 	}
@@ -198,7 +212,7 @@ float2x3 calculate_2nd_order_scattering_and_f_ms(
 	float2 dists = intersect_spherical_shell(
 		ray_origin,
 		ray_dir,
-		params.planet_radius,
+		params.planet_radius * (1.0 - EPS),
 		params.atmosphere_radius()
 	);
 	float ray_length = dists.y - dists.x;
@@ -219,8 +233,8 @@ float2x3 calculate_2nd_order_scattering_and_f_ms(
 			= calculate_density(params, length(ray_pos)) * step_length;
 		float3 step_optical_depth = mul(airmass, extinction_coeff);
 		float3 step_transmittance = exp(-step_optical_depth);
-		float3 visible_scattering = transmittance
-			* saturate((1.0 - step_transmittance) / step_optical_depth);
+		float3 visible_scattering = transmittance * (1.0 - step_transmittance)
+			/ max(step_optical_depth, EPS);
 
 		float3 light_transmittance = lookup_transmittance(
 			params,
@@ -229,7 +243,13 @@ float2x3 calculate_2nd_order_scattering_and_f_ms(
 			light_dir
 		);
 		light_transmittance
-			*= intersect_sphere(ray_pos, light_dir, params.planet_radius).x >= 0
+			*= intersect_sphere(
+				   ray_pos,
+				   light_dir,
+				   params.planet_radius * (1.0 - EPS)
+			   )
+					.x
+				>= 0
 			? 0.0
 			: 1.0;
 
@@ -296,7 +316,7 @@ float3 calculate_multiscatter_energy(
 	L_2nd_order /= pow2(sqrt_direction_samples);
 	f_ms /= pow2(sqrt_direction_samples);
 
-	float3 F_ms = 1.0 / (1.0 + f_ms);
+	float3 F_ms = 1.0 / max(1.0 - f_ms, EPS);
 
 	return L_2nd_order * F_ms;
 }
@@ -307,13 +327,17 @@ float3 lookup_multiscatter_energy(
 	float3 ray_origin,
 	float3 ray_dir
 ) {
+	int w, h;
+	multiscatter_lut.GetDimensions(w, h);
+
 	float r = length(ray_origin);
 	float cos_zenith_angle = dot(ray_origin, ray_dir) / r;
 	float2 uv = float2(
 		cos_zenith_angle * 0.5 + 0.5,
 		linstep(params.planet_radius, params.atmosphere_radius(), r)
 	);
-	return multiscatter_lut.Sample(apt_linearSampler, uv);
+	uv = get_uv_from_unit_range(uv, float2(w, h));
+	return multiscatter_lut.sampleLinear(uv);
 }
 
 float3 calculate_scattering<int LightSourceCount>(
@@ -370,8 +394,8 @@ float3 calculate_scattering<int LightSourceCount>(
 			= calculate_density(params, length(ray_pos)) * step_length;
 		float3 step_optical_depth = mul(airmass, extinction_coeff);
 		float3 step_transmittance = exp(-step_optical_depth);
-		float3 visible_scattering = transmittance
-			* saturate((1.0 - step_transmittance) / step_optical_depth);
+		float3 visible_scattering = transmittance * (1.0 - step_transmittance)
+			/ max(step_optical_depth, EPS);
 
 		for (int light_index = 0; light_index < LightSourceCount;
 			 ++light_index) {
@@ -472,6 +496,48 @@ float3 apply_aerial_perspective(
 	);
 
 	return radiance * transmittance + scattering;
+}
+
+float2 project_sky_view(float3 direction) {
+	float2 projected_dir = normalize(direction.xz);
+
+	float azimuth_angle = PI + atan2(projected_dir.x, -projected_dir.y);
+	float altitude_angle = 0.5 * PI - fast_acos(direction.y);
+
+	float2 coord;
+	coord.x = azimuth_angle / TAU;
+	coord.y = 0.5
+		+ 0.5 * sign(altitude_angle)
+			* sqrt((2.0 / PI) * abs(altitude_angle)); // Section 5.3
+
+	return coord;
+}
+
+float3 unproject_sky_view(float2 coord) {
+	// Non-linear mapping of altitude angle (See section 5.3 of the paper)
+	coord.y = (coord.y < 0.5) ? -pow2(1.0 - 2.0 * coord.y)
+							  : pow2(2.0 * coord.y - 1.0);
+
+	float azimuth_angle = coord.x * TAU - PI;
+	float altitude_angle = coord.y * (0.5 * PI);
+
+	float altitude_sin, altitude_cos, azimuth_sin, azimuth_cos;
+	sincos(altitude_angle, altitude_sin, altitude_cos);
+	sincos(azimuth_angle, azimuth_sin, azimuth_cos);
+
+	return float3(
+		altitude_cos * azimuth_sin,
+		altitude_sin,
+		-altitude_cos * azimuth_cos
+	);
+}
+
+float3 lookup_sky_radiance(Texture2D<float3> tex_sky_view, float3 ray_dir) {
+	int w, h;
+	tex_sky_view.GetDimensions(w, h);
+
+	float2 uv = get_uv_from_unit_range(project_sky_view(ray_dir), float2(w, h));
+	return tex_sky_view.sampleLinearLevel(uv, 0);
 }
 } // namespace atmosphere
 
