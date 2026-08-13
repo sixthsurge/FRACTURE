@@ -24,6 +24,23 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
+		final var screenFog = screen.child("fog");
+		screenFog.option(
+			"FOG_VOLUME_SIZE_X",
+			OptionType.intType(32, 512, 16, 240),
+			false
+		);
+		screenFog.option(
+			"FOG_VOLUME_SIZE_Y",
+			OptionType.intType(32, 512, 16, 128),
+			false
+		);
+		screenFog.option(
+			"FOG_VOLUME_SIZE_Z",
+			OptionType.intType(16, 128, 16, 64),
+			false
+		);
+
 		final var screenBloom = screen.child("bloom");
 		screenBloom.option("BLOOM_ENABLED", OptionType.boolType(true), false);
 		screenBloom.option(

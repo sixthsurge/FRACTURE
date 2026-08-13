@@ -4,6 +4,7 @@ import dev.irisshaders.aperture.api.pipeline.*;
 import dev.irisshaders.aperture.api.renderer.*;
 import pipeline.ObjectShaders;
 import pipeline.PostRenderPasses;
+import pipeline.PostShadowPasses;
 import pipeline.PreRenderPasses;
 import pipeline.PreTranslucentPasses;
 import resources.Buffers;
@@ -27,8 +28,9 @@ public class Fracture implements ShaderPack {
 			)
 			.dispatch1D(1);
 
-		ObjectShaders.setupShadow(pipeline, textures);
 		PreRenderPasses.setup(pipeline, screen, textures);
+		ObjectShaders.setupShadow(pipeline, textures);
+		PostShadowPasses.setup(pipeline, screen, textures);
 		ObjectShaders.setupOpaque(pipeline, textures);
 		PreTranslucentPasses.setup(pipeline, screen, textures);
 		ObjectShaders.setupTranslucent(pipeline, textures);
@@ -60,7 +62,8 @@ public class Fracture implements ShaderPack {
 		if (id.path() == "water") {
 			return 1;
 		}
-		if (block.hasTag("replaceable_by_trees") || block.hasTag("saplings") || block.hasTag("flowers")) {
+		if (block.hasTag("replaceable_by_trees") || block.hasTag("saplings")
+			|| block.hasTag("flowers")) {
 			return 2;
 		}
 		if (block.hasTag("leaves")) {

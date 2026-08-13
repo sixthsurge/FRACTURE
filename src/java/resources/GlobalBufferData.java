@@ -18,20 +18,19 @@ public record GlobalBufferData(
 		final var lightDirWorld
 			= state.uniforms().getFloat3("ap.celestial.position").normalize();
 		final var sunDirWorld = state.uniforms()
-							  .getFloat3("ap.celestial.sunPosition")
-							  .normalize();
-		final var moonDirWorld = state.uniforms()
-							   .getFloat3("ap.celestial.sunPosition")
-							   .negate()
-							   .normalize();
+									.getFloat3("ap.celestial.sunPosition")
+									.normalize();
+		final var moonDirWorld
+			= state.uniforms()
+				  .getFloat3("ap.celestial.sunPosition")
+				  .negate()
+				  .normalize();
 		final var sunRadiosity = new Vector3f(1.0f);
 		final var moonRadiosity = new Vector3f(0.01f);
 		final boolean isNight = lightDirWorld.dot(moonDirWorld) < 0.0;
 
 		final var celestialLightRadiosity
-			= isNight
-			? sunRadiosity
-			: moonRadiosity;
+			= isNight ? sunRadiosity : moonRadiosity;
 
 		var celestialLightIrradiance
 			= new Vector3f(celestialLightRadiosity)

@@ -3,6 +3,7 @@ package resources;
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.ShadowTexture;
 import dev.irisshaders.aperture.api.objects.Texture2D;
+import dev.irisshaders.aperture.api.objects.Texture3D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import util.Flipper;
@@ -85,6 +86,54 @@ public class Textures {
 				  .size(256, 128)
 				  .create();
 
+		final var fogVolumeSizeX
+			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_X");
+		final var fogVolumeSizeY
+			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Y");
+		final var fogVolumeSizeZ
+			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Z");
+		pipeline
+			.texture3D("tex_fog_volume_light_a", TextureFormat.RG11B10_UFLOAT)
+			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+			.create();
+		pipeline
+			.texture3D(
+				"tex_fog_volume_extinction_a",
+				TextureFormat.RGBA16_SFLOAT
+			)
+			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+			.create();
+		pipeline
+			.texture3D("tex_fog_volume_light_b", TextureFormat.RG11B10_UFLOAT)
+			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+			.create();
+		pipeline
+			.texture3D(
+				"tex_fog_volume_extinction_b",
+				TextureFormat.RGBA16_SFLOAT
+			)
+			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+			.create();
+		pipeline
+			.texture3D(
+				"tex_fog_volume_integrated_light",
+				TextureFormat.RGBA16_SFLOAT
+			)
+			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+			.create();
+		pipeline
+			.texture3D(
+				"tex_fog_volume_integrated_extinction",
+				TextureFormat.RGBA16_SFLOAT
+			)
+			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+			.create();
+
+		shadowColor = pipeline.shadowTexture(
+			"tex_shadow_color",
+			TextureFormat.RGBA8_UNORM
+		);
+
 		pipeline
 			.texture3D(
 				"tex_atmosphere_aerial_perspective",
@@ -96,10 +145,5 @@ public class Textures {
 		pipeline.texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
 			.size(256, 1)
 			.create();
-
-		shadowColor = pipeline.shadowTexture(
-			"tex_shadow_color",
-			TextureFormat.RGBA8_UNORM
-		);
 	}
 }

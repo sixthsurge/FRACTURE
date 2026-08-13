@@ -9,6 +9,12 @@ import resources.Textures;
 public class PostRenderPasses {
 	public static void
 	setup(PipelineConfig pipeline, Screen screen, Textures textures) {
+		pipeline.stage(ProgramStage.POST_RENDER)
+			.composite("temp_fog", "program/temp_fog", "main")
+			.overrideObject("tex_scene", textures.scene.front().name())
+			.writes("radiance", textures.scene.back());
+		textures.scene.flip();
+
 		setupExposure(pipeline, screen, textures);
 		setupBloom(pipeline, screen, textures, textures.scene.front());
 
