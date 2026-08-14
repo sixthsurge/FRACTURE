@@ -37,13 +37,13 @@ interface IFogProfile {
 struct OverworldProfile : IFogProfile {
 	static const int NUM_SCATTERING_PARTICLE_KINDS = 2;
 	static const float3 RLH_SCATTERING_COEFF
-		= float3(0.3, 0.5, 1.0) * float3(0.001);
+		= float3(0.3, 0.5, 1.0) * float3(0.0005);
 	static const float3 RLH_EXTINCTION_COEFF
-		= float3(0.3, 0.5, 1.0) * float3(0.001);
+		= float3(0.3, 0.5, 1.0) * float3(0.0005);
 	static const float3 MIE_SCATTERING_COEFF
-		= float3(0.9, 0.9, 0.9) * float3(0.01);
+		= float3(0.9, 0.9, 0.9) * float3(0.001);
 	static const float3 MIE_EXTINCTION_COEFF
-		= float3(1.0, 1.0, 1.0) * float3(0.01);
+		= float3(1.0, 1.0, 1.0) * float3(0.001);
 	static const float BOTTOM_PLANE_ALTITUDE = 0.0;
 	static const float TOP_PLANE_ALTITUDE = 320.0;
 
@@ -56,6 +56,7 @@ struct OverworldProfile : IFogProfile {
 		float2 density = exp(-max0(pos_world.y - SEA_LEVEL)
 							 / float2(RLH_SCALE_HEIGHT, MIE_SCALE_HEIGHT))
 			* segment_length;
+		density.y /= (max(buf_global.sun_dir_world.y, 0.05) * 0.9 + 0.1);
 
 		return FogMedia<NUM_SCATTERING_PARTICLE_KINDS>(
 			{ RLH_SCATTERING_COEFF * density.x,

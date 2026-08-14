@@ -16,11 +16,47 @@ public class PostShadowPasses {
 			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Z");
 
 		pipeline.stage(ProgramStage.POST_SHADOW)
-			.compute("fog/create_volume", "program/fog/create_volume", "main")
+			.compute("fog/create_volume a", "program/fog/create_volume", "main")
 			.dispatch3D(
 				Math.ceilDiv(fogVolumeSizeX, 8),
 				Math.ceilDiv(fogVolumeSizeY, 8),
 				Math.ceilDiv(fogVolumeSizeZ, 4)
+			)
+			.exportInt("ACTIVE_FRAME", 0)
+			.overrideObject("tex_fog_volume_light", "tex_fog_volume_light_a")
+			.overrideObject(
+				"tex_fog_volume_extinction",
+				"tex_fog_volume_extinction_a"
+			)
+			.overrideObject(
+				"tex_fog_volume_light_prev",
+				"tex_fog_volume_light_b"
+			)
+			.overrideObject(
+				"tex_fog_volume_extinction_prev",
+				"tex_fog_volume_extinction_b"
+			);
+
+		pipeline.stage(ProgramStage.POST_SHADOW)
+			.compute("fog/create_volume b", "program/fog/create_volume", "main")
+			.dispatch3D(
+				Math.ceilDiv(fogVolumeSizeX, 8),
+				Math.ceilDiv(fogVolumeSizeY, 8),
+				Math.ceilDiv(fogVolumeSizeZ, 4)
+			)
+			.exportInt("ACTIVE_FRAME", 1)
+			.overrideObject("tex_fog_volume_light", "tex_fog_volume_light_b")
+			.overrideObject(
+				"tex_fog_volume_extinction",
+				"tex_fog_volume_extinction_b"
+			)
+			.overrideObject(
+				"tex_fog_volume_light_prev",
+				"tex_fog_volume_light_a"
+			)
+			.overrideObject(
+				"tex_fog_volume_extinction_prev",
+				"tex_fog_volume_extinction_a"
 			);
 
 		pipeline.stage(ProgramStage.POST_SHADOW)

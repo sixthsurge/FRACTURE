@@ -93,7 +93,7 @@ public class Textures {
 		final var fogVolumeSizeZ
 			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Z");
 		pipeline
-			.texture3D("tex_fog_volume_light_a", TextureFormat.RG11B10_UFLOAT)
+			.texture3D("tex_fog_volume_light_a", TextureFormat.RGBA16_SFLOAT)
 			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
 			.create();
 		pipeline
@@ -104,7 +104,7 @@ public class Textures {
 			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
 			.create();
 		pipeline
-			.texture3D("tex_fog_volume_light_b", TextureFormat.RG11B10_UFLOAT)
+			.texture3D("tex_fog_volume_light_b", TextureFormat.RGBA16_SFLOAT)
 			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
 			.create();
 		pipeline
@@ -117,14 +117,14 @@ public class Textures {
 		pipeline
 			.texture3D(
 				"tex_fog_volume_integrated_light",
-				TextureFormat.RGBA16_SFLOAT
+				TextureFormat.RG11B10_UFLOAT
 			)
 			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
 			.create();
 		pipeline
 			.texture3D(
 				"tex_fog_volume_integrated_extinction",
-				TextureFormat.RGBA16_SFLOAT
+				TextureFormat.RG11B10_UFLOAT
 			)
 			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
 			.create();

@@ -40,6 +40,11 @@ public class FractureSettings implements PackSettings {
 			OptionType.intType(16, 128, 16, 64),
 			false
 		);
+		screenFog.option(
+			"ATMOSPHERE_AP_LUT_ENABLED",
+			OptionType.boolType(false),
+			false
+		);
 
 		final var screenBloom = screen.child("bloom");
 		screenBloom.option("BLOOM_ENABLED", OptionType.boolType(true), false);

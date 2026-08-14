@@ -1,5 +1,6 @@
 import aperture;
 import lib.fog;
+import lib.util.math;
 import lib.util.space_conversion;
 
 Texture2D<float3> tex_scene;
@@ -43,8 +44,8 @@ FragmentOutput main(float2 coord: SV_Position) {
 			pos_view,
 		);
 	}
-	radiance
-		= radiance * exp(-participation.extinction) + participation.added_light;
+	radiance = radiance * max0(exp(-participation.extinction))
+		+ max0(participation.added_light);
 
 	return FragmentOutput(radiance);
 }

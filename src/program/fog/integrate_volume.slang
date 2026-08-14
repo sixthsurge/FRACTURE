@@ -1,4 +1,5 @@
 import aperture;
+import lib.fog;
 import settings;
 
 RWTexture3D<float3> tex_fog_volume_integrated_light;
@@ -20,9 +21,18 @@ void integrate(
 	float3 extinction = float3(0.0);
 
 	for (int z = 0; z <= d; ++z) {
-		float3 step_extinction = tex_fog_volume_extinction[int3(icoord.xy, z)];
+		float3 p0v
+			= fog.unproject_fog_volume(float3(float2(0), float(z) / float(d)));
+		float3 p1v = fog.unproject_fog_volume(
+			float3(float2(0), float(z + 1) / float(d))
+		);
+		float ray_length = distance(p0v, p1v);
 
-		light += tex_fog_volume_light[int3(icoord.xy, z)] * exp(-extinction);
+		float3 step_extinction
+			= tex_fog_volume_extinction[int3(icoord.xy, z)] * ray_length;
+
+		light += tex_fog_volume_light[int3(icoord.xy, z)] * ray_length
+			* exp(-extinction);
 		extinction += step_extinction;
 		tex_fog_volume_integrated_light[int3(icoord.xy, z)] = light;
 		tex_fog_volume_integrated_extinction[int3(icoord.xy, z)] = extinction;

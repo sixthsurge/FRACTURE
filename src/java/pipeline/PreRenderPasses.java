@@ -41,20 +41,14 @@ public class PreRenderPasses {
 			)
 			.writes("sky_radiance", textures.atmosphereSkyView);
 
-		pipeline.stage(ProgramStage.PRE_RENDER)
-			.compute(
-				"atmosphere/aerial_perspective",
-				"program/atmosphere",
-				"aerial_perspective_main"
-			)
-			.dispatch3D(32 / 16, 32 / 16, 32);
-
-		pipeline.stage(ProgramStage.PRE_RENDER)
-			.compute(
-				"atmosphere/aerial_perspective",
-				"program/atmosphere",
-				"aerial_perspective_main"
-			)
-			.dispatch3D(32 / 16, 32 / 16, 32);
+		if (pipeline.settings().getBoolValue("ATMOSPHERE_AP_LUT_ENABLED")) {
+			pipeline.stage(ProgramStage.PRE_RENDER)
+				.compute(
+					"atmosphere/aerial_perspective",
+					"program/atmosphere",
+					"aerial_perspective_main"
+				)
+				.dispatch3D(32 / 16, 32 / 16, 32);
+		}
 	}
 }

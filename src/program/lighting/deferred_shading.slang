@@ -60,13 +60,15 @@ FragmentOutput main(float2 coord: SV_Position) {
 		dither
 	);
 
-	radiance = atmosphere.apply_aerial_perspective(
-		tex_atmosphere_aerial_perspective,
-		tex_atmosphere_transmittance_lut,
-		pos_screen,
-		pos_scene,
-		radiance
-	);
+	if (userSettings.ATMOSPHERE_AP_LUT_ENABLED) {
+		radiance = atmosphere.apply_aerial_perspective(
+			tex_atmosphere_aerial_perspective,
+			tex_atmosphere_transmittance_lut,
+			pos_screen,
+			pos_scene,
+			radiance
+		);
+	}
 
 	return FragmentOutput(radiance);
 }
