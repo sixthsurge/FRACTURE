@@ -64,7 +64,7 @@ struct BasicObject : Shader<VertexOutput, FragmentOutput> {
 		if (max_of(abs(tangent_world)) > EPS) {
 			float3x3 tbn = float3x3(
 				tangent_world.xyz,
-				cross(flat_normal_world, tangent_world.xyz)
+				cross(tangent_world.xyz, flat_normal_world)
 					* sign(tangent_world.w),
 				flat_normal_world
 			);

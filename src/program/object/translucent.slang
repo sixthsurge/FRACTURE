@@ -87,7 +87,7 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 			&& all(normal_map.xy < 1.0 - 1.0 / 255.0)) {
 			float3x3 tbn = float3x3(
 				tangent_world.xyz,
-				cross(flat_normal_world, tangent_world.xyz)
+				cross(tangent_world.xyz, flat_normal_world)
 					* sign(tangent_world.w),
 				flat_normal_world
 			);
