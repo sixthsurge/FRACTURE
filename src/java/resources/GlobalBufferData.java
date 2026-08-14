@@ -25,8 +25,13 @@ public record GlobalBufferData(
 				  .getFloat3("ap.celestial.sunPosition")
 				  .negate()
 				  .normalize();
-		final var sunRadiosity = new Vector3f(1.0f);
-		final var moonRadiosity = new Vector3f(0.01f);
+		// Color of sunlight in space, obtained from AM0 solar irradiance spectrum
+		// from https://www.nrel.gov/grid/solar-resource/spectra-astm-e490.html using
+		// the CIE (2006) 2-deg LMS cone fundamentals
+		final var sunRadiosity = new Vector3f(1.051f, 0.985f, 0.940f);
+
+		final var moonRadiosity = new Vector3f(sunRadiosity).mul(0.01f);
+
 		final boolean isNight = lightDirWorld.dot(moonDirWorld) < 0.0;
 
 		final var celestialLightRadiosity

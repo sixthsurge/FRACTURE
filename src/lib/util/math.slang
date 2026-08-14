@@ -88,6 +88,10 @@ float fast_acos(float x) {
 	return x >= 0 ? res : PI - res; // Undo range reduction.
 }
 
+float linstep(float min, float max, float x, ) {
+	return saturate((x - min) / (max - min));
+}
+
 vector<float, N> linstep<uint N>(
 	vector<float, N> min,
 	vector<float, N> max,

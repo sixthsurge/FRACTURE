@@ -19,8 +19,8 @@ internal float3 calculate_sss(
 	float sss_depth,
 	float LoV
 ) {
-	const float DENSITY = 8.0;
-	const float SCALE = 5.0;
+	const float DENSITY = 2.0;
+	const float SCALE = 1.2;
 
 	if (sss_amount < EPS) {
 		return float3(0.0);

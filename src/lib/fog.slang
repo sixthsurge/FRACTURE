@@ -56,7 +56,9 @@ struct OverworldProfile : IFogProfile {
 		float2 density = exp(-max0(pos_world.y - SEA_LEVEL)
 							 / float2(RLH_SCALE_HEIGHT, MIE_SCALE_HEIGHT))
 			* segment_length;
-		density.y /= (max(buf_global.sun_dir_world.y, 0.05) * 0.9 + 0.1);
+		density.y
+			/= max(linstep(0.0, 0.66, buf_global.sun_dir_world.y), 0.05) * 0.9
+			+ 0.1;
 
 		return FogMedia<NUM_SCATTERING_PARTICLE_KINDS>(
 			{ RLH_SCATTERING_COEFF * density.x,

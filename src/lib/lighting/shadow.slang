@@ -9,7 +9,7 @@ import settings;
 internal Texture2DArray<float3> tex_shadow_color;
 
 namespace shadow {
-internal static const float BLOCKER_SEARCH_RADIUS = 0.25;
+internal static const float BLOCKER_SEARCH_RADIUS = 0.125;
 
 struct Result {
 	float3 visibility;
@@ -195,7 +195,7 @@ Result calculate(
 		return result;
 	}
 
-	float penumbra_size = 4.0 * (pos_shadow_screen.z - blocker_search_result.x)
+	float penumbra_size = 1.0 * (pos_shadow_screen.z - blocker_search_result.x)
 		/ blocker_search_result.x;
 	penumbra_size = min(penumbra_size, BLOCKER_SEARCH_RADIUS);
 	penumbra_size
