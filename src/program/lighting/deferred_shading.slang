@@ -3,6 +3,7 @@ import lib.atmosphere;
 import lib.gbuffer_packing;
 import lib.lighting.main_lighting;
 import lib.lighting.material;
+import lib.sky;
 import lib.util.color;
 import lib.util.math;
 import lib.util.random;
@@ -10,9 +11,8 @@ import lib.util.space_conversion;
 import settings;
 
 Texture2D<uint4> tex_packed_gbuffer_data;
-Texture2D<float3> tex_atmosphere_sky_view;
-Texture2D<float3> tex_atmosphere_transmittance_lut;
 Texture3D<float3> tex_atmosphere_aerial_perspective;
+Texture2D<float3> tex_atmosphere_transmittance_lut;
 Texture2D<float> tex_blue_noise;
 
 struct FragmentOutput {
@@ -38,9 +38,7 @@ FragmentOutput main(float2 coord: SV_Position) {
 	float3 dir_world = normalize(pos_scene);
 
 	if (depth == 0.0) {
-		return FragmentOutput(
-			atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, dir_world)
-		);
+		return FragmentOutput(calculate_sky_radiance(dir_world));
 	}
 
 	GbufferData gbuffer_data = GbufferData.unpack(packed_gbuffer_data);

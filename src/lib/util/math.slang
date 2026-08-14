@@ -144,4 +144,8 @@ struct Ray {
 	float3 at(float t) { return o + d * t; }
 }
 
+float cone_angle_to_solid_angle(float theta) {
+	return TAU * (1.0 - cos(theta));
+}
+
 

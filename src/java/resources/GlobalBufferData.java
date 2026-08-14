@@ -25,8 +25,9 @@ public record GlobalBufferData(
 				  .getFloat3("ap.celestial.sunPosition")
 				  .negate()
 				  .normalize();
-		// Color of sunlight in space, obtained from AM0 solar irradiance spectrum
-		// from https://www.nrel.gov/grid/solar-resource/spectra-astm-e490.html using
+		// Color of sunlight in space, obtained from AM0 solar irradiance
+		// spectrum from
+		// https://www.nrel.gov/grid/solar-resource/spectra-astm-e490.html using
 		// the CIE (2006) 2-deg LMS cone fundamentals
 		final var sunRadiosity = new Vector3f(1.051f, 0.985f, 0.940f);
 
@@ -57,8 +58,10 @@ public record GlobalBufferData(
 
 		float celestialLightAngularRadius
 			= state.uniforms().getFloat("ap.celestial.angle") > 0.5f
-			? 0.004f
-			: 0.008f;
+			? state.settings().getFloatValue("SUN_ANGULAR_RADIUS")
+				* ((float) Math.TAU / 360.0f)
+			: state.settings().getFloatValue("MOON_ANGULAR_RADIUS")
+				* ((float) Math.TAU / 360.0f);
 
 		return new GlobalBufferData(
 			lightDirWorld,

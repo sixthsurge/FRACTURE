@@ -19,7 +19,8 @@ public class PostRenderPasses {
 		setupBloom(pipeline, screen, textures, textures.scene.front());
 
 		pipeline.combinationPass("program/post/combination")
-			.overrideObject("tex_scene", textures.scene.front().name());
+			.overrideObject("tex_scene", textures.scene.front().name())
+			.overrideObject("tex_bloom", textures.bloom.front().name());
 	}
 
 	private static void
@@ -89,11 +90,13 @@ public class PostRenderPasses {
 					"program/post/bloom/downsample",
 					"main"
 				)
-				.writes("downsampled", textures.bloom.front(), srcLod + 1)
+				.writes("downsampled", textures.bloom.back(), srcLod + 1)
 				.overrideObject("input", srcTex.name())
-				.overrideObject("dest", textures.bloom.front().name())
+				.overrideObject("dest", textures.bloom.back().name())
 				.exportInt("INPUT_LOD", srcLod);
+			textures.bloom.flip();
 		}
+		textures.bloom.flip();
 
 		// Blur
 
@@ -139,7 +142,6 @@ public class PostRenderPasses {
 				.overrideObject("input", textures.bloom.front().name())
 				.overrideObject("dest", textures.bloom.back().name())
 				.exportInt("LOD", lod);
-			textures.bloom.flip();
 		}
 
 		// Upsampling
@@ -147,6 +149,11 @@ public class PostRenderPasses {
 		// applied (save unneeded write).
 
 		for (int dstLod = tileCount - 2; dstLod >= 1; dstLod--) {
+			// For the first tile, smaller input comes from back too.
+			final var smallerInputTex = dstLod == tileCount - 2
+				? textures.bloom.back()
+				: textures.bloom.front();
+
 			pipeline.stage(ProgramStage.POST_RENDER)
 				.composite(
 					"bloom/upsample " + dstLod,
@@ -155,8 +162,8 @@ public class PostRenderPasses {
 				)
 				.writes("upsampled", textures.bloom.back(), dstLod)
 				.exportInt("DST_LOD", dstLod)
-				.overrideObject("input", textures.bloom.front().name());
-
+				.overrideObject("input_smaller", smallerInputTex.name())
+				.overrideObject("input_bigger", textures.bloom.front().name());
 			textures.bloom.flip();
 		}
 	}

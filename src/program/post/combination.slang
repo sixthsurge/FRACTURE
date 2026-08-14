@@ -5,8 +5,7 @@ import lib.util.dithering;
 import settings;
 
 Texture2D<float3> tex_scene;
-Texture2D<float3> tex_bloom_a;
-Texture2D<float3> tex_bloom_b;
+Texture2D<float3> tex_bloom;
 Texture2D<float> tex_blue_noise;
 
 ConstantBuffer<ExposureBuffer> buf_exposure;
@@ -23,15 +22,11 @@ float3 apply_bloom(int2 icoord, float2 ncoord, float3 input) {
 		return input;
 	}
 
-	float3 bloom_0 = tex_bloom_a[icoord];
-	float3 bloom_1;
-	if ((userSettings.BLOOM_TILE_COUNT & 1) == 0) {
-		bloom_1 = tex_bloom_b.sampleLinearLevel(ncoord, 1);
-	} else {
-		bloom_1 = tex_bloom_a.sampleLinearLevel(ncoord, 1);
-	}
+	float3 bloom_0 = tex_bloom[icoord];
+	float3 bloom_1 = tex_bloom.sampleLinearLevel(ncoord, 1);
 
 	float3 bloom = (bloom_0 + bloom_1) / userSettings.BLOOM_TILE_COUNT;
+	// return tex_bloom_a.sampleLinearLevel(ncoord, 1);
 	return lerp(input, bloom, userSettings.BLOOM_INTENSITY);
 }
 

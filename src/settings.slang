@@ -22,10 +22,12 @@ extern static const bool value_DISPLAY_LUMINANCE_HISTOGRAM;
 extern static const int value_FOG_VOLUME_SIZE_X;
 extern static const int value_FOG_VOLUME_SIZE_Y;
 extern static const int value_FOG_VOLUME_SIZE_Z;
+extern static const float value_MOON_ANGULAR_RADIUS;
 extern static const int value_SHADOW_CASCADE_COUNT;
 extern static const int value_SHADOW_DISTANCE;
 extern static const bool value_SHADOW_ENABLED;
 extern static const int value_SHADOW_RESOLUTION;
+extern static const float value_SUN_ANGULAR_RADIUS;
 
 struct Settings {
     float AGX_OFFSET_B;
@@ -49,10 +51,12 @@ struct Settings {
     static const int FOG_VOLUME_SIZE_X = value_FOG_VOLUME_SIZE_X;
     static const int FOG_VOLUME_SIZE_Y = value_FOG_VOLUME_SIZE_Y;
     static const int FOG_VOLUME_SIZE_Z = value_FOG_VOLUME_SIZE_Z;
+    static const float MOON_ANGULAR_RADIUS = value_MOON_ANGULAR_RADIUS;
     static const int SHADOW_CASCADE_COUNT = value_SHADOW_CASCADE_COUNT;
     static const int SHADOW_DISTANCE = value_SHADOW_DISTANCE;
     static const bool SHADOW_ENABLED = value_SHADOW_ENABLED;
     static const int SHADOW_RESOLUTION = value_SHADOW_RESOLUTION;
+    static const float SUN_ANGULAR_RADIUS = value_SUN_ANGULAR_RADIUS;
 };
 
 ConstantBuffer<Settings, ScalarDataLayout> userSettings;
