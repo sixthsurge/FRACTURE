@@ -49,12 +49,12 @@ public class FractureSettings implements PackSettings {
 		final var screenSky = screen.child("sky");
 		screenSky.option(
 			"SUN_ANGULAR_RADIUS",
-			OptionType.floatType(0.1f, 4.0f, 0.05f, 0.5f),
+			OptionType.floatType(0.1f, 10.0f, 0.05f, 0.5f),
 			false
 		);
 		screenSky.option(
 			"MOON_ANGULAR_RADIUS",
-			OptionType.floatType(0.1f, 4.0f, 0.05f, 1.0f),
+			OptionType.floatType(0.1f, 10.0f, 0.05f, 2.5f),
 			false
 		);
 

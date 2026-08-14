@@ -125,6 +125,14 @@ float3 lookup_transmittance(
 	transmittance_lut.GetDimensions(w, h);
 
 	float r = length(ray_origin);
+	if (r > params.atmosphere_radius()) {
+		return intersect_sphere(ray_origin, ray_dir, params.atmosphere_radius())
+					.x
+				< 0
+			? 1.0
+			: 0.0;
+	}
+
 	float cos_zenith_angle = dot(ray_origin, ray_dir) / r;
 	float2 uv = float2(
 		cos_zenith_angle * 0.5 + 0.5,

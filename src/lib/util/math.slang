@@ -44,6 +44,19 @@ T pow5<T>(T x)
 	T x2 = x * x;
 	return x2 * x2 * x;
 }
+T pow8<T>(T x)
+	where T : IArithmetic {
+	x = x * x;
+	x = x * x;
+	return x * x;
+}
+T pow16<T>(T x)
+	where T : IArithmetic {
+	x = x * x;
+	x = x * x;
+	x = x * x;
+	return x * x;
+}
 
 float pow_3_over_2(float x) { return x * sqrt(x); }
 

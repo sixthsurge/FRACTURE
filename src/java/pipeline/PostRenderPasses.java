@@ -96,7 +96,10 @@ public class PostRenderPasses {
 				.exportInt("INPUT_LOD", srcLod);
 			textures.bloom.flip();
 		}
+		if ((tileCount & 1) == 0) {
+
 		textures.bloom.flip();
+		}
 
 		// Blur
 
