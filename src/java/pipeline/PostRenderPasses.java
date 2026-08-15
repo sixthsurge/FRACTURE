@@ -9,8 +9,10 @@ import resources.Textures;
 public class PostRenderPasses {
 	public static void
 	setup(PipelineConfig pipeline, Screen screen, Textures textures) {
+		setupHiZ(pipeline, screen, textures);
+
 		pipeline.stage(ProgramStage.POST_RENDER)
-			.composite("temp_fog", "program/temp_fog", "main")
+			.composite("specular", "program/specular", "main")
 			.overrideObject("tex_scene", textures.scene.front().name())
 			.writes("radiance", textures.scene.back());
 		textures.scene.flip();
@@ -21,6 +23,24 @@ public class PostRenderPasses {
 		pipeline.combinationPass("program/post/combination")
 			.overrideObject("tex_scene", textures.scene.front().name())
 			.overrideObject("tex_bloom", textures.bloom.front().name());
+	}
+
+	private static void
+	setupHiZ(PipelineConfig pipeline, Screen screen, Textures textures) {
+		final var maxLod = (int) Math.ceil(
+			Math.log(Math.max(screen.windowWidth(), screen.windowHeight()))
+			/ Math.log(2.0)
+		);
+		final var lodCount = Math.min(maxLod, 11);
+		final var workGroupsX = Math.ceilDiv(screen.renderWidth(), 64);
+		final var workGroupsY = Math.ceilDiv(screen.renderHeight(), 64);
+
+		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
+			.compute("hiz_downsample", "program/hiz_downsample", "main")
+			.overrideObject("imgDst", textures.depthHizMinMax.name())
+			.exportInt("mips", lodCount)
+			.exportInt("numWorkGroups", workGroupsX * workGroupsY)
+			.dispatch2D(workGroupsX, workGroupsY);
 	}
 
 	private static void

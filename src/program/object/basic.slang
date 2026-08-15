@@ -6,7 +6,7 @@ import object_shader;
 import settings;
 
 struct FragmentOutput {
-	uint4 packed_solid_gbuffer;
+	uint4 gbuffer;
 }
 
 struct VertexOutput {
@@ -47,7 +47,7 @@ struct BasicObject : Shader<VertexOutput, FragmentOutput> {
 		ap.discardCutout(albedo);
 
 		float4 normal_map = float4(0.5, 0.5, 1.0, 1.0);
-		float4 specular_map = float4(0.0, 0.0, 0.0, 0.1);
+		float4 specular_map = float4(0.0);
 		if (userSettings.LABPBR_SUPPORT_ENABLED) {
 			if (let normal_tex = object_data.normal()) {
 				normal_map = normal_tex.sampleTexture(input.uv);

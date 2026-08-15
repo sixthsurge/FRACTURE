@@ -20,6 +20,10 @@ struct FogMedia<int NUM_SCATTERING_PARTICLE_KINDS> {
 struct FogParticipation {
 	float3 added_light;
 	float3 extinction;
+
+	float3 apply(float3 radiance) {
+		return radiance * exp(-extinction) + added_light;
+	}
 }
 
 interface IFogProfile {
@@ -41,9 +45,9 @@ struct OverworldProfile : IFogProfile {
 	static const float3 RLH_EXTINCTION_COEFF
 		= float3(0.3, 0.5, 1.0) * float3(0.0002);
 	static const float3 MIE_SCATTERING_COEFF
-		= float3(0.9, 0.9, 0.9) * float3(0.001);
+		= float3(0.9, 0.9, 0.9) * float3(0.0001);
 	static const float3 MIE_EXTINCTION_COEFF
-		= float3(1.0, 1.0, 1.0) * float3(0.001);
+		= float3(1.0, 1.0, 1.0) * float3(0.0001);
 	static const float BOTTOM_PLANE_ALTITUDE = 0.0;
 	static const float TOP_PLANE_ALTITUDE = 320.0;
 
@@ -215,6 +219,18 @@ FogParticipation lookup_fog_participation(
 	float3 extinction = tex_extinction.Sample(apt_linearSampler, uv);
 
 	return FogParticipation(light, extinction);
+}
+
+// Lookup only light or extinction.
+float3 lookup_fog(Texture3D<float3> tex, float3 pos_screen, float3 pos_view, ) {
+	int w, h, d;
+	tex.GetDimensions(w, h, d);
+
+	float3 uv = get_uv_from_unit_range(
+		project_fog_volume(pos_screen, pos_view),
+		float3(w, h, d)
+	);
+	return tex.Sample(apt_linearSampler, uv);
 }
 }
 

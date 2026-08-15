@@ -86,8 +86,8 @@ void main(int3 icoord: SV_DispatchThreadID) {
 	}
 
 	tex_fog_volume_light[icoord]
-		= float4(froxel_participation.added_light, pixel_age);
-	tex_fog_volume_extinction[icoord] = froxel_participation.extinction;
+		= float4(max0(froxel_participation.added_light), pixel_age);
+	tex_fog_volume_extinction[icoord] = max0(froxel_participation.extinction);
 }
 
 

@@ -111,6 +111,15 @@ float get_NoH_squared(float NoL, float NoV, float LoV, float light_radius) {
 	return saturate(NoH * NoH / HoH);
 }
 
+float3 calculate_fresnel(Material material, float LoH) {
+	if (material.is_hardcoded_metal) {
+		return fresnel_lazanyi_2019(LoH, material.f0, material.f82);
+	} else if (material.is_metal) {
+		return fresnel_schlick(LoH, material.albedo);
+	}
+	return fresnel_dielectric(LoH, material.f0.x);
+}
+
 float3 specular_smith_ggx(
 	Material material,
 	float light_radius,
@@ -124,14 +133,7 @@ float3 specular_smith_ggx(
 		return float3(0.0);
 	}
 
-	float3 fresnel;
-	if (material.is_hardcoded_metal) {
-		fresnel = fresnel_lazanyi_2019(LoH, material.f0, material.f82);
-	} else if (material.is_metal) {
-		fresnel = fresnel_schlick(LoH, material.albedo);
-	} else {
-		fresnel = fresnel_dielectric(LoH, material.f0.x);
-	}
+	float3 fresnel = calculate_fresnel(material, LoH);
 	if (all(fresnel < float3(1e-2))) {
 		return float3(0.0);
 	}
@@ -148,7 +150,7 @@ float3 specular_smith_ggx(
 	float d = distribution_ggx(NoH_squared, alpha_squared);
 	float v = v2_smith_ggx(max(NoL, 1e-2), max(NoV, 1e-2), alpha_squared);
 
-	return d * v * fresnel * albedo_tint;
+	return min(d * v * fresnel * albedo_tint, 128.0);
 }
 
 // https://www.gdcvault.com/play/1024478/PBR-Diffuse-Lighting-for-GGX

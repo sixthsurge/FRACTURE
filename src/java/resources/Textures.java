@@ -10,7 +10,8 @@ import util.Flipper;
 public class Textures {
 	public final Flipper<Texture2D> scene;
 	public final Flipper<Texture2D> bloom;
-	public final Texture2D packedSolidGbuffer;
+	public final Texture2D gbufferSolid;
+	public final Texture2D gbufferTranslucent;
 	public final Texture2D depthHizMinMax;
 	public final Texture2D atmosphereTransmittanceLut;
 	public final Texture2D atmosphereMultiscatterLut;
@@ -44,14 +45,21 @@ public class Textures {
 		bloom = new Flipper<Texture2D>(bloomA, bloomB);
 
 		// Select texture format for the amount of data needed.
-		final boolean labPbrEnabled
+		final var labPbrEnabled
 			= pipeline.settings().getBoolValue("LABPBR_SUPPORT_ENABLED");
-		final TextureFormat solidGbufferFormat = labPbrEnabled
+		final var solidGbufferFormat = labPbrEnabled
 			? TextureFormat.RGBA32_UINT
 			: TextureFormat.RG32_UINT;
+		final var translucentGbufferFormat
+			= labPbrEnabled ? TextureFormat.RG32_UINT : TextureFormat.R32_UINT;
 
-		packedSolidGbuffer
-			= pipeline.texture2D("tex_packed_solid_gbuffer", solidGbufferFormat)
+		gbufferSolid
+			= pipeline.texture2D("tex_gbuffer_solid", solidGbufferFormat)
+				  .renderSize()
+				  .create();
+
+		gbufferTranslucent
+			= pipeline.texture2D("tex_gbuffer_translucent", solidGbufferFormat)
 				  .renderSize()
 				  .create();
 

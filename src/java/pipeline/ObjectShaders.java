@@ -8,7 +8,7 @@ public class ObjectShaders {
 	public static void setupOpaque(PipelineConfig pipeline, Textures textures) {
 		pipeline
 			.object(ProgramUsage.BASIC, "program/object/basic", "BasicObject")
-			.writes("packed_solid_gbuffer", textures.packedSolidGbuffer);
+			.writes("gbuffer", textures.gbufferSolid);
 	}
 
 	public static void
@@ -19,7 +19,8 @@ public class ObjectShaders {
 				"program/object/translucent",
 				"TranslucentObject"
 			)
-			.writes("color", textures.scene.front());
+			.writes("color", textures.scene.front())
+			.writes("gbuffer", textures.gbufferTranslucent);
 	}
 
 	public static void setupShadow(PipelineConfig pipeline, Textures textures) {

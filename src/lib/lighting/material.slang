@@ -18,7 +18,11 @@ struct Material {
 	bool is_hardcoded_metal;
 
 	// Create material with default values.
-	static Material get(float3 albedo, uint mat_id) {
+	static Material get(float3 albedo, int mat_id) {
+		if (mat_id == MAT_WATER) {
+			return WATER_MATERIAL;
+		}
+
 		Material material;
 		material.albedo = albedo;
 		material.emission = float3(0.0);
@@ -85,7 +89,7 @@ struct Material {
 			);
 		} else if (specular_map.g < 237.5 / 255.0) {
 			// Hardcoded metals
-			uint metal_id = clamp(uint(255.0 * specular_map.g) - 230u, 0u, 7u);
+			int metal_id = clamp(int(255.0 * specular_map.g) - 230u, 0u, 7u);
 
 			f0 = metal_f0[metal_id];
 			f82 = metal_f82[metal_id];
@@ -108,7 +112,7 @@ static const Material WATER_MATERIAL = Material(
 	1.0,
 	0.0,
 	false,
-	false
+	false,
 );
 
 struct NormalMapData {

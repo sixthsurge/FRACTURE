@@ -3,6 +3,7 @@ import lib.atmosphere;
 import lib.gbuffer_packing;
 import lib.lighting.main_lighting;
 import lib.lighting.material;
+import lib.fog;
 import lib.sky;
 import lib.util.color;
 import lib.util.math;
@@ -10,8 +11,10 @@ import lib.util.random;
 import lib.util.space_conversion;
 import settings;
 
-Texture2D<uint4> tex_packed_solid_gbuffer;
+Texture2D<uint4> tex_gbuffer_solid;
 Texture3D<float3> tex_atmosphere_aerial_perspective;
+Texture3D<float3> tex_fog_volume_integrated_light;
+Texture3D<float3> tex_fog_volume_integrated_extinction;
 Texture2D<float3> tex_atmosphere_transmittance_lut;
 Texture2D<float> tex_blue_noise;
 
@@ -25,7 +28,7 @@ FragmentOutput main(float2 coord: SV_Position) {
 	float2 ncoord = coord / float2(ap.game.renderSize);
 
 	float depth = ap.opaqueDepth[icoord];
-	uint4 packed_gbuffer = tex_packed_solid_gbuffer[icoord];
+	uint4 packed_gbuffer = tex_gbuffer_solid[icoord];
 	float2 dither = float2(
 		tex_blue_noise[icoord & 511],
 		tex_blue_noise[(icoord + int2(93, 41)) & 511]
@@ -33,12 +36,22 @@ FragmentOutput main(float2 coord: SV_Position) {
 
 	float3 pos_screen = float3(ncoord, depth);
 	float3 pos_view = screen_to_view(pos_screen);
-	float3 pos_scene = view_to_scene(pos_view);
 
+	// Lookup fog participation a while before using it (latency hiding).
+	fog.FogParticipation fog_participation = fog.lookup_fog_participation(
+		tex_fog_volume_integrated_light,
+		tex_fog_volume_integrated_extinction,
+		pos_screen,
+		pos_view
+	);
+
+	float3 pos_scene = view_to_scene(pos_view);
 	float3 dir_world = normalize(pos_scene);
 
 	if (depth == 0.0) {
-		return FragmentOutput(calculate_sky_radiance(dir_world));
+		float3 radiance = calculate_sky_radiance(dir_world);
+		radiance = fog_participation.apply(radiance);
+		return FragmentOutput(radiance);
 	}
 
 	SolidGbuffer gbuffer = SolidGbuffer.unpack(packed_gbuffer);
@@ -69,6 +82,8 @@ FragmentOutput main(float2 coord: SV_Position) {
 			radiance
 		);
 	}
+
+	radiance = fog_participation.apply(radiance);
 
 	return FragmentOutput(radiance);
 }

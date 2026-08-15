@@ -11,7 +11,7 @@ public class PreRenderPasses {
 		setupAtmosphere(pipeline, textures);
 
 		pipeline.stage(ProgramStage.PRE_RENDER)
-			.compute("gen_sky_sh", "program/lighting/gen_sky_sh", "main")
+			.compute("gen_sky_sh", "program/gen_sky_sh", "main")
 			.dispatch1D(1);
 	}
 

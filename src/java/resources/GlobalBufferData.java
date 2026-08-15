@@ -33,10 +33,10 @@ public record GlobalBufferData(
 
 		final var moonRadiosity = new Vector3f(sunRadiosity).mul(0.001f);
 
-		final boolean isNight = lightDirWorld.dot(moonDirWorld) < 0.0;
+		final boolean isDay = lightDirWorld.dot(moonDirWorld) < 0.0;
 
 		final var celestialLightRadiosity
-			= isNight ? sunRadiosity : moonRadiosity;
+			= isDay ? sunRadiosity : moonRadiosity;
 
 		var celestialLightIrradiance
 			= new Vector3f(celestialLightRadiosity)
@@ -57,7 +57,7 @@ public record GlobalBufferData(
 				  ));
 
 		float celestialLightAngularRadius
-			= state.uniforms().getFloat("ap.celestial.angle") > 0.5f
+			= isDay
 			? state.settings().getFloatValue("SUN_ANGULAR_RADIUS")
 				* ((float) Math.TAU / 360.0f)
 			: state.settings().getFloatValue("MOON_ANGULAR_RADIUS")
