@@ -3,7 +3,6 @@ package resources;
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.ShadowTexture;
 import dev.irisshaders.aperture.api.objects.Texture2D;
-import dev.irisshaders.aperture.api.objects.Texture3D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import util.Flipper;
@@ -20,6 +19,7 @@ public class Textures {
 
 	public Textures(PipelineConfig pipeline, Screen screen) {
 		pipeline.loadPNGTexture("tex_blue_noise", "texture/blue_noise.png");
+		pipeline.loadPNGTexture("tex_galaxy", "texture/galaxy.png");
 
 		final var sceneTexA
 			= pipeline.texture2D("tex_scene_a", TextureFormat.RG11B10_UFLOAT)

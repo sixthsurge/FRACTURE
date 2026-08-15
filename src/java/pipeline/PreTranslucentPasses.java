@@ -1,6 +1,5 @@
 package pipeline;
 
-import dev.irisshaders.aperture.api.commands.MipCalculator;
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;

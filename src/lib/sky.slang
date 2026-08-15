@@ -9,7 +9,9 @@ import lib.util.ray_sphere_intersection;
 import settings;
 
 internal Texture2D<float3> tex_atmosphere_sky_view;
+internal Texture2D<float3> tex_atmosphere_multiscatter_lut;
 internal Texture2D<float3> tex_atmosphere_transmittance_lut;
+internal Texture2D<float3> tex_galaxy;
 
 float3 calculate_sun_radiance(float3 dir) {
 	float nu = dot(dir, buf_global.sun_dir_world);
@@ -124,37 +126,82 @@ float3 stable_star_field(float2 coord, float star_threshold) {
 		+ unstable_star_field(i + float2(1.0, 1.0), star_threshold) * f.x * f.y;
 }
 
-float3 calculate_star_radiance(float3 dir) {
+float3 calculate_star_radiance(float3 dir, float galaxy_luminance) {
 	// Adjust star threshold so that brightest stars appear first
-	float star_threshold = 0.99;
+	float star_threshold = 0.99 - 0.08 * linstep(0.1, 0.8, galaxy_luminance);
 
 	// Project ray direction onto the plane
 	float2 coord
 		= dir.xy * rcp(abs(dir.z) + length(dir.xy)) + 41.21 * sign(dir.z);
-	coord *= 600.0;
+	coord *= 900.0;
 
 	return stable_star_field(coord, star_threshold);
 }
 
-float3 calculate_sky_radiance(float3 dir) {
-	float3 radiance = float3(0.0);
-	float3 atmosphere_scattering
-		= atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, dir);
-	float3 atmosphere_transmittance = atmosphere.lookup_transmittance(
+float3 lookup_galaxy_texture(float3 dir) {
+	float lon = atan2(dir.x, dir.z);
+	float lat = fast_acos(-dir.y);
+
+	return tex_galaxy.sampleLinear(float2(lon / TAU + 0.5, lat / PI));
+}
+
+atmosphere.AtmosphereParticipation
+calculate_atmosphere_participation(float3 dir) {
+	// Raymarch atmosphere if outside atmosphere boundary; otherwise lookup in
+	// sky map.
+
+	if (atmosphere.camera_pos().y
+		< atmosphere.EARTH_PARAMS.atmosphere_radius()) {
+		atmosphere.AtmosphereParticipation participation;
+		participation.scattering
+			= atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, dir);
+		participation.transmittance = atmosphere.lookup_transmittance(
+			atmosphere.EARTH_PARAMS,
+			tex_atmosphere_transmittance_lut,
+			atmosphere.camera_pos(),
+			dir
+		);
+		participation.hit_planet
+			= false; // Not needed as included in transmittance.
+		return participation;
+	}
+
+	return atmosphere.calculate_scattering(
 		atmosphere.EARTH_PARAMS,
 		tex_atmosphere_transmittance_lut,
+		tex_atmosphere_multiscatter_lut,
 		atmosphere.camera_pos(),
-		dir
+		dir,
+		none,
+		atmosphere.light_sources()
 	);
+}
+
+float3 calculate_sky_radiance(float3 dir) {
+	float3 radiance = float3(0.0);
+	// Use shadow view matrix to orient ray direction with the sun and moon.
+	float3 space_dir = mul(float3x3(ap.celestial.view), dir);
+	float3 galaxy = lookup_galaxy_texture(
+		space_dir.zyx
+	); // Swizzle to get a look I like at midnight.
+
+	atmosphere.AtmosphereParticipation atmosphere_participation
+		= calculate_atmosphere_participation(dir);
 
 	// Space.
 	radiance += calculate_sun_radiance(dir);
-	radiance += calculate_star_radiance(dir);
+	radiance += srgb_eotf_inv(galaxy) * 0.0015;
+	radiance += calculate_star_radiance(
+		space_dir,
+		dot(galaxy, LUMINANCE_WEIGHTS_REC709)
+	);
 	float4 moon = calculate_moon_radiance_and_opacity(dir);
 	radiance = radiance * (1.0 - moon.a) + moon.rgb;
+	radiance
+		= select(atmosphere_participation.hit_planet, float3(0.0), radiance);
 
 	// Atmosphere.
-	radiance = radiance * atmosphere_transmittance + atmosphere_scattering;
+	radiance = atmosphere_participation.apply(radiance);
 
 	return radiance;
 }

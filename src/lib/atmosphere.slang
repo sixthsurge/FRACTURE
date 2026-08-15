@@ -9,6 +9,7 @@ import lib.util.phase_functions;
 import lib.util.ray_sphere_intersection;
 import lib.util.sampling;
 import lib.util.space_conversion;
+import settings;
 
 namespace atmosphere {
 struct AtmosphereParameters {
@@ -45,6 +46,16 @@ static const AtmosphereParameters EARTH_PARAMS = {
 	float3(0.015, 0.02, 0.05), // Planet albedo
 };
 
+struct AtmosphereParticipation {
+	float3 scattering;
+	float3 transmittance;
+	bool hit_planet;
+
+	float3 apply(float3 radiance) {
+		return radiance * transmittance + scattering;
+	}
+}
+
 static const float AERIAL_PERSPECTIVE_DEPTH_SCALE
 	= 1e5; // meters divided by terrain scale.
 static const float AERIAL_PERSPECTIVE_TERRAIN_SCALE = 3.0;
@@ -57,6 +68,14 @@ float3 camera_pos() {
 			+ ap.camera.position.y * AERIAL_PERSPECTIVE_TERRAIN_SCALE + 10.0,
 		0.0
 	);
+}
+
+// Light sources for the Minecraft world.
+LightSource light_sources[2]() {
+	return {
+		LightSource(buf_global.sun_radiosity, buf_global.sun_dir_world),
+		LightSource(buf_global.moon_radiosity, buf_global.moon_dir_world),
+	};
 }
 
 struct LightSource {
@@ -183,16 +202,9 @@ float3 calculate_planet_radiance<int LightSourceCount>(
 	AtmosphereParameters params,
 	float3 ray_origin,
 	float3 ray_dir,
+	float planet_dist,
 	LightSource lights[LightSourceCount]
 ) {
-	// Treat planet as uniform lambertian sphere, only considering direct light.
-	float planet_dist
-		= intersect_sphere(
-			  ray_origin,
-			  ray_dir,
-			  params.planet_radius * (1.0 - EPS)
-		)
-			  .x;
 	if (planet_dist < 0.0) {
 		return float3(0.0);
 	}
@@ -266,12 +278,19 @@ float2x3 calculate_2nd_order_scattering_and_f_ms(
 		+ scattering[1] * scattering_coeff[1];
 	radiance += inscattered_light * ISOTROPIC_PHASE;
 
-	radiance += transmittance
+	radiance
+		+= transmittance
 		* calculate_planet_radiance<1>(
-					params,
-					ray_origin,
-					ray_dir,
-					{ LightSource(float3(1.0), light_dir) }
+			   params,
+			   ray_origin,
+			   ray_dir,
+			   intersect_sphere(
+				   ray_origin,
+				   ray_dir,
+				   params.planet_radius * (1.0 - EPS)
+			   )
+				   .x,
+			   { LightSource(float3(1.0), light_dir) }
 		);
 
 	return float2x3(radiance, f_ms);
@@ -338,7 +357,7 @@ float3 lookup_multiscatter_energy(
 	return multiscatter_lut.sampleLinear(uv);
 }
 
-float3 calculate_scattering<int LightSourceCount>(
+AtmosphereParticipation calculate_scattering<int LightSourceCount>(
 	AtmosphereParameters params,
 	Texture2D<float3> transmittance_lut,
 	Texture2D<float3> multiscatter_lut,
@@ -436,14 +455,27 @@ float3 calculate_scattering<int LightSourceCount>(
 
 		radiance += light.irradiance * inscattered_light;
 	}
+	float planet_dist
+		= intersect_sphere(
+			  ray_origin,
+			  ray_dir,
+			  params.planet_radius * (1.0 - EPS)
+		)
+			  .x;
 	if (!max_distance.hasValue) {
 		// Don't render the planet when there is a max distance imposed, as this
 		// means we are rendering aerial perspective.
 		radiance += transmittance
-			* calculate_planet_radiance(params, ray_origin, ray_dir, lights);
+			* calculate_planet_radiance(
+						params,
+						ray_origin,
+						ray_dir,
+						planet_dist,
+						lights
+			);
 	}
 
-	return radiance;
+	return AtmosphereParticipation(radiance, transmittance, planet_dist >= 0.0);
 }
 
 float3 lookup_aerial_perspective_scattering(

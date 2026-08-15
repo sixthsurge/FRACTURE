@@ -24,15 +24,6 @@ struct SkyViewOutput {
 static const atmosphere.AtmosphereParameters ATMOSPHERE_PARAMS
 	= atmosphere.EARTH_PARAMS;
 
-atmosphere.LightSource get_light_sources[2]() {
-	return {
-		atmosphere
-			.LightSource(buf_global.sun_radiosity, buf_global.sun_dir_world),
-		atmosphere
-			.LightSource(buf_global.moon_radiosity, buf_global.moon_dir_world),
-	};
-}
-
 [shader("fragment")]
 TransmittanceOutput transmittance_lut_main(float2 coord: SV_Position) {
 	float w, h;
@@ -92,15 +83,19 @@ SkyViewOutput sky_view_main(float2 coord: SV_Position) {
 
 	float3 ray_dir = atmosphere.unproject_sky_view(ncoord);
 
-	return SkyViewOutput(atmosphere.calculate_scattering(
-		ATMOSPHERE_PARAMS,
-		tex_atmosphere_transmittance_lut,
-		tex_atmosphere_multiscatter_lut,
-		atmosphere.camera_pos(),
-		ray_dir,
-		none,
-		get_light_sources()
-	));
+	return SkyViewOutput(
+		atmosphere
+			.calculate_scattering(
+				ATMOSPHERE_PARAMS,
+				tex_atmosphere_transmittance_lut,
+				tex_atmosphere_multiscatter_lut,
+				atmosphere.camera_pos(),
+				ray_dir,
+				none,
+				atmosphere.light_sources()
+			)
+			.scattering
+	);
 }
 
 [shader("compute")]
@@ -123,15 +118,19 @@ void aerial_perspective_main(int3 icoord: SV_DispatchThreadID) {
 	float3 pos_scene = view_to_scene(pos_view);
 	float3 dir_world = normalize(pos_scene);
 
-	tex_atmosphere_aerial_perspective[icoord] = atmosphere.calculate_scattering(
-		ATMOSPHERE_PARAMS,
-		tex_atmosphere_transmittance_lut,
-		tex_atmosphere_multiscatter_lut,
-		atmosphere.camera_pos(),
-		dir_world,
-		length(pos_scene) * atmosphere.AERIAL_PERSPECTIVE_TERRAIN_SCALE,
-		get_light_sources()
-	);
+	tex_atmosphere_aerial_perspective[icoord]
+		= atmosphere
+			  .calculate_scattering(
+				  ATMOSPHERE_PARAMS,
+				  tex_atmosphere_transmittance_lut,
+				  tex_atmosphere_multiscatter_lut,
+				  atmosphere.camera_pos(),
+				  dir_world,
+				  length(pos_scene)
+					  * atmosphere.AERIAL_PERSPECTIVE_TERRAIN_SCALE,
+				  atmosphere.light_sources()
+			  )
+			  .scattering;
 }
 
 
