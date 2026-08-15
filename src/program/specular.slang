@@ -125,9 +125,6 @@ FragmentOutput main(float2 coord: SV_Position) {
 			albedo_for_albedo_metals = gbuffer.albedo;
 		}
 	}
-	if (all(icoord == 0)) {
-		printf("%f\n", mat_id);
-	}
 	Material material = Material.get(albedo_for_albedo_metals, mat_id);
 	if (userSettings.LABPBR_SUPPORT_ENABLED && mat_id != MAT_WATER) {
 		material.apply_specular_map(float4(specular_map_rg, float2(0.0)));
