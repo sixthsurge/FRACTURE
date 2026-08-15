@@ -10,7 +10,7 @@ import lib.util.random;
 import lib.util.space_conversion;
 import settings;
 
-Texture2D<uint4> tex_packed_gbuffer_data;
+Texture2D<uint4> tex_packed_solid_gbuffer;
 Texture3D<float3> tex_atmosphere_aerial_perspective;
 Texture2D<float3> tex_atmosphere_transmittance_lut;
 Texture2D<float> tex_blue_noise;
@@ -25,7 +25,7 @@ FragmentOutput main(float2 coord: SV_Position) {
 	float2 ncoord = coord / float2(ap.game.renderSize);
 
 	float depth = ap.opaqueDepth[icoord];
-	uint4 packed_gbuffer_data = tex_packed_gbuffer_data[icoord];
+	uint4 packed_gbuffer = tex_packed_solid_gbuffer[icoord];
 	float2 dither = float2(
 		tex_blue_noise[icoord & 511],
 		tex_blue_noise[(icoord + int2(93, 41)) & 511]
@@ -41,20 +41,22 @@ FragmentOutput main(float2 coord: SV_Position) {
 		return FragmentOutput(calculate_sky_radiance(dir_world));
 	}
 
-	GbufferData gbuffer_data = GbufferData.unpack(packed_gbuffer_data);
+	SolidGbuffer gbuffer = SolidGbuffer.unpack(packed_gbuffer);
 
-	float3 albedo = srgb_eotf_inv(gbuffer_data.albedo);
+	float3 albedo = srgb_eotf_inv(gbuffer.albedo);
 
-	Material material = Material.get(albedo, gbuffer_data.mat_id);
-	material.apply_specular_map(gbuffer_data.specular_map);
+	Material material = Material.get(albedo, gbuffer.mat_id);
+	if (userSettings.LABPBR_SUPPORT_ENABLED) {
+		material.apply_specular_map(gbuffer.specular_map.get().value);
+	}
 
 	float3 radiance = calculate_outgoing_radiance(
 		material,
 		pos_scene,
 		dir_world,
-		gbuffer_data.flat_normal_world,
-		gbuffer_data.detail_normal_world,
-		gbuffer_data.lightmap,
+		gbuffer.flat_normal_world,
+		gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world),
+		gbuffer.lightmap,
 		dither
 	);
 

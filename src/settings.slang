@@ -22,6 +22,7 @@ extern static const bool value_DISPLAY_LUMINANCE_HISTOGRAM;
 extern static const int value_FOG_VOLUME_SIZE_X;
 extern static const int value_FOG_VOLUME_SIZE_Y;
 extern static const int value_FOG_VOLUME_SIZE_Z;
+extern static const bool value_LABPBR_SUPPORT_ENABLED;
 extern static const float value_MOON_ANGULAR_RADIUS;
 extern static const int value_SHADOW_CASCADE_COUNT;
 extern static const int value_SHADOW_DISTANCE;
@@ -52,6 +53,7 @@ struct Settings {
     static const int FOG_VOLUME_SIZE_X = value_FOG_VOLUME_SIZE_X;
     static const int FOG_VOLUME_SIZE_Y = value_FOG_VOLUME_SIZE_Y;
     static const int FOG_VOLUME_SIZE_Z = value_FOG_VOLUME_SIZE_Z;
+    static const bool LABPBR_SUPPORT_ENABLED = value_LABPBR_SUPPORT_ENABLED;
     static const float MOON_ANGULAR_RADIUS = value_MOON_ANGULAR_RADIUS;
     static const int SHADOW_CASCADE_COUNT = value_SHADOW_CASCADE_COUNT;
     static const int SHADOW_DISTANCE = value_SHADOW_DISTANCE;

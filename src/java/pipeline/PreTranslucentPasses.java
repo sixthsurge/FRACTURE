@@ -33,10 +33,6 @@ public class PreTranslucentPasses {
 				"main"
 			)
 			.writes("radiance", textures.scene.back());
-
-		// Must have scene data in front and back for translucent passes to read
-		// and write sceneTex.
-		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
-			.copy(textures.scene.back(), textures.scene.front());
+		textures.scene.flip();
 	}
 }

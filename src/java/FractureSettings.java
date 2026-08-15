@@ -6,6 +6,12 @@ import dev.irisshaders.aperture.api.settings.SettingsScreen;
 public class FractureSettings implements PackSettings {
 	@Override
 	public void createSettings(SettingsManager manager, SettingsScreen screen) {
+		screen.option(
+			"LABPBR_SUPPORT_ENABLED",
+			OptionType.boolType(false),
+			false
+		);
+
 		final var screenShadow = screen.child("shadow");
 		screenShadow.option("SHADOW_ENABLED", OptionType.boolType(true), false);
 		screenShadow.option(

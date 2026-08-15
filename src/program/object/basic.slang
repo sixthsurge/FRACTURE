@@ -3,9 +3,10 @@ import lib.gbuffer_packing;
 import lib.lighting.material;
 import lib.util.math;
 import object_shader;
+import settings;
 
 struct FragmentOutput {
-	uint4 packed_gbuffer_data;
+	uint4 packed_solid_gbuffer;
 }
 
 struct VertexOutput {
@@ -47,43 +48,47 @@ struct BasicObject : Shader<VertexOutput, FragmentOutput> {
 
 		float4 normal_map = float4(0.5, 0.5, 1.0, 1.0);
 		float4 specular_map = float4(0.0, 0.0, 0.0, 0.1);
-
-		if (let normal_tex = object_data.normal()) {
-			normal_map = normal_tex.sampleTexture(input.uv);
-		}
-		if (let specular_tex = object_data.specular()) {
-			specular_map = specular_tex.sampleTexture(input.uv);
+		if (userSettings.LABPBR_SUPPORT_ENABLED) {
+			if (let normal_tex = object_data.normal()) {
+				normal_map = normal_tex.sampleTexture(input.uv);
+			}
+			if (let specular_tex = object_data.specular()) {
+				specular_map = specular_tex.sampleTexture(input.uv);
+			}
 		}
 
 		float3 flat_normal_world
 			= unpackUnorm4x8ToFloat(input.normal_packed).xyz * 2.0 - 1.0;
+
+		SolidGbuffer gbuffer;
+		gbuffer.albedo = albedo.rgb;
+		gbuffer.flat_normal_world = flat_normal_world;
+		gbuffer.lightmap = input.lightmap;
+		gbuffer.mat_id = input.id;
+
 		float4 tangent_world
 			= unpackUnorm4x8ToFloat(input.tangent_packed) * 2.0 - 1.0;
 
-		float3 detail_normal_world = flat_normal_world;
-		if (max_of(abs(tangent_world)) > EPS) {
-			float3x3 tbn = float3x3(
-				tangent_world.xyz,
-				cross(tangent_world.xyz, flat_normal_world)
-					* sign(tangent_world.w),
-				flat_normal_world
-			);
+		if (userSettings.LABPBR_SUPPORT_ENABLED) {
+			float3 detail_normal_world = flat_normal_world;
+			if (max_of(abs(tangent_world)) > EPS) {
+				float3x3 tbn = float3x3(
+					tangent_world.xyz,
+					cross(tangent_world.xyz, flat_normal_world)
+						* sign(tangent_world.w),
+					flat_normal_world
+				);
 
-			NormalMapData normal_map_data = NormalMapData.unpack(normal_map);
-			detail_normal_world = mul(normal_map_data.normal_tangent, tbn);
+				NormalMapData normal_map_data
+					= NormalMapData.unpack(normal_map);
+				detail_normal_world = mul(normal_map_data.normal_tangent, tbn);
+			}
+
+			gbuffer.detail_normal_world.set(detail_normal_world);
+			gbuffer.specular_map.set(specular_map);
 		}
 
-		return FragmentOutput(
-			GbufferData(
-				albedo.rgb,
-				flat_normal_world,
-				input.lightmap,
-				input.id,
-				detail_normal_world,
-				specular_map
-			)
-				.pack()
-		);
+		return FragmentOutput(gbuffer.pack());
 	}
 }
 

@@ -12,8 +12,6 @@ import lib.util.space_conversion;
 import object_shader;
 import settings;
 
-Texture2D<float3> tex_scene;
-Texture2D<float3> tex_atmosphere_sky_view;
 Texture2D<float> tex_blue_noise;
 
 struct FragmentOutput {
@@ -110,39 +108,6 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 			input.lightmap,
 			dither
 		);
-
-		float3 dir_view = normalize(pos_view);
-		float3 dir_world = normalize(input.pos_scene);
-		float3 ray_dir_view = reflect(
-			dir_view,
-			mul(float3x3(ap.camera.view), detail_normal_world)
-		);
-
-		float3 ray_dir_screen = ssrt.screen_space_ray_direction(
-			pos_screen,
-			pos_view,
-			ray_dir_view
-		);
-		Ray ray = Ray(pos_screen, ray_dir_screen);
-
-		if (input.id == MAT_WATER) {
-			float3 reflected_radiance;
-			if (let hit_pos = ssrt.trace_hiz(
-					ray,
-					ssrt.screen_space_ray_length(ray),
-					ssrt.thickness_heuristic(pos_view, ray_dir_screen)
-				)) {
-				reflected_radiance = tex_scene.sampleLinear(hit_pos.xy);
-			} else {
-				reflected_radiance = atmosphere.lookup_sky_radiance(
-					tex_atmosphere_sky_view,
-					mul(float3x3(ap.camera.viewInv), ray_dir_view),
-				);
-			}
-
-			radiance = reflected_radiance / max(albedo.a, EPS);
-			albedo.a = 1.0;
-		}
 
 		return FragmentOutput(float4(radiance, albedo.a));
 	}

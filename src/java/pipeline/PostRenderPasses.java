@@ -97,8 +97,7 @@ public class PostRenderPasses {
 			textures.bloom.flip();
 		}
 		if ((tileCount & 1) == 0) {
-
-		textures.bloom.flip();
+			textures.bloom.flip();
 		}
 
 		// Blur
