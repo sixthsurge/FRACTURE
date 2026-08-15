@@ -37,9 +37,9 @@ interface IFogProfile {
 struct OverworldProfile : IFogProfile {
 	static const int NUM_SCATTERING_PARTICLE_KINDS = 2;
 	static const float3 RLH_SCATTERING_COEFF
-		= float3(0.3, 0.5, 1.0) * float3(0.0005);
+		= float3(0.3, 0.5, 1.0) * float3(0.0002);
 	static const float3 RLH_EXTINCTION_COEFF
-		= float3(0.3, 0.5, 1.0) * float3(0.0005);
+		= float3(0.3, 0.5, 1.0) * float3(0.0002);
 	static const float3 MIE_SCATTERING_COEFF
 		= float3(0.9, 0.9, 0.9) * float3(0.001);
 	static const float3 MIE_EXTINCTION_COEFF

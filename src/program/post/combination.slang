@@ -59,8 +59,11 @@ float4 main(float2 coord: SV_Position) {
 			if (tex_exposure_histogram[int2(pos.x, 0)] > pos.y * 1000) {
 				color = float3(0.0);
 			}
-			if (pos.x == buf_exposure.selected_bin) {
+			if (pos.x == buf_exposure.bin_a) {
 				color += float3(0.5, 0.0, 0.0);
+			}
+			if (pos.x == buf_exposure.bin_b) {
+				color += float3(0.0, 0.5, 0.0);
 			}
 		}
 	}

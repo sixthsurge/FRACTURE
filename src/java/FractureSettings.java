@@ -72,8 +72,13 @@ public class FractureSettings implements PackSettings {
 		screenExposure
 			.option("AUTO_EXPOSURE_ENABLED", OptionType.boolType(true), false);
 		screenExposure.option(
-			"EXPOSURE_TARGET",
-			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.75f),
+			"EXPOSURE_TARGET_A",
+			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.25f),
+			true
+		);
+		screenExposure.option(
+			"EXPOSURE_TARGET_B",
+			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.90f),
 			true
 		);
 		screenExposure.option(
@@ -135,7 +140,7 @@ public class FractureSettings implements PackSettings {
 		);
 		screenAgx.option(
 			"AGX_SAT",
-			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.1f),
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.2f),
 			true
 		);
 	}

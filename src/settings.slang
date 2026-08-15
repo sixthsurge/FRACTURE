@@ -41,7 +41,8 @@ struct Settings {
     float AGX_SLOPE_G;
     float AGX_SLOPE_R;
     float BLOOM_INTENSITY;
-    float EXPOSURE_TARGET;
+    float EXPOSURE_TARGET_A;
+    float EXPOSURE_TARGET_B;
     float MANUAL_EXPOSURE_VALUE;
     static const bool ATMOSPHERE_AP_LUT_ENABLED = value_ATMOSPHERE_AP_LUT_ENABLED;
     static const bool AUTO_EXPOSURE_ENABLED = value_AUTO_EXPOSURE_ENABLED;

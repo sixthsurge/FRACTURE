@@ -11,7 +11,7 @@ public class Buffers {
 		globalBuffer
 			= pipeline.mappedBuffer("buf_global", GlobalBufferData.class);
 
-		pipeline.buffer("buf_exposure", 4 * 3); // float, float, int
+		pipeline.buffer("buf_exposure", 4 * 4); // float, float, int, int
 		pipeline.buffer("buf_sky_sh", 10 * 4 * 4); // float3[9], float3
 
 		// For FidelityFX-SPD.
