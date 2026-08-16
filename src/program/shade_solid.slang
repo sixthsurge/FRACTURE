@@ -12,12 +12,12 @@ import lib.util.space_conversion;
 import settings;
 
 RWTexture2D<float3> tex_scene_write;
-
 Texture2D<uint4> tex_gbuffer_solid;
 Texture3D<float3> tex_atmosphere_aerial_perspective;
+Texture2D<float3> tex_atmosphere_transmittance;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
-Texture2D<float3> tex_atmosphere_transmittance;
+Texture2D<float4> tex_gtao_output_current;
 Texture2D<float> tex_blue_noise;
 
 [shader("compute")]
@@ -35,6 +35,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 	float3 pos_screen = float3(ncoord, depth);
 	float3 pos_view = screen_to_view(pos_screen);
+	float4 gtao_output = tex_gtao_output_current.sampleLinear(ncoord);
 
 	// Lookup fog participation a while before using it (latency hiding).
 	fog.FogParticipation fog_participation = fog.lookup_fog_participation(
@@ -63,6 +64,14 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		material.apply_specular_map(gbuffer.specular_map.get().value);
 	}
 
+	float3 bent_normal_world = mul(
+		float3x3(ap.camera.viewInv),
+		float3(
+			gtao_output.zw,
+			sqrt(saturate(1.0 - length_squared(gtao_output.zw)))
+		)
+	);
+
 	float3 radiance = calculate_outgoing_radiance(
 		material,
 		pos_scene,
@@ -70,6 +79,9 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		gbuffer.flat_normal_world,
 		gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world),
 		gbuffer.lightmap,
+		gtao_output.x,
+		gtao_output.y,
+		bent_normal_world,
 		dither
 	);
 

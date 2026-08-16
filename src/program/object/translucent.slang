@@ -120,6 +120,9 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 			flat_normal_world,
 			detail_normal_world,
 			input.lightmap,
+			1.0,
+			0.0,
+			detail_normal_world,
 			dither
 		);
 

@@ -54,6 +54,7 @@ public class Fracture implements ShaderPack {
 	@Override
 	public void onNewFrame(FrameState state) {
 		buffers.update(state);
+		textures.updateReferences(state);
 	}
 
 	@Override

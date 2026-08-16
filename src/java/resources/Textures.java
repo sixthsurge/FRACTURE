@@ -4,6 +4,8 @@ import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.ShadowTexture;
 import dev.irisshaders.aperture.api.objects.Texture2D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
+import dev.irisshaders.aperture.api.objects.TextureReference;
+import dev.irisshaders.aperture.api.pipeline.FrameState;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import util.Flipper;
 
@@ -23,12 +25,25 @@ public class Textures {
 
 	public final Flipper<Texture2D> scene;
 	public final Flipper<Texture2D> bloom;
+
 	public final Texture2D gbufferSolid;
 	public final Texture2D gbufferTranslucent;
+
 	public final Texture2D depthHizMinMax;
+
 	public final Texture2D atmosphereTransmittance;
 	public final Texture2D atmosphereMultiscatter;
 	public final Texture2D atmosphereSkyView;
+
+	public final Texture2D gtaoOutputA;
+	public final Texture2D gtaoOutputB;
+	public final Texture2D gtaoTemporalDataA;
+	public final Texture2D gtaoTemporalDataB;
+	public final TextureReference gtaoOutputCurrent;
+	public final TextureReference gtaoOutputPrevious;
+	public final TextureReference gtaoTemporalDataCurrent;
+	public final TextureReference gtaoTemporalDataPrevious;
+
 	public final ShadowTexture shadowColor;
 
 	public Textures(PipelineConfig pipeline, Screen screen) {
@@ -45,6 +60,8 @@ public class Textures {
 				  .create();
 		scene = new Flipper<>(sceneTexA, sceneTexB);
 
+		// Bloom
+
 		final var bloomA
 			= pipeline.texture2D("tex_bloom_a", TextureFormat.RG11B10_UFLOAT)
 				  .renderSize()
@@ -56,6 +73,8 @@ public class Textures {
 				  .usesMipmaps()
 				  .create();
 		bloom = new Flipper<Texture2D>(bloomA, bloomB);
+
+		// G-Buffer
 
 		// Select texture format for the amount of data needed.
 		final var labPbrEnabled
@@ -80,12 +99,16 @@ public class Textures {
 				  .renderSize()
 				  .create();
 
+		// Hi-Z depth
+
 		depthHizMinMax
 			= pipeline
 				  .texture2D("tex_depth_hiz_min_max", TextureFormat.RG32_SFLOAT)
 				  .size(screen.renderWidth() / 2, screen.renderHeight() / 2)
 				  .usesMipmaps()
 				  .create();
+
+		// Atmosphere
 
 		atmosphereTransmittance
 			= pipeline
@@ -135,6 +158,64 @@ public class Textures {
 			)
 			.create();
 
+		// GTAO
+
+		final var gtaoWidth = Math.ceilDiv(screen.renderWidth(), 2);
+		final var gtaoHeight = Math.ceilDiv(screen.renderHeight(), 2);
+		gtaoOutputA
+			= pipeline
+				  .texture2D("tex_gtao_output_a", TextureFormat.RGBA16_SFLOAT)
+				  .size(gtaoWidth, gtaoHeight)
+				  .create();
+		gtaoOutputB
+			= pipeline
+				  .texture2D("tex_gtao_output_b", TextureFormat.RGBA16_SFLOAT)
+				  .size(gtaoWidth, gtaoHeight)
+				  .create();
+		gtaoTemporalDataA
+			= pipeline
+				  .texture2D(
+					  "tex_gtao_temporal_data_a",
+					  TextureFormat.RG16_SFLOAT
+				  )
+				  .size(gtaoWidth, gtaoHeight)
+				  .create();
+		gtaoTemporalDataB
+			= pipeline
+				  .texture2D(
+					  "tex_gtao_temporal_data_b",
+					  TextureFormat.RG16_SFLOAT
+				  )
+				  .size(gtaoWidth, gtaoHeight)
+				  .create();
+		gtaoOutputCurrent
+			= pipeline
+				  .reference("tex_gtao_output_current", gtaoOutputA.format())
+				  .size(gtaoWidth, gtaoHeight)
+				  .createEmpty();
+		gtaoTemporalDataCurrent
+			= pipeline
+				  .reference(
+					  "tex_gtao_temporal_data_current",
+					  gtaoTemporalDataA.format()
+				  )
+				  .size(gtaoWidth, gtaoHeight)
+				  .createEmpty();
+		gtaoOutputPrevious
+			= pipeline.reference("tex_gtao_output_prev", gtaoOutputA.format())
+				  .size(gtaoWidth, gtaoHeight)
+				  .createEmpty();
+		gtaoTemporalDataPrevious
+			= pipeline
+				  .reference(
+					  "tex_gtao_temporal_data_prev",
+					  gtaoTemporalDataA.format()
+				  )
+				  .size(gtaoWidth, gtaoHeight)
+				  .createEmpty();
+
+		// Fog
+
 		final var fogVolumeSizeX
 			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_X");
 		final var fogVolumeSizeY
@@ -183,8 +264,26 @@ public class Textures {
 			TextureFormat.RGBA8_UNORM
 		);
 
+		// Exposure histogram
+
 		pipeline.texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
 			.size(256, 1)
 			.create();
+	}
+
+	// Called in onNewFrame.
+	public void updateReferences(FrameState state) {
+		final var frameCounter
+			= state.uniforms().getInt("ap.timing.frameCounter");
+		final var oddFrame = (frameCounter & 1) == 0;
+
+		gtaoOutputCurrent.set(oddFrame ? gtaoOutputA : gtaoOutputB);
+		gtaoOutputPrevious.set(oddFrame ? gtaoOutputB : gtaoOutputA);
+		gtaoTemporalDataCurrent.set(
+			oddFrame ? gtaoTemporalDataA : gtaoTemporalDataB
+		);
+		gtaoTemporalDataPrevious.set(
+			oddFrame ? gtaoTemporalDataB : gtaoTemporalDataA
+		);
 	}
 }

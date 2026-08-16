@@ -48,12 +48,16 @@ void main() {
 
 	// Calculate exposure.
 
-	const float blend_factor = saturate(4.0 * ap.timing.lastFrameTime);
+	float current_weight = select(
+		ap.timing.frameCounter > 1,
+		saturate(4.0 * ap.timing.lastFrameTime),
+		1.0
+	);
 
 	buf_exposure[0].value = lerp(
 		max0(buf_exposure[0].previous_value),
 		exposure.luminance_to_exposure(target_luminance),
-		blend_factor
+		current_weight
 	);
 	buf_exposure[0].previous_value = buf_exposure[0].value;
 	buf_exposure[0].bin_a = bin_a.orElse(0);

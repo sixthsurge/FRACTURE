@@ -9,6 +9,13 @@ public class PreTranslucentPasses {
 	public static void
 	setup(PipelineConfig pipeline, Screen screen, Textures textures) {
 		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
+			.compute("gtao", "program/gtao", "main")
+			.dispatch2D(
+				Math.ceilDiv(screen.renderWidth(), 16 * 2),
+				Math.ceilDiv(screen.renderHeight(), 16 * 2)
+			);
+
+		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
 			.compute("shade_solid", "program/shade_solid", "main")
 			.dispatch2D(
 				Math.ceilDiv(screen.renderWidth(), 16),

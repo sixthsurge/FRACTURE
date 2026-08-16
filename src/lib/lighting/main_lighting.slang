@@ -104,6 +104,9 @@ float3 calculate_outgoing_radiance(
 	float3 flat_normal_world,
 	float3 detail_normal_world,
 	float2 lightmap,
+	float ao,
+	float ambient_sss,
+	float3 bent_normal,
 	float2 dither
 ) {
 	float3 radiance = calculate_direct_celestial_light(
@@ -118,10 +121,10 @@ float3 calculate_outgoing_radiance(
 	// Ambient light
 
 	float3 ambient_irradiance
-		= sh_evaluate_irradiance(buf_sky_sh.coeff, flat_normal_world, 1.0)
+		= sh_evaluate_irradiance(buf_sky_sh.coeff, bent_normal, ao)
 		* pow2(lightmap.y);
 
-	ambient_irradiance += pow3(lightmap.x) * float3(0.05, 0.02, 0.02);
+	ambient_irradiance += pow3(lightmap.x) * float3(0.05, 0.02, 0.02) * ao;
 
 	radiance += ambient_irradiance * material.albedo / PI;
 
