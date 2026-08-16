@@ -12,9 +12,13 @@ public class PostRenderPasses {
 		setupHiZ(pipeline, screen, textures);
 
 		pipeline.stage(ProgramStage.POST_RENDER)
-			.composite("specular", "program/specular", "main")
-			.overrideObject("tex_scene", textures.scene.front().name())
-			.writes("radiance", textures.scene.back());
+			.compute("specular", "program/specular", "main")
+			.dispatch2D(
+				Math.ceilDiv(screen.windowWidth(), 16),
+				Math.ceilDiv(screen.windowHeight(), 16)
+			)
+			.overrideObject("tex_scene_write", textures.scene.back().name())
+			.overrideObject("tex_scene", textures.scene.front().name());
 		textures.scene.flip();
 
 		setupExposure(pipeline, screen, textures);
@@ -103,16 +107,20 @@ public class PostRenderPasses {
 			// Read from sourceTexture for lod 0 (avoid initial copy)
 			Texture2D srcTex
 				= srcLod == 0 ? sourceTexture : textures.bloom.front();
+			int destMipScale = Math.powExact(2, srcLod + 1);
 
 			pipeline.stage(ProgramStage.POST_RENDER)
-				.composite(
+				.compute(
 					"bloom/downsample " + srcLod,
 					"program/post/bloom/downsample",
 					"main"
 				)
-				.writes("downsampled", textures.bloom.back(), srcLod + 1)
-				.overrideObject("input", srcTex.name())
+				.dispatch2D(
+					Math.ceilDiv(screen.windowWidth(), 16 * destMipScale),
+					Math.ceilDiv(screen.windowHeight(), 16 * destMipScale)
+				)
 				.overrideObject("dest", textures.bloom.back().name())
+				.overrideObject("input", srcTex.name())
 				.exportInt("INPUT_LOD", srcLod);
 			textures.bloom.flip();
 		}
@@ -126,9 +134,9 @@ public class PostRenderPasses {
 
 		for (int lod = 0; lod < tileCount; lod++) {
 			// Read from sourceTexture for lod 0 (avoid initial copy)
-			Texture2D srcTex
+			final var srcTex
 				= lod == 0 ? sourceTexture : textures.bloom.front();
-			int mipScale = Math.powExact(2, lod);
+			final var mipScale = Math.powExact(2, lod);
 
 			pipeline.stage(ProgramStage.POST_RENDER)
 				.compute(
@@ -175,17 +183,22 @@ public class PostRenderPasses {
 			final var smallerInputTex = dstLod == tileCount - 2
 				? textures.bloom.back()
 				: textures.bloom.front();
+			final var destMipScale = Math.powExact(2, dstLod);
 
 			pipeline.stage(ProgramStage.POST_RENDER)
-				.composite(
+				.compute(
 					"bloom/upsample " + dstLod,
 					"program/post/bloom/upsample",
 					"main"
 				)
-				.writes("upsampled", textures.bloom.back(), dstLod)
-				.exportInt("DST_LOD", dstLod)
+				.dispatch2D(
+					Math.ceilDiv(screen.windowWidth(), 16 * destMipScale),
+					Math.ceilDiv(screen.windowHeight(), 16 * destMipScale)
+				)
+				.overrideObject("dest", textures.bloom.back().name())
 				.overrideObject("input_smaller", smallerInputTex.name())
-				.overrideObject("input_bigger", textures.bloom.front().name());
+				.overrideObject("input_bigger", textures.bloom.front().name())
+				.exportInt("DST_LOD", dstLod);
 			textures.bloom.flip();
 		}
 	}

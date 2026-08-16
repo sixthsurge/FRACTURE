@@ -18,37 +18,50 @@ public class PreRenderPasses {
 	private static void
 	setupAtmosphere(PipelineConfig pipeline, Textures textures) {
 		pipeline.stage(ProgramStage.PRE_RENDER)
-			.composite(
-				"atmosphere/transmittance_lut",
-				"program/atmosphere",
-				"transmittance_lut_main"
+			.compute(
+				"atmosphere/gen_transmittance_lut",
+				"program/atmosphere/gen_transmittance_lut",
+				"main"
 			)
-			.writes("transmittance", textures.atmosphereTransmittanceLut);
+			.dispatch2D(
+				Math.ceilDiv(Textures.ATMOSPHERE_TRANSMITTANCE_LUT_WIDTH, 16),
+				Math.ceilDiv(Textures.ATMOSPHERE_TRANSMITTANCE_LUT_HEIGHT, 16)
+			);
 
 		pipeline.stage(ProgramStage.PRE_RENDER)
-			.composite(
-				"atmosphere/multiscatter_lut",
-				"program/atmosphere",
-				"multiscatter_lut_main"
+			.compute(
+				"atmosphere/gen_multiscatter_lut",
+				"program/atmosphere/gen_multiscatter_lut",
+				"main"
 			)
-			.writes("multiscatter_energy", textures.atmosphereMultiscatterLut);
+			.dispatch2D(
+				Math.ceilDiv(Textures.ATMOSPHERE_MULTISCATTER_LUT_WIDTH, 8),
+				Math.ceilDiv(Textures.ATMOSPHERE_MULTISCATTER_LUT_HEIGHT, 8)
+			);
 
 		pipeline.stage(ProgramStage.PRE_RENDER)
-			.composite(
-				"atmosphere/sky_view",
-				"program/atmosphere",
-				"sky_view_main"
+			.compute(
+				"atmosphere/gen_sky_view_lut",
+				"program/atmosphere/gen_sky_view_lut",
+				"main"
 			)
-			.writes("sky_radiance", textures.atmosphereSkyView);
+			.dispatch2D(
+				Math.ceilDiv(Textures.ATMOSPHERE_SKY_VIEW_LUT_WIDTH, 16),
+				Math.ceilDiv(Textures.ATMOSPHERE_SKY_VIEW_LUT_HEIGHT, 16)
+			);
 
 		if (pipeline.settings().getBoolValue("ATMOSPHERE_AP_LUT_ENABLED")) {
 			pipeline.stage(ProgramStage.PRE_RENDER)
 				.compute(
-					"atmosphere/aerial_perspective",
-					"program/atmosphere",
-					"aerial_perspective_main"
+					"atmosphere/gen_aerial_perspective_lut",
+					"program/atmosphere/gen_aerial_perspective_lut",
+					"main"
 				)
-				.dispatch3D(32 / 16, 32 / 16, 32);
+				.dispatch3D(
+					Math.ceilDiv(Textures.ATMOSPHERE_AP_LUT_WIDTH, 16),
+					Math.ceilDiv(Textures.ATMOSPHERE_AP_LUT_DEPTH, 16),
+					Math.ceilDiv(Textures.ATMOSPHERE_AP_LUT_DEPTH, 16)
+				);
 		}
 	}
 }

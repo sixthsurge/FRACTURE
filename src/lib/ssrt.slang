@@ -71,7 +71,7 @@ internal bool crossed_cell_boundary(float2 cell_a, float2 cell_b) {
 
 internal float2 read_min_max_depth(int2 pos, int lod) {
 	if (lod == 0) {
-		return float2(ap.opaqueDepth[pos]);
+		return float2(ap.depth[pos]);
 	} else {
 		return tex_depth_hiz_min_max.Load(int3(pos, lod - 1));
 	}

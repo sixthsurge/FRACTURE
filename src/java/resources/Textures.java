@@ -8,13 +8,26 @@ import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import util.Flipper;
 
 public class Textures {
+	public static final int ATMOSPHERE_TRANSMITTANCE_LUT_WIDTH = 256;
+	public static final int ATMOSPHERE_TRANSMITTANCE_LUT_HEIGHT = 64;
+
+	public static final int ATMOSPHERE_MULTISCATTER_LUT_WIDTH = 32;
+	public static final int ATMOSPHERE_MULTISCATTER_LUT_HEIGHT = 32;
+
+	public static final int ATMOSPHERE_SKY_VIEW_LUT_WIDTH = 256;
+	public static final int ATMOSPHERE_SKY_VIEW_LUT_HEIGHT = 128;
+
+	public static final int ATMOSPHERE_AP_LUT_WIDTH = 32;
+	public static final int ATMOSPHERE_AP_LUT_HEIGHT = 32;
+	public static final int ATMOSPHERE_AP_LUT_DEPTH = 32;
+
 	public final Flipper<Texture2D> scene;
 	public final Flipper<Texture2D> bloom;
 	public final Texture2D gbufferSolid;
 	public final Texture2D gbufferTranslucent;
 	public final Texture2D depthHizMinMax;
-	public final Texture2D atmosphereTransmittanceLut;
-	public final Texture2D atmosphereMultiscatterLut;
+	public final Texture2D atmosphereTransmittance;
+	public final Texture2D atmosphereMultiscatter;
 	public final Texture2D atmosphereSkyView;
 	public final ShadowTexture shadowColor;
 
@@ -59,7 +72,11 @@ public class Textures {
 				  .create();
 
 		gbufferTranslucent
-			= pipeline.texture2D("tex_gbuffer_translucent", solidGbufferFormat)
+			= pipeline
+				  .texture2D(
+					  "tex_gbuffer_translucent",
+					  translucentGbufferFormat
+				  )
 				  .renderSize()
 				  .create();
 
@@ -70,22 +87,28 @@ public class Textures {
 				  .usesMipmaps()
 				  .create();
 
-		atmosphereTransmittanceLut
+		atmosphereTransmittance
 			= pipeline
 				  .texture2D(
-					  "tex_atmosphere_transmittance_lut",
+					  "tex_atmosphere_transmittance",
 					  TextureFormat.RG11B10_UFLOAT
 				  )
-				  .size(256, 64)
+				  .size(
+					  ATMOSPHERE_TRANSMITTANCE_LUT_WIDTH,
+					  ATMOSPHERE_TRANSMITTANCE_LUT_HEIGHT
+				  )
 				  .create();
 
-		atmosphereMultiscatterLut
+		atmosphereMultiscatter
 			= pipeline
 				  .texture2D(
-					  "tex_atmosphere_multiscatter_lut",
+					  "tex_atmosphere_multiscatter",
 					  TextureFormat.RGBA16_SFLOAT
 				  )
-				  .size(32, 32)
+				  .size(
+					  ATMOSPHERE_MULTISCATTER_LUT_WIDTH,
+					  ATMOSPHERE_MULTISCATTER_LUT_HEIGHT
+				  )
 				  .create();
 
 		atmosphereSkyView
@@ -94,8 +117,23 @@ public class Textures {
 					  "tex_atmosphere_sky_view",
 					  TextureFormat.RG11B10_UFLOAT
 				  )
-				  .size(256, 128)
+				  .size(
+					  ATMOSPHERE_SKY_VIEW_LUT_WIDTH,
+					  ATMOSPHERE_SKY_VIEW_LUT_HEIGHT
+				  )
 				  .create();
+
+		pipeline
+			.texture3D(
+				"tex_atmosphere_aerial_perspective",
+				TextureFormat.RG11B10_UFLOAT
+			)
+			.size(
+				ATMOSPHERE_AP_LUT_WIDTH,
+				ATMOSPHERE_AP_LUT_HEIGHT,
+				ATMOSPHERE_AP_LUT_DEPTH
+			)
+			.create();
 
 		final var fogVolumeSizeX
 			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_X");
@@ -144,14 +182,6 @@ public class Textures {
 			"tex_shadow_color",
 			TextureFormat.RGBA8_UNORM
 		);
-
-		pipeline
-			.texture3D(
-				"tex_atmosphere_aerial_perspective",
-				TextureFormat.RG11B10_UFLOAT
-			)
-			.size(32, 32, 32)
-			.create();
 
 		pipeline.texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
 			.size(256, 1)

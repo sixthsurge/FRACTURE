@@ -56,8 +56,7 @@ public record GlobalBufferData(
 					  )
 				  ));
 
-		float celestialLightAngularRadius
-			= isDay
+		float celestialLightAngularRadius = isDay
 			? state.settings().getFloatValue("SUN_ANGULAR_RADIUS")
 				* ((float) Math.TAU / 360.0f)
 			: state.settings().getFloatValue("MOON_ANGULAR_RADIUS")

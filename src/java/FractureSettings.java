@@ -84,7 +84,7 @@ public class FractureSettings implements PackSettings {
 		);
 		screenExposure.option(
 			"EXPOSURE_TARGET_B",
-			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.90f),
+			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.75f),
 			true
 		);
 		screenExposure.option(

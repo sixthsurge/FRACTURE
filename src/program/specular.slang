@@ -14,6 +14,8 @@ import lib.util.math;
 import lib.util.space_conversion;
 import settings;
 
+RWTexture2D<float3> tex_scene_write;
+
 Texture2D<float3> tex_scene;
 Texture2D<uint4> tex_gbuffer_solid;
 Texture2D<uint2> tex_gbuffer_translucent;
@@ -65,9 +67,14 @@ struct FragmentOutput {
 	float3 radiance;
 }
 
-[shader("fragment")]
-FragmentOutput main(float2 coord: SV_Position) {
-	int2 icoord = int2(coord);
+[shader("compute")]
+[numthreads(16, 16, 1)]
+void main(int2 icoord: SV_DispatchThreadID) {
+	if (any(icoord >= ap.game.renderSize)) {
+		return;
+	}
+
+	float2 coord = float2(icoord) + 0.5;
 	float2 ncoord = coord / float2(ap.game.renderSize);
 
 	float front_depth = ap.depth[icoord];
@@ -77,7 +84,9 @@ FragmentOutput main(float2 coord: SV_Position) {
 	uint2 gbuffer_translucent = tex_gbuffer_translucent[icoord];
 
 	if (front_depth == 0.0) {
-		return FragmentOutput(radiance);
+		// FIXME work out if we need to write here.
+		tex_scene_write[icoord] = radiance;
+		return;
 	}
 
 	float3 front_pos_screen = float3(ncoord, front_depth);
@@ -139,7 +148,7 @@ FragmentOutput main(float2 coord: SV_Position) {
 				)
 		* exp(-fog_extinction);
 
-	return FragmentOutput(radiance);
+	tex_scene_write[icoord] = radiance;
 }
 
 

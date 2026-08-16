@@ -35,7 +35,7 @@ struct SolidGbuffer {
 
 	uint4 pack() {
 		uint4 packed;
-		packed.x = packUnorm4x8(float4(albedo, (float(mat_id) + 0.5) / 255.0));
+		packed.x = packUnorm4x8(float4(albedo, float(mat_id) * rcp(255.0)));
 		packed.y = packUnorm4x8(
 			float4(encode_octahedral(flat_normal_world), lightmap)
 		);
@@ -77,7 +77,7 @@ struct TranslucentGbuffer {
 			if (is_albedo_metal) {
 				unpacked.specular_map_rg.set(float2(unpacked1.x, 0.0));
 				unpacked.albedo_for_albedo_metals.set(
-					saturate((unpacked1.yzw - 1.0 / 255.0) * (255.0 / 254.0))
+					saturate((unpacked1.yzw * (255.0 / 245.0) - (1.0 / 254.0)))
 				);
 			} else {
 				unpacked.specular_map_rg.set(unpacked1.xy);
@@ -93,7 +93,7 @@ struct TranslucentGbuffer {
 		packed.x = packUnorm4x8(float4(
 			encode_octahedral(normal_world),
 			skylight,
-			float(mat_id) / 255.0
+			float(mat_id) * rcp(255.0)
 		));
 		if (userSettings.LABPBR_SUPPORT_ENABLED) {
 			if (let metal_f0 = albedo_for_albedo_metals.get().value) {

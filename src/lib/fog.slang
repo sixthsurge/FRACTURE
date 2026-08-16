@@ -58,7 +58,7 @@ struct OverworldProfile : IFogProfile {
 		const float MIE_SCALE_HEIGHT = 10.0;
 
 		float2 density = exp(-max0(pos_world.y - SEA_LEVEL)
-							 / float2(RLH_SCALE_HEIGHT, MIE_SCALE_HEIGHT))
+							 * rcp(float2(RLH_SCALE_HEIGHT, MIE_SCALE_HEIGHT)))
 			* segment_length;
 		density.y
 			/= max(linstep(0.0, 0.66, buf_global.sun_dir_world.y), 0.05) * 0.9
@@ -163,7 +163,7 @@ FogParticipation raymarch<FogProfile>(
 		distance_to_terrain,
 		FogProfile.distance_to_volume_end(ray_origin_world, ray_dir_world),
 	);
-	float step_length = ray_length / float(STEP_COUNT);
+	float step_length = ray_length * rcp(float(STEP_COUNT));
 
 	float3 ray_step_world = ray_dir_world * step_length;
 	float3 ray_pos_world = ray_origin_world + dither * ray_step_world;

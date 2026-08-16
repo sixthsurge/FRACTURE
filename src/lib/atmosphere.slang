@@ -85,17 +85,17 @@ struct LightSource {
 
 float3 calculate_density(AtmosphereParameters params, float r) {
 	float altitude = max0(r - params.planet_radius);
-	float2 rm = exp(-altitude / params.scale_heights);
+	float2 rm = exp(-altitude * rcp(params.scale_heights));
 
 	// Source for ozone density curve: Jessie in shaderLABS.
 	float altitude_km = altitude * 1e-3;
-	float o1 = 12.5 * exp((1.0 / 8.0) * (0.0 - altitude_km));
-	float o2 = 30.0
-		* exp((1.0 / 80.0) * (18.0 - altitude_km) * (altitude_km - 18.0));
-	float o3 = 75.0
-		* exp((1.0 / 50.0) * (23.5 - altitude_km) * (altitude_km - 23.5));
-	float o4 = 50.0
-		* exp((1.0 / 150.0) * (30.0 - altitude_km) * (altitude_km - 30.0));
+	float o1 = 12.5 * exp(rcp(8.0) * (0.0 - altitude_km));
+	float o2
+		= 30.0 * exp(rcp(80.0) * (18.0 - altitude_km) * (altitude_km - 18.0));
+	float o3
+		= 75.0 * exp(rcp(50.0) * (23.5 - altitude_km) * (altitude_km - 23.5));
+	float o4
+		= 50.0 * exp(rcp(150.0) * (30.0 - altitude_km) * (altitude_km - 30.0));
 	float o = 7.428e-3 * (o1 + o2 + o3 + o4);
 
 	return float3(rm, o);
@@ -119,7 +119,7 @@ float3 calculate_transmittance(
 	float ray_length
 		= intersect_sphere(ray_origin, ray_dir, params.atmosphere_radius()).y;
 
-	float3 ray_step = ray_dir * ray_length / float(step_count - 1);
+	float3 ray_step = ray_dir * ray_length * rcp(float(step_count - 1));
 	float3 ray_pos = ray_origin;
 
 	// Integrating extinction using trapezium rule.
@@ -129,7 +129,7 @@ float3 calculate_transmittance(
 		airmass += w * calculate_density(params, length(ray_pos));
 		ray_pos += ray_step;
 	}
-	airmass *= ray_length / float(step_count - 1);
+	airmass *= ray_length * rcp(float(step_count - 1));
 
 	return exp(-mul(airmass, params.extinction_coeff()));
 }
@@ -381,7 +381,7 @@ AtmosphereParticipation calculate_scattering<int LightSourceCount>(
 		// calculation.
 		ray_length = min(ray_length, d);
 	}
-	float step_length = ray_length / float(step_count);
+	float step_length = ray_length * rcp(float(step_count));
 
 	float3 ray_step = ray_dir * step_length;
 	float3 ray_pos = ray_origin + ray_dir * dists.x + ray_step * 0.5;
@@ -525,7 +525,7 @@ float2 project_sky_view(float3 direction) {
 	float altitude_angle = 0.5 * PI - fast_acos(direction.y);
 
 	float2 coord;
-	coord.x = azimuth_angle / TAU;
+	coord.x = azimuth_angle * rcp(TAU);
 	coord.y = 0.5
 		+ 0.5 * sign(altitude_angle)
 			* sqrt((2.0 / PI) * abs(altitude_angle)); // Section 5.3

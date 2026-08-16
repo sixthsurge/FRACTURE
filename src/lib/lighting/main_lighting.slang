@@ -35,7 +35,7 @@ internal float3 calculate_sss(
 
 	float3 sss = phase * exp2(-coeff * sss_depth) * dampen(sss_amount);
 
-	float3 sheen = (0.8) / (albedo + EPS) * exp2(-1.0 * coeff * sss_depth)
+	float3 sheen = 0.8 / (albedo + EPS) * exp2(-1.0 * coeff * sss_depth)
 		* henyey_greenstein_phase(-LoV, 0.5) * linstep(-0.8, -0.2, -LoV);
 	sss += sheen * sheen_amount * 0.1;
 

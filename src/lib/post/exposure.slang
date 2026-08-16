@@ -34,7 +34,7 @@ float bin_to_luminance(int bin) {
 	return exp2(lerp(
 		log2(MIN_LUMINANCE),
 		log2(MAX_LUMINANCE),
-		float(bin) / float(HISTOGRAM_BIN_COUNT)
+		float(bin) * rcp(float(HISTOGRAM_BIN_COUNT))
 	));
 }
 }

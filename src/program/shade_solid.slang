@@ -11,20 +11,19 @@ import lib.util.random;
 import lib.util.space_conversion;
 import settings;
 
+RWTexture2D<float3> tex_scene_write;
+
 Texture2D<uint4> tex_gbuffer_solid;
 Texture3D<float3> tex_atmosphere_aerial_perspective;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
-Texture2D<float3> tex_atmosphere_transmittance_lut;
+Texture2D<float3> tex_atmosphere_transmittance;
 Texture2D<float> tex_blue_noise;
 
-struct FragmentOutput {
-	float3 radiance;
-}
-
-[shader("pixel")]
-FragmentOutput main(float2 coord: SV_Position) {
-	int2 icoord = int2(coord);
+[shader("compute")]
+[numthreads(16, 16, 1)]
+void main(int2 icoord: SV_DispatchThreadID) {
+	float2 coord = float2(icoord) + 0.5;
 	float2 ncoord = coord / float2(ap.game.renderSize);
 
 	float depth = ap.opaqueDepth[icoord];
@@ -51,7 +50,8 @@ FragmentOutput main(float2 coord: SV_Position) {
 	if (depth == 0.0) {
 		float3 radiance = calculate_sky_radiance(dir_world);
 		radiance = fog_participation.apply(radiance);
-		return FragmentOutput(radiance);
+		tex_scene_write[icoord] = radiance;
+		return;
 	}
 
 	SolidGbuffer gbuffer = SolidGbuffer.unpack(packed_gbuffer);
@@ -76,7 +76,7 @@ FragmentOutput main(float2 coord: SV_Position) {
 	if (userSettings.ATMOSPHERE_AP_LUT_ENABLED) {
 		radiance = atmosphere.apply_aerial_perspective(
 			tex_atmosphere_aerial_perspective,
-			tex_atmosphere_transmittance_lut,
+			tex_atmosphere_transmittance,
 			pos_screen,
 			pos_scene,
 			radiance
@@ -85,7 +85,7 @@ FragmentOutput main(float2 coord: SV_Position) {
 
 	radiance = fog_participation.apply(radiance);
 
-	return FragmentOutput(radiance);
+	tex_scene_write[icoord] = radiance;
 }
 
 

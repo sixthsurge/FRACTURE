@@ -9,8 +9,8 @@ import lib.util.ray_sphere_intersection;
 import settings;
 
 internal Texture2D<float3> tex_atmosphere_sky_view;
-internal Texture2D<float3> tex_atmosphere_multiscatter_lut;
-internal Texture2D<float3> tex_atmosphere_transmittance_lut;
+internal Texture2D<float3> tex_atmosphere_multiscatter;
+internal Texture2D<float3> tex_atmosphere_transmittance;
 internal Texture2D<float3> tex_galaxy;
 
 float3 calculate_sun_radiance(float3 dir) {
@@ -142,7 +142,7 @@ float3 lookup_galaxy_texture(float3 dir) {
 	float lon = atan2(dir.x, dir.z);
 	float lat = fast_acos(-dir.y);
 
-	return tex_galaxy.sampleLinear(float2(lon / TAU + 0.5, lat / PI));
+	return tex_galaxy.sampleLinear(float2(lon * rcp(TAU) + 0.5, lat * rcp(PI)));
 }
 
 atmosphere.AtmosphereParticipation
@@ -157,7 +157,7 @@ calculate_atmosphere_participation(float3 dir) {
 			= atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, dir);
 		participation.transmittance = atmosphere.lookup_transmittance(
 			atmosphere.EARTH_PARAMS,
-			tex_atmosphere_transmittance_lut,
+			tex_atmosphere_transmittance,
 			atmosphere.camera_pos(),
 			dir
 		);
@@ -168,8 +168,8 @@ calculate_atmosphere_participation(float3 dir) {
 
 	return atmosphere.calculate_scattering(
 		atmosphere.EARTH_PARAMS,
-		tex_atmosphere_transmittance_lut,
-		tex_atmosphere_multiscatter_lut,
+		tex_atmosphere_transmittance,
+		tex_atmosphere_multiscatter,
 		atmosphere.camera_pos(),
 		dir,
 		none,
