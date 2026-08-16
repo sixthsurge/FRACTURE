@@ -60,7 +60,7 @@ public class FractureSettings implements PackSettings {
 		);
 		screenSky.option(
 			"MOON_ANGULAR_RADIUS",
-			OptionType.floatType(0.1f, 10.0f, 0.05f, 2.5f),
+			OptionType.floatType(0.1f, 10.0f, 0.05f, 8.0f),
 			false
 		);
 

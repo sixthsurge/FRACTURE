@@ -31,7 +31,7 @@ public record GlobalBufferData(
 		// the CIE (2006) 2-deg LMS cone fundamentals
 		final var sunRadiosity = new Vector3f(1.051f, 0.985f, 0.940f);
 
-		final var moonRadiosity = new Vector3f(sunRadiosity).mul(0.001f);
+		final var moonRadiosity = new Vector3f(sunRadiosity).mul(new Vector3f(0.001f, 0.008f, 0.005f));
 
 		final boolean isDay = lightDirWorld.dot(moonDirWorld) < 0.0;
 
