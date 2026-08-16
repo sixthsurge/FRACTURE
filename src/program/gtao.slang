@@ -1,6 +1,7 @@
 import aperture;
 import lib.gbuffer_packing;
 import lib.lighting.gtao;
+import lib.util.filtering;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
@@ -43,7 +44,11 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float3 pos_prev_screen
 		= view_to_screen(pos_prev_view, ap.temporal.projection);
 
-	float4 output_prev = tex_gtao_output_prev.sampleLinear(pos_prev_screen.xy);
+	float4 output_prev = tex_gtao_output_prev.catmull_rom_filter_fast(
+		pos_prev_screen.xy,
+		0,
+		0.65
+	);
 	float2 temporal_data_prev
 		= tex_gtao_temporal_data_prev.sampleLinear(pos_prev_screen.xy);
 
@@ -109,11 +114,13 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		float history_weight = pixel_age / (pixel_age + 1.0);
 
 		// Blend with history.
-		result.ao = lerp(result.ao, output_prev.x, history_weight);
+		result.ao = lerp(result.ao, max0(output_prev.x), history_weight);
 		result.ambient_sss
-			= lerp(result.ambient_sss, output_prev.y, history_weight);
-		result.bent_normal
-			= slerp(result.bent_normal, bent_normal_prev, history_weight);
+			= lerp(result.ambient_sss, max0(output_prev.y), history_weight);
+		if (abs(length_squared(bent_normal_prev) - 1.0) < EPS) {
+			result.bent_normal
+				= slerp(result.bent_normal, bent_normal_prev, history_weight);
+		}
 	}
 
 	tex_gtao_output_current[icoord]

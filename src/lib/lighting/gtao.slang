@@ -23,7 +23,13 @@ internal float compute_maximum_horizon_angle(
 	float radius,
 	float dither
 ) {
-	float step_size = (RADIUS / float(HORIZON_STEP_COUNT)) * radius;
+	const float STEP_GROWTH_RATIO = 2.0;
+	const float INITIAL_STEP_SIZE_SCALE = STEP_GROWTH_RATIO == 1.0
+		? 1.0 / float(HORIZON_STEP_COUNT)
+		: (1.0 - STEP_GROWTH_RATIO)
+			/ (1.0 - pow(STEP_GROWTH_RATIO, float(HORIZON_STEP_COUNT)));
+
+	float step_size = (INITIAL_STEP_SIZE_SCALE * RADIUS) * radius;
 
 	float max_cos_theta = -1.0;
 
@@ -31,33 +37,32 @@ internal float compute_maximum_horizon_angle(
 		= (view_to_screen(pos_view + slice_dir_view * step_size) - pos_screen)
 			  .xy;
 	float2 ray_pos = pos_screen.xy
-		+ ray_step
-			* (dither
-			   + max_of(rcp(float2(ap.game.renderSize))) * rlength(ray_step));
+		+ normalize(ray_step) * max_of(rcp(float2(ap.game.renderSize)));
 
 	for (int i = 0; i < HORIZON_STEP_COUNT; ++i, ray_pos += ray_step) {
-		int2 texel = int2(saturate(ray_pos) * float2(ap.game.renderSize) - 0.5);
+		float2 dithered_pos = ray_pos + dither * ray_step;
+		int2 texel
+			= int2(saturate(dithered_pos) * float2(ap.game.renderSize) - 0.5);
 		float depth = ap.depth[texel];
 
 		if (depth == 0.0) {
 			continue;
 		}
 
-		float3 offset = screen_to_view(float3(ray_pos, depth)) - pos_view;
+		float3 offset = screen_to_view(float3(dithered_pos, depth)) - pos_view;
 
 		float len_sq = length_squared(offset);
 		float norm = rsqrt(len_sq);
 
-		float distance_falloff = linstep(
-			FALLOFF_START * RADIUS,
-			RADIUS,
-			len_sq * norm * rcp(radius)
+		float distance_falloff = pow4(
+			linstep(FALLOFF_START * RADIUS, RADIUS, len_sq * norm * rcp(radius))
 		);
 
 		float cos_theta = dot(viewer_dir, offset) * norm;
 		cos_theta = lerp(cos_theta, -1.0, distance_falloff);
 
 		max_cos_theta = max(cos_theta, max_cos_theta);
+		ray_step *= STEP_GROWTH_RATIO;
 	}
 
 	return fast_acos(clamp(max_cos_theta, -1.0, 1.0));
