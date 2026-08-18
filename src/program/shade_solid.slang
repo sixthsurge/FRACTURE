@@ -18,6 +18,7 @@ Texture2D<float3> tex_atmosphere_transmittance;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
 Texture2D<float4> tex_gtao_output_current;
+Texture2D<float3> tex_rsm_output_current;
 Texture2D<float> tex_blue_noise;
 
 [shader("compute")]
@@ -84,6 +85,12 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		bent_normal_world,
 		dither
 	);
+
+	if (userSettings.RSM_ENABLED) {
+		radiance += material.albedo
+			* tex_rsm_output_current.sampleLinear(ncoord)
+			* buf_global.celestial_light_irradiance;
+	}
 
 	if (userSettings.ATMOSPHERE_AP_LUT_ENABLED) {
 		radiance = atmosphere.apply_aerial_perspective(

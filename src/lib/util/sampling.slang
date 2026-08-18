@@ -2,8 +2,13 @@ public module sampling;
 
 import lib.util.math;
 
-float2 sample_vogel_disc(int step_index, int step_count, float rotation) {
-	float r = sqrt(step_index + 0.5) / sqrt(float(step_count));
+float2 sample_vogel_disc(
+	int step_index,
+	int step_count,
+	float rotation,
+	float start_r = 0.5
+) {
+	float r = sqrt(step_index + start_r) / sqrt(float(step_count));
 	float theta = step_index * GOLDEN_ANGLE + rotation;
 
 	return r * float2(cos(theta), sin(theta));

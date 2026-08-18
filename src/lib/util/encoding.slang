@@ -32,4 +32,25 @@ float3 decode_octahedral(float2 e) {
 	return normalize(v);
 }
 
+// Pack 4 unsigned normalized numbers into a uint32_t with arbitrary precision
+// per channel
+
+uint pack_unorm_arb(float4 data, const uint4 bits) {
+	float4 mul = exp2(float4(bits)) - 1.0;
+
+	uint4 shift = uint4(0, bits.x, bits.x + bits.y, bits.x + bits.y + bits.z);
+	uint4 shifted = uint4(data * mul + 0.5) << shift;
+
+	return shifted.x | shifted.y | shifted.z | shifted.w;
+}
+
+float4 unpack_unorm_arb(uint pack, const uint4 bits) {
+	uint4 max_value = uint4(exp2(bits) - 1);
+	uint4 shift = uint4(0, bits.x, bits.x + bits.y, bits.x + bits.y + bits.z);
+	uint4 unshifted = uint4(pack) >> shift;
+	unshifted = unshifted & max_value;
+
+	return float4(unshifted) * rcp(float4(max_value));
+}
+
 

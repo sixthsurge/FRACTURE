@@ -1,0 +1,15 @@
+screen.root = General
+
+screen.lighting = Lighting
+screen.shadow = Shadows
+screen.gtao = GTAO
+screen.rsm = RSM 
+
+screen.atmospherics = Atmospherics
+screen.fog = Fog
+screen.sky = Sky
+
+screen.post = Post-Processing
+screen.bloom = Bloom 
+screen.exposure = Exposure 
+screen.agx = AGX Look Transform

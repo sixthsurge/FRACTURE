@@ -12,7 +12,9 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
-		final var screenShadow = screen.child("shadow");
+		final var screenLighting = screen.child("lighting");
+
+		final var screenShadow = screenLighting.child("shadow");
 		screenShadow.option("SHADOW_ENABLED", OptionType.boolType(true), false);
 		screenShadow.option(
 			"SHADOW_CASCADE_COUNT",
@@ -30,7 +32,21 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
-		final var screenFog = screen.child("fog");
+		final var screenGtao = screenLighting.child("gtao");
+		screenGtao.option("GTAO_ENABLED", OptionType.boolType(true), false);
+		screenGtao.option("GTAO_SLICE_COUNT", OptionType.intType(1, 64, 1, 2), false);
+		screenGtao.option("GTAO_HORIZON_STEP_COUNT", OptionType.intType(1, 64, 1, 4), false);
+		screenGtao.option("GTAO_RADIUS", OptionType.floatType(0.25f, 16.0f, 0.25f, 4.0f), true);
+
+		final var screenRsm = screenLighting.child("rsm");
+		screenRsm.option("RSM_ENABLED", OptionType.boolType(true), false);
+		screenRsm.option("RSM_STEP_COUNT", OptionType.intType(1, 64, 1, 12), false);
+		screenRsm.option("RSM_RADIUS", OptionType.floatType(0.25f, 16.0f, 0.25f, 4.0f), true);
+		screenRsm.option("RSM_DISTANCE_FALLOFF", OptionType.floatType(0.01f, 1.0f, 0.1f, 0.25f), true);
+
+		final var screenAtmospherics = screen.child("atmospherics");
+
+		final var screenFog = screenAtmospherics.child("fog");
 		screenFog.option(
 			"FOG_VOLUME_SIZE_X",
 			OptionType.intType(32, 512, 16, 240),
@@ -52,7 +68,7 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
-		final var screenSky = screen.child("sky");
+		final var screenSky = screenAtmospherics.child("sky");
 		screenSky.option(
 			"SUN_ANGULAR_RADIUS",
 			OptionType.floatType(0.1f, 10.0f, 0.05f, 0.5f),
@@ -64,7 +80,9 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
-		final var screenBloom = screen.child("bloom");
+		final var screenPost = screen.child("post");
+
+		final var screenBloom = screenPost.child("bloom");
 		screenBloom.option("BLOOM_ENABLED", OptionType.boolType(true), false);
 		screenBloom.option(
 			"BLOOM_INTENSITY",
@@ -74,7 +92,7 @@ public class FractureSettings implements PackSettings {
 		screenBloom
 			.option("BLOOM_TILE_COUNT", OptionType.intType(1, 12, 1, 7), false);
 
-		final var screenExposure = screen.child("exposure");
+		final var screenExposure = screenPost.child("exposure");
 		screenExposure
 			.option("AUTO_EXPOSURE_ENABLED", OptionType.boolType(true), false);
 		screenExposure.option(
@@ -84,7 +102,7 @@ public class FractureSettings implements PackSettings {
 		);
 		screenExposure.option(
 			"EXPOSURE_TARGET_B",
-			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.75f),
+			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.90f),
 			true
 		);
 		screenExposure.option(
@@ -98,7 +116,7 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
-		final var screenAgx = screen.child("agx");
+		final var screenAgx = screenPost.child("agx");
 		screenAgx.option(
 			"AGX_OFFSET_R",
 			OptionType.floatType(-1.0f, 1.0f, 0.01f, 0.0f),

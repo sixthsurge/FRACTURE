@@ -3,13 +3,9 @@ public module gtao;
 import aperture;
 import lib.util.math;
 import lib.util.space_conversion;
+import settings;
 
 namespace gtao {
-internal static const float RADIUS = 3.0; // Meters.
-internal static const float FALLOFF_START = 0.75; // Fraction of radius.
-internal static const int SLICE_COUNT = 2;
-internal static const int HORIZON_STEP_COUNT = 4;
-
 internal float integrate_arc(float2 h, float n, float cos_n) {
 	float2 tmp = cos_n + 2.0 * h * sin(n) - cos(2.0 * h - n);
 	return 0.25 * (tmp.x + tmp.y);
@@ -23,13 +19,19 @@ internal float compute_maximum_horizon_angle(
 	float radius,
 	float dither
 ) {
+	const float FALLOFF_START = 0.75;
 	const float STEP_GROWTH_RATIO = 2.0;
 	const float INITIAL_STEP_SIZE_SCALE = STEP_GROWTH_RATIO == 1.0
-		? 1.0 / float(HORIZON_STEP_COUNT)
+		? 1.0 / float(userSettings.GTAO_HORIZON_STEP_COUNT)
 		: (1.0 - STEP_GROWTH_RATIO)
-			/ (1.0 - pow(STEP_GROWTH_RATIO, float(HORIZON_STEP_COUNT)));
+			/ (1.0
+			   - pow(
+				   STEP_GROWTH_RATIO,
+				   float(userSettings.GTAO_HORIZON_STEP_COUNT)
+			   ));
 
-	float step_size = (INITIAL_STEP_SIZE_SCALE * RADIUS) * radius;
+	float step_size
+		= INITIAL_STEP_SIZE_SCALE * userSettings.GTAO_RADIUS * radius;
 
 	float max_cos_theta = -1.0;
 
@@ -39,7 +41,8 @@ internal float compute_maximum_horizon_angle(
 	float2 ray_pos = pos_screen.xy
 		+ normalize(ray_step) * max_of(rcp(float2(ap.game.renderSize)));
 
-	for (int i = 0; i < HORIZON_STEP_COUNT; ++i, ray_pos += ray_step) {
+	for (int i = 0; i < userSettings.GTAO_HORIZON_STEP_COUNT;
+		 ++i, ray_pos += ray_step) {
 		float2 dithered_pos = ray_pos + dither * ray_step;
 		int2 texel
 			= int2(saturate(dithered_pos) * float2(ap.game.renderSize) - 0.5);
@@ -54,9 +57,11 @@ internal float compute_maximum_horizon_angle(
 		float len_sq = length_squared(offset);
 		float norm = rsqrt(len_sq);
 
-		float distance_falloff = pow4(
-			linstep(FALLOFF_START * RADIUS, RADIUS, len_sq * norm * rcp(radius))
-		);
+		float distance_falloff = pow4(linstep(
+			FALLOFF_START * userSettings.GTAO_RADIUS,
+			userSettings.GTAO_RADIUS,
+			len_sq * norm * rcp(radius)
+		));
 
 		float cos_theta = dot(viewer_dir, offset) * norm;
 		cos_theta = lerp(cos_theta, -1.0, distance_falloff);
@@ -80,6 +85,10 @@ Result calculate(
 	float3 normal_view,
 	float2 dither
 ) {
+	if (!userSettings.GTAO_ENABLED) {
+		return Result(1.0, 0.0, normal_view);
+	}
+
 	float ao = 0.0;
 	float ambient_sss = 0.0;
 	float3 bent_normal = float3(0.0);
@@ -104,8 +113,9 @@ Result calculate(
 	}
 #endif
 
-	for (int i = 0; i < SLICE_COUNT; ++i) {
-		float slice_angle = (i + dither.x) * (PI / float(SLICE_COUNT));
+	for (int i = 0; i < userSettings.GTAO_SLICE_COUNT; ++i) {
+		float slice_angle
+			= (i + dither.x) * (PI / float(userSettings.GTAO_SLICE_COUNT));
 
 		float3 slice_dir = float3(cos(slice_angle), sin(slice_angle), 0.0);
 		float3 slice_dir_view = mul(local_to_view, slice_dir);
@@ -155,8 +165,9 @@ Result calculate(
 
 	const float albedo = 0.2; // albedo of surroundings (for multibounce approx)
 
-	ao *= rcp(float(SLICE_COUNT));
-	ambient_sss = saturate(ambient_sss * rcp(float(SLICE_COUNT)));
+	ao *= rcp(float(userSettings.GTAO_SLICE_COUNT));
+	ambient_sss
+		= saturate(ambient_sss * rcp(float(userSettings.GTAO_SLICE_COUNT)));
 	ao = saturate(ao / (albedo * ao + (1.0 - albedo)));
 
 	bent_normal = normalize(normalize(bent_normal) - 0.5 * viewer_dir);

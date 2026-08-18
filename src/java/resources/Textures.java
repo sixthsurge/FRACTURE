@@ -35,14 +35,20 @@ public class Textures {
 	public final Texture2D atmosphereMultiscatter;
 	public final Texture2D atmosphereSkyView;
 
+	public final Texture2D qresTemporalDataA;
+	public final Texture2D qresTemporalDataB;
+	public final TextureReference qresTemporalDataCurrent;
+	public final TextureReference qresTemporalDataPrevious;
+
 	public final Texture2D gtaoOutputA;
 	public final Texture2D gtaoOutputB;
-	public final Texture2D gtaoTemporalDataA;
-	public final Texture2D gtaoTemporalDataB;
 	public final TextureReference gtaoOutputCurrent;
 	public final TextureReference gtaoOutputPrevious;
-	public final TextureReference gtaoTemporalDataCurrent;
-	public final TextureReference gtaoTemporalDataPrevious;
+
+	public final Texture2D rsmOutputA;
+	public final Texture2D rsmOutputB;
+	public final TextureReference rsmOutputCurrent;
+	public final TextureReference rsmOutputPrevious;
 
 	public final ShadowTexture shadowColor;
 
@@ -158,60 +164,85 @@ public class Textures {
 			)
 			.create();
 
+		// Quarter-res temporal data (GTAO + RSM)
+
+		final var qresWidth = Math.ceilDiv(screen.renderWidth(), 2);
+		final var qresHeight = Math.ceilDiv(screen.renderHeight(), 2);
+
+		qresTemporalDataA
+			= pipeline
+				  .texture2D(
+					  "tex_qres_temporal_data_a",
+					  TextureFormat.RG16_SFLOAT
+				  )
+				  .size(qresWidth, qresHeight)
+				  .create();
+		qresTemporalDataB
+			= pipeline
+				  .texture2D(
+					  "tex_qres_temporal_data_b",
+					  TextureFormat.RG16_SFLOAT
+				  )
+				  .size(qresWidth, qresHeight)
+				  .create();
+		qresTemporalDataCurrent
+			= pipeline
+				  .reference(
+					  "tex_qres_temporal_data_current",
+					  qresTemporalDataA.format()
+				  )
+				  .size(qresWidth, qresHeight)
+				  .createEmpty();
+		qresTemporalDataPrevious
+			= pipeline
+				  .reference(
+					  "tex_qres_temporal_data_prev",
+					  qresTemporalDataA.format()
+				  )
+				  .size(qresWidth, qresHeight)
+				  .createEmpty();
 		// GTAO
 
-		final var gtaoWidth = Math.ceilDiv(screen.renderWidth(), 2);
-		final var gtaoHeight = Math.ceilDiv(screen.renderHeight(), 2);
 		gtaoOutputA
 			= pipeline
 				  .texture2D("tex_gtao_output_a", TextureFormat.RGBA16_SFLOAT)
-				  .size(gtaoWidth, gtaoHeight)
+				  .size(qresWidth, qresHeight)
 				  .create();
 		gtaoOutputB
 			= pipeline
 				  .texture2D("tex_gtao_output_b", TextureFormat.RGBA16_SFLOAT)
-				  .size(gtaoWidth, gtaoHeight)
-				  .create();
-		gtaoTemporalDataA
-			= pipeline
-				  .texture2D(
-					  "tex_gtao_temporal_data_a",
-					  TextureFormat.RG16_SFLOAT
-				  )
-				  .size(gtaoWidth, gtaoHeight)
-				  .create();
-		gtaoTemporalDataB
-			= pipeline
-				  .texture2D(
-					  "tex_gtao_temporal_data_b",
-					  TextureFormat.RG16_SFLOAT
-				  )
-				  .size(gtaoWidth, gtaoHeight)
+				  .size(qresWidth, qresHeight)
 				  .create();
 		gtaoOutputCurrent
 			= pipeline
 				  .reference("tex_gtao_output_current", gtaoOutputA.format())
-				  .size(gtaoWidth, gtaoHeight)
-				  .createEmpty();
-		gtaoTemporalDataCurrent
-			= pipeline
-				  .reference(
-					  "tex_gtao_temporal_data_current",
-					  gtaoTemporalDataA.format()
-				  )
-				  .size(gtaoWidth, gtaoHeight)
+				  .size(qresWidth, qresHeight)
 				  .createEmpty();
 		gtaoOutputPrevious
 			= pipeline.reference("tex_gtao_output_prev", gtaoOutputA.format())
-				  .size(gtaoWidth, gtaoHeight)
+				  .size(qresWidth, qresHeight)
 				  .createEmpty();
-		gtaoTemporalDataPrevious
+		
+		// RSM
+
+		rsmOutputA
 			= pipeline
-				  .reference(
-					  "tex_gtao_temporal_data_prev",
-					  gtaoTemporalDataA.format()
-				  )
-				  .size(gtaoWidth, gtaoHeight)
+				  .texture2D("tex_rsm_output_a", TextureFormat.RGBA16_SFLOAT)
+				  .size(qresWidth, qresHeight)
+				  .create();
+		rsmOutputB
+			= pipeline
+				  .texture2D("tex_rsm_output_b", TextureFormat.RGBA16_SFLOAT)
+				  .size(qresWidth, qresHeight)
+				  .create();
+		rsmOutputCurrent
+			= pipeline
+				  .reference("tex_rsm_output_current", rsmOutputA.format())
+				  .size(qresWidth, qresHeight)
+				  .createEmpty();
+		rsmOutputPrevious
+			= pipeline.reference("tex_rsm_output_prev", rsmOutputA.format())
+				  .size(qresWidth, qresHeight)
 				  .createEmpty();
 
 		// Fog
@@ -279,11 +310,13 @@ public class Textures {
 
 		gtaoOutputCurrent.set(oddFrame ? gtaoOutputA : gtaoOutputB);
 		gtaoOutputPrevious.set(oddFrame ? gtaoOutputB : gtaoOutputA);
-		gtaoTemporalDataCurrent.set(
-			oddFrame ? gtaoTemporalDataA : gtaoTemporalDataB
+		rsmOutputCurrent.set(oddFrame ? rsmOutputA : rsmOutputB);
+		rsmOutputPrevious.set(oddFrame ? rsmOutputB : rsmOutputA);
+		qresTemporalDataCurrent.set(
+			oddFrame ? qresTemporalDataA : qresTemporalDataB
 		);
-		gtaoTemporalDataPrevious.set(
-			oddFrame ? gtaoTemporalDataB : gtaoTemporalDataA
+		qresTemporalDataPrevious.set(
+			oddFrame ? qresTemporalDataB : qresTemporalDataA
 		);
 	}
 }

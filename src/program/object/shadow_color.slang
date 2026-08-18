@@ -1,13 +1,15 @@
 import aperture;
+import lib.util.encoding;
 import object_shader;
 
 struct FragmentOutput {
-	float3 color;
+	float4 color_and_normal;
 }
 
 struct VertexOutput {
 	float2 uv : TEXCOORD;
 	nointerpolation uint color_packed;
+	nointerpolation uint normal_packed;
 }
 
 struct ShadowObject : Shader<VertexOutput, FragmentOutput> {
@@ -15,6 +17,9 @@ struct ShadowObject : Shader<VertexOutput, FragmentOutput> {
 		pos = v.pos();
 		output.uv = v.uv();
 		output.color_packed = packUnorm4x8(v.color());
+		output.normal_packed = packUnorm4x8(
+			float4(v.normal().orElse(float3(0.0, 1.0, 0.0)) * 0.5 + 0.5, 0.0)
+		);
 	}
 
 	static FragmentOutput
@@ -24,9 +29,19 @@ struct ShadowObject : Shader<VertexOutput, FragmentOutput> {
 			color *= texture.sampleTexture(input.uv);
 			ap.discardCutout(color);
 		}
+		float3 normal
+			= unpackUnorm4x8ToFloat(input.normal_packed).xyz * 2.0 - 1.0;
 		color.rgb = lerp(float3(1.0), color.rgb, color.a);
-		color.rgb = lerp(color.rgb, float3(0.0), color.a);
-		return FragmentOutput(color.rgb);
+
+		float2 normal_octahedral = encode_octahedral(normal);
+		uint normal_packed = pack_unorm_arb(
+			float4(normal_octahedral, 0.0, 0.0),
+			uint4(4, 4, 0, 0)
+		);
+
+		return FragmentOutput(
+			float4(color.rgb, float(normal_packed) * rcp(255.0))
+		);
 	}
 }
 

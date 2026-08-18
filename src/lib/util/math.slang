@@ -110,6 +110,12 @@ constexpr float4 project(float4x4 m, float3 pos) {
 }
 
 [ForceInline]
+constexpr float4 project_inv(float4x4 m, float3 pos) {
+	return (pos.xyzz - float4(m[0].w, m[1].w, m[2].w, m[3].w))
+		/ float4(m[0].x, m[1].y, m[2].z, m[3].z);
+}
+
+[ForceInline]
 constexpr float3 project_and_divide(float4x4 m, float3 pos) {
 	float4 homogenous = project(m, pos);
 	return homogenous.xyz / homogenous.w;

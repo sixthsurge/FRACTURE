@@ -25,11 +25,20 @@ public class ObjectShaders {
 
 	public static void setupShadow(PipelineConfig pipeline, Textures textures) {
 		if (pipeline.settings().getBoolValue("SHADOW_ENABLED")) {
-			pipeline.object(
-				ProgramUsage.SHADOW,
-				"program/object/shadow",
-				"ShadowObject"
-			);
+			if (pipeline.settings().getBoolValue("RSM_ENABLED")) {
+				pipeline.object(
+					ProgramUsage.SHADOW,
+					"program/object/shadow_color",
+					"ShadowObject"
+				)
+					.writes("color_and_normal", textures.shadowColor);
+			} else {
+				pipeline.object(
+					ProgramUsage.SHADOW,
+					"program/object/shadow",
+					"ShadowObject"
+				);
+			}
 
 			final var translucentShadowUsages = new ProgramUsage[] {
 				ProgramUsage.SHADOW_TERRAIN_TRANSLUCENT,
@@ -41,10 +50,10 @@ public class ObjectShaders {
 				pipeline
 					.object(
 						usage,
-						"program/object/shadow_translucent",
+						"program/object/shadow_color",
 						"ShadowObject"
 					)
-					.writes("color", textures.shadowColor);
+					.writes("color_and_normal", textures.shadowColor);
 			}
 		}
 	}
