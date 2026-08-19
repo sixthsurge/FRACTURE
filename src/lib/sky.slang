@@ -105,7 +105,7 @@ float3 unstable_star_field(float2 coord, float star_threshold) {
 		- twinkle_amount
 			* cos(ap.timing.timeElapsed * twinkle_speed + twinkle_offset);
 
-	return 0.0025 * star * color;
+	return 0.008 * star * color;
 }
 
 // Stabilizes the star field by sampling at the four neighboring integer
@@ -128,7 +128,8 @@ float3 stable_star_field(float2 coord, float star_threshold) {
 
 float3 calculate_star_radiance(float3 dir, float galaxy_luminance) {
 	// Adjust star threshold so that brightest stars appear first
-	float star_threshold = 0.99 - 0.08 * linstep(0.1, 0.8, galaxy_luminance);
+	float star_threshold
+		= 0.99 - 0.08 * pow2(linstep(0.1, 0.8, galaxy_luminance));
 
 	// Project ray direction onto the plane
 	float2 coord
