@@ -34,15 +34,33 @@ public class FractureSettings implements PackSettings {
 
 		final var screenGtao = screenLighting.child("gtao");
 		screenGtao.option("GTAO_ENABLED", OptionType.boolType(true), false);
-		screenGtao.option("GTAO_SLICE_COUNT", OptionType.intType(1, 64, 1, 2), false);
-		screenGtao.option("GTAO_HORIZON_STEP_COUNT", OptionType.intType(1, 64, 1, 4), false);
-		screenGtao.option("GTAO_RADIUS", OptionType.floatType(0.25f, 16.0f, 0.25f, 4.0f), true);
+		screenGtao
+			.option("GTAO_SLICE_COUNT", OptionType.intType(1, 64, 1, 2), false);
+		screenGtao.option(
+			"GTAO_HORIZON_STEP_COUNT",
+			OptionType.intType(1, 64, 1, 4),
+			false
+		);
+		screenGtao.option(
+			"GTAO_RADIUS",
+			OptionType.floatType(0.25f, 16.0f, 0.25f, 4.0f),
+			true
+		);
 
 		final var screenRsm = screenLighting.child("rsm");
 		screenRsm.option("RSM_ENABLED", OptionType.boolType(true), false);
-		screenRsm.option("RSM_STEP_COUNT", OptionType.intType(1, 64, 1, 12), false);
-		screenRsm.option("RSM_RADIUS", OptionType.floatType(0.25f, 16.0f, 0.25f, 4.0f), true);
-		screenRsm.option("RSM_DISTANCE_FALLOFF", OptionType.floatType(0.01f, 1.0f, 0.1f, 0.25f), true);
+		screenRsm
+			.option("RSM_STEP_COUNT", OptionType.intType(1, 64, 1, 12), false);
+		screenRsm.option(
+			"RSM_RADIUS",
+			OptionType.floatType(0.25f, 16.0f, 0.25f, 4.0f),
+			true
+		);
+		screenRsm.option(
+			"RSM_DISTANCE_FALLOFF",
+			OptionType.floatType(0.01f, 1.0f, 0.1f, 0.25f),
+			true
+		);
 
 		final var screenAtmospherics = screen.child("atmospherics");
 
@@ -81,6 +99,9 @@ public class FractureSettings implements PackSettings {
 		);
 
 		final var screenPost = screen.child("post");
+
+		final var screenTaa = screenPost.child("taa");
+		screenTaa.option("TAA_ENABLED", OptionType.boolType(true), false);
 
 		final var screenBloom = screenPost.child("bloom");
 		screenBloom.option("BLOOM_ENABLED", OptionType.boolType(true), false);

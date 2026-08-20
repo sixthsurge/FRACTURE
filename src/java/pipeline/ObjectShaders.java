@@ -26,11 +26,12 @@ public class ObjectShaders {
 	public static void setupShadow(PipelineConfig pipeline, Textures textures) {
 		if (pipeline.settings().getBoolValue("SHADOW_ENABLED")) {
 			if (pipeline.settings().getBoolValue("RSM_ENABLED")) {
-				pipeline.object(
-					ProgramUsage.SHADOW,
-					"program/object/shadow_color",
-					"ShadowObject"
-				)
+				pipeline
+					.object(
+						ProgramUsage.SHADOW,
+						"program/object/shadow_color",
+						"ShadowObject"
+					)
 					.writes("color_and_normal", textures.shadowColor);
 			} else {
 				pipeline.object(

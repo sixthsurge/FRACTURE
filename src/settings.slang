@@ -2,6 +2,7 @@
 public module settings;
 
 struct GlobalBufferData {
+    float2 taa_jitter;
     float3 light_dir_world;
     float3 sun_dir_world;
     float3 moon_dir_world;
@@ -34,6 +35,7 @@ extern static const int value_SHADOW_DISTANCE;
 extern static const bool value_SHADOW_ENABLED;
 extern static const int value_SHADOW_RESOLUTION;
 extern static const float value_SUN_ANGULAR_RADIUS;
+extern static const bool value_TAA_ENABLED;
 
 struct Settings {
     float AGX_OFFSET_B;
@@ -73,6 +75,7 @@ struct Settings {
     static const bool SHADOW_ENABLED = value_SHADOW_ENABLED;
     static const int SHADOW_RESOLUTION = value_SHADOW_RESOLUTION;
     static const float SUN_ANGULAR_RADIUS = value_SUN_ANGULAR_RADIUS;
+    static const bool TAA_ENABLED = value_TAA_ENABLED;
 };
 
 ConstantBuffer<Settings, ScalarDataLayout> userSettings;

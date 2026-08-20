@@ -1,10 +1,10 @@
 import aperture;
-import lib.atmosphere;
+import lib.atmospherics.atmosphere;
+import lib.atmospherics.fog;
+import lib.atmospherics.sky;
 import lib.gbuffer_packing;
 import lib.lighting.main_lighting;
 import lib.lighting.material;
-import lib.fog;
-import lib.sky;
 import lib.util.color;
 import lib.util.math;
 import lib.util.random;
@@ -105,7 +105,7 @@ struct QuarterResLighting {
 }
 
 [shader("compute")]
-[numthreads(16, 16, 1)]
+[numthreads(16, 16)]
 void main(int2 icoord: SV_DispatchThreadID) {
 	float2 coord = float2(icoord) + 0.5;
 	float2 ncoord = coord / float2(ap.game.renderSize);
@@ -163,6 +163,12 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			sqrt(saturate(1.0 - length_squared(upscaled.gtao_output.zw)))
 		)
 	);
+
+	if (userSettings.TAA_ENABLED) {
+		// Animate dither when TAA is enabled so it can help a little with
+		// the noise.
+		dither = r2(ap.timing.frameCounter, dither);
+	}
 
 	float3 radiance = calculate_outgoing_radiance(
 		material,

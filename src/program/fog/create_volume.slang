@@ -1,5 +1,5 @@
 import aperture;
-import lib.fog;
+import lib.atmospherics.fog;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;

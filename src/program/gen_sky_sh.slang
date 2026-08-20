@@ -1,5 +1,5 @@
 import aperture;
-import lib.atmosphere;
+import lib.atmospherics.atmosphere;
 import lib.buffer.sky_sh;
 import lib.util.math;
 import lib.util.random;

@@ -4,7 +4,7 @@ import lib.post.tonemapping;
 import lib.util.dithering;
 import settings;
 
-Texture2D<float3> tex_scene;
+Texture2D<float3> tex_input;
 Texture2D<float3> tex_bloom;
 Texture2D<float> tex_blue_noise;
 
@@ -35,7 +35,7 @@ float4 main(float2 coord: SV_Position) {
 	int2 icoord = int2(coord);
 	float2 ncoord = (icoord + 0.5) / ap.game.screenSize;
 
-	float3 color = tex_scene[icoord];
+	float3 color = tex_input[icoord];
 	float dither = tex_blue_noise[icoord & 511];
 
 	color = apply_bloom(icoord, ncoord, color);

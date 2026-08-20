@@ -6,7 +6,7 @@ Texture2D<float3> input_bigger;
 extern static const int DST_LOD;
 
 [shader("compute")]
-[numthreads(16, 16, 1)]
+[numthreads(16, 16)]
 void main(int2 icoord: SV_DispatchThreadID) {
 	int w, h;
 	dest[DST_LOD].GetDimensions(w, h);

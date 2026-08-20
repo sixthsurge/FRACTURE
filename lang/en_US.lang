@@ -10,6 +10,7 @@ screen.fog = Fog
 screen.sky = Sky
 
 screen.post = Post-Processing
+screen.taa = TAA
 screen.bloom = Bloom 
 screen.exposure = Exposure 
 screen.agx = AGX Look Transform

@@ -59,7 +59,7 @@ extension<T> Texture2D<T>
 
 	// 9-taps.
 	// Returns filtered value and confidence factor.
-	Tuple<T, float> catmull_rom_filter(float2 coord, int lod) {
+	Tuple<T, float> sample_catmull_rom(float2 coord, int lod) {
 		// Source:
 		// https://gist.github.com/TheRealMJP/c83b8c0f46b63f3a88a5986f4fa982b1.
 		// License:
@@ -165,7 +165,7 @@ extension<T> Texture2D<T>
 	// Ignores the corner texels, reducing the overhead from 9 to 5 bilinear
 	// samples.
 	// 5 taps.
-	T catmull_rom_filter_fast(float2 coord, int lod, float sharpness) {
+	T sample_catmull_rom_fast(float2 coord, int lod, float sharpness) {
 		int w, h, levels;
 		GetDimensions(lod, w, h, levels);
 		float2 res = float2(w, h);

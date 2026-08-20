@@ -2,9 +2,9 @@
 // - Calculate reflection and refraction.
 
 import aperture;
-import lib.atmosphere;
+import lib.atmospherics.atmosphere;
+import lib.atmospherics.fog;
 import lib.gbuffer_packing;
-import lib.fog;
 import lib.lighting.brdf;
 import lib.lighting.material;
 import lib.mat_ids;
@@ -68,7 +68,7 @@ struct FragmentOutput {
 }
 
 [shader("compute")]
-[numthreads(16, 16, 1)]
+[numthreads(16, 16)]
 void main(int2 icoord: SV_DispatchThreadID) {
 	if (any(icoord >= ap.game.renderSize)) {
 		return;

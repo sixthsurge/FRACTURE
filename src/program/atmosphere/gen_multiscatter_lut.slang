@@ -1,5 +1,5 @@
 import aperture;
-import lib.atmosphere;
+import lib.atmospherics.atmosphere;
 import lib.util.math;
 import lib.util.space_conversion;
 import settings;
@@ -11,7 +11,7 @@ static const atmosphere.AtmosphereParameters ATMOSPHERE_PARAMS
 	= atmosphere.EARTH_PARAMS;
 
 [shader("compute")]
-[numthreads(8, 8, 1)]
+[numthreads(8, 8)]
 void main(int2 icoord: SV_DispatchThreadID) {
 	int w, h;
 	tex_atmosphere_multiscatter.GetDimensions(w, h);

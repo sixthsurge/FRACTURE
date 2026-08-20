@@ -14,18 +14,33 @@ public class PostRenderPasses {
 		pipeline.stage(ProgramStage.POST_RENDER)
 			.compute("specular", "program/specular", "main")
 			.dispatch2D(
-				Math.ceilDiv(screen.windowWidth(), 16),
-				Math.ceilDiv(screen.windowHeight(), 16)
+				Math.ceilDiv(screen.renderWidth(), 16),
+				Math.ceilDiv(screen.renderHeight(), 16)
 			)
 			.overrideObject("tex_scene_write", textures.scene.back().name())
 			.overrideObject("tex_scene", textures.scene.front().name());
 		textures.scene.flip();
 
 		setupExposure(pipeline, screen, textures);
-		setupBloom(pipeline, screen, textures, textures.scene.front());
+
+		String nextPassInput = null;
+		if (pipeline.settings().getBoolValue("TAA_ENABLED")) {
+			pipeline.stage(ProgramStage.POST_RENDER)
+				.compute("taa", "program/post/taa", "main")
+				.dispatch2D(
+					Math.ceilDiv(screen.windowWidth(), 16),
+					Math.ceilDiv(screen.windowHeight(), 16)
+				)
+				.overrideObject("tex_scene", textures.scene.front().name());
+			nextPassInput = textures.taaOutputPrevious.name();
+		} else {
+			nextPassInput = textures.scene.front().name();
+		}
+
+		setupBloom(pipeline, screen, textures, nextPassInput);
 
 		pipeline.combinationPass("program/post/combination")
-			.overrideObject("tex_scene", textures.scene.front().name())
+			.overrideObject("tex_input", nextPassInput)
 			.overrideObject("tex_bloom", textures.bloom.front().name());
 	}
 
@@ -86,7 +101,7 @@ public class PostRenderPasses {
 		PipelineConfig pipeline,
 		Screen screen,
 		Textures textures,
-		Texture2D sourceTexture
+		String sourceTexture
 	) {
 		if (!pipeline.settings().getBoolValue("BLOOM_ENABLED")) {
 			return;
@@ -105,8 +120,8 @@ public class PostRenderPasses {
 
 		for (int srcLod = 0; srcLod < tileCount - 1; srcLod++) {
 			// Read from sourceTexture for lod 0 (avoid initial copy)
-			Texture2D srcTex
-				= srcLod == 0 ? sourceTexture : textures.bloom.front();
+			String srcTex
+				= srcLod == 0 ? sourceTexture : textures.bloom.front().name();
 			int destMipScale = Math.powExact(2, srcLod + 1);
 
 			pipeline.stage(ProgramStage.POST_RENDER)
@@ -120,7 +135,7 @@ public class PostRenderPasses {
 					Math.ceilDiv(screen.windowHeight(), 16 * destMipScale)
 				)
 				.overrideObject("dest", textures.bloom.back().name())
-				.overrideObject("input", srcTex.name())
+				.overrideObject("input", srcTex)
 				.exportInt("INPUT_LOD", srcLod);
 			textures.bloom.flip();
 		}
@@ -135,7 +150,7 @@ public class PostRenderPasses {
 		for (int lod = 0; lod < tileCount; lod++) {
 			// Read from sourceTexture for lod 0 (avoid initial copy)
 			final var srcTex
-				= lod == 0 ? sourceTexture : textures.bloom.front();
+				= lod == 0 ? sourceTexture : textures.bloom.front().name();
 			final var mipScale = Math.powExact(2, lod);
 
 			pipeline.stage(ProgramStage.POST_RENDER)
@@ -151,7 +166,7 @@ public class PostRenderPasses {
 					),
 					Math.ceilDiv(screen.windowHeight(), mipScale)
 				)
-				.overrideObject("input", srcTex.name())
+				.overrideObject("input", srcTex)
 				.overrideObject("dest", textures.bloom.back().name())
 				.exportInt("LOD", lod);
 			textures.bloom.flip();

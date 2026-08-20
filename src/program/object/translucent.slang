@@ -1,10 +1,10 @@
 import aperture;
-import lib.atmosphere;
+import lib.atmospherics.atmosphere;
 import lib.mat_ids;
 import lib.lighting.main_lighting;
 import lib.lighting.material;
 import lib.gbuffer_packing;
-import lib.fog;
+import lib.atmospherics.fog;
 import lib.util.color;
 import lib.util.math;
 import lib.util.random;
@@ -50,6 +50,12 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 		output.normal_packed
 			= packUnorm4x8(float4(normal_world * 0.5 + 0.5, 1.0));
 		output.tangent_packed = packUnorm4x8(tangent_world * 0.5 + 0.5);
+	}
+
+	override static float4
+	transformClipSpace(float4 pos_clip, VertexOutput data) {
+		pos_clip.xy += buf_global.taa_jitter * pos_clip.w;
+		return pos_clip;
 	}
 
 	static FragmentOutput
@@ -111,6 +117,12 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 		Material material = Material.get(srgb_eotf_inv(albedo.rgb), input.id);
 		if (userSettings.LABPBR_SUPPORT_ENABLED && input.id != MAT_WATER) {
 			material.apply_specular_map(specular_map);
+		}
+
+		if (userSettings.TAA_ENABLED) {
+			// Animate dither when TAA is enabled so it can help a little with
+			// the noise.
+			dither = r2(ap.timing.frameCounter, dither);
 		}
 
 		float3 radiance = calculate_outgoing_radiance(

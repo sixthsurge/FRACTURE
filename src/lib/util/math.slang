@@ -105,14 +105,11 @@ constexpr float3 transform(float4x4 m, float3 pos) {
 
 [ForceInline]
 constexpr float4 project(float4x4 m, float3 pos) {
+	/*
 	return float4(m[0].x, m[1].y, m[2].z, m[3].z) * pos.xyzz
 		+ float4(m[0].w, m[1].w, m[2].w, m[3].w);
-}
-
-[ForceInline]
-constexpr float4 project_inv(float4x4 m, float3 pos) {
-	return (pos.xyzz - float4(m[0].w, m[1].w, m[2].w, m[3].w))
-		/ float4(m[0].x, m[1].y, m[2].z, m[3].z);
+	*/
+	return mul(m, float4(pos, 1.0));
 }
 
 [ForceInline]

@@ -18,6 +18,19 @@ float3 srgb_eotf_inv(float3 srgb) {
 	return srgb * (srgb * (srgb * 0.305306011 + 0.682171111) + 0.012522878);
 }
 
+// Source:
+// https://en.wikipedia.org/wiki/YCoCg#Conversion_with_the_RGB_color_model
+float3 rgb_to_ycocg(float3 rgb) {
+	const float3x3 CM
+		= float3x3(0.25, 0.5, 0.25, 0.5, 0.0, -0.5, -0.25, 0.5, -0.25);
+	return mul(CM, rgb);
+}
+
+float3 ycocg_to_rgb(float3 ycocg) {
+	float tmp = ycocg.x - ycocg.z;
+	return float3(tmp + ycocg.y, ycocg.x + ycocg.z, tmp - ycocg.y);
+}
+
 // Calculate the colour of a blackbody emitter from its temperature according to
 // Planck's law. Source:
 // https://github.com/Jessie-LC/open-source-utility-code/blob/main/advanced/blackbody.glsl

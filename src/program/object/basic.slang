@@ -38,6 +38,12 @@ struct BasicObject : Shader<VertexOutput, FragmentOutput> {
 		output.tangent_packed = packUnorm4x8(tangent_world * 0.5 + 0.5);
 	}
 
+	override static float4
+	transformClipSpace(float4 pos_clip, VertexOutput data) {
+		pos_clip.xy += buf_global.taa_jitter * pos_clip.w;
+		return pos_clip;
+	}
+
 	static FragmentOutput
 	shadeSurface(PixelData object_data, VertexOutput input) {
 		var albedo = unpackUnorm4x8ToFloat(input.color_packed);

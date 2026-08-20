@@ -26,29 +26,50 @@ public class Textures {
 	public final Flipper<Texture2D> scene;
 	public final Flipper<Texture2D> bloom;
 
+	// TAA
+
+	public final Texture2D taaOutputA;
+	public final Texture2D taaOutputB;
+	public final TextureReference taaOutputCurrent;
+	public final TextureReference taaOutputPrevious;
+
+	// G-Buffer
+
 	public final Texture2D gbufferSolid;
 	public final Texture2D gbufferTranslucent;
 
+	// Hi-Z depth
+
 	public final Texture2D depthHizMinMax;
+
+	// Atmosphere
 
 	public final Texture2D atmosphereTransmittance;
 	public final Texture2D atmosphereMultiscatter;
 	public final Texture2D atmosphereSkyView;
+
+	// Quarter-res general
 
 	public final Texture2D qresTemporalDataA;
 	public final Texture2D qresTemporalDataB;
 	public final TextureReference qresTemporalDataCurrent;
 	public final TextureReference qresTemporalDataPrevious;
 
+	// GTAO
+
 	public final Texture2D gtaoOutputA;
 	public final Texture2D gtaoOutputB;
 	public final TextureReference gtaoOutputCurrent;
 	public final TextureReference gtaoOutputPrevious;
 
+	// RSM
+
 	public final Texture2D rsmOutputA;
 	public final Texture2D rsmOutputB;
 	public final TextureReference rsmOutputCurrent;
 	public final TextureReference rsmOutputPrevious;
+
+	// Shadow
 
 	public final ShadowTexture shadowColor;
 
@@ -79,6 +100,27 @@ public class Textures {
 				  .usesMipmaps()
 				  .create();
 		bloom = new Flipper<Texture2D>(bloomA, bloomB);
+
+		// TAA
+
+		taaOutputA
+			= pipeline
+				  .texture2D("tex_taa_output_a", TextureFormat.RGBA16_SFLOAT)
+				  .windowSize()
+				  .create();
+		taaOutputB
+			= pipeline
+				  .texture2D("tex_taa_output_b", TextureFormat.RGBA16_SFLOAT)
+				  .windowSize()
+				  .create();
+		taaOutputCurrent
+			= pipeline.reference("tex_taa_output_current", taaOutputA.format())
+				  .windowSize()
+				  .createEmpty();
+		taaOutputPrevious
+			= pipeline.reference("tex_taa_output_prev", taaOutputA.format())
+				  .windowSize()
+				  .createEmpty();
 
 		// G-Buffer
 
@@ -164,7 +206,7 @@ public class Textures {
 			)
 			.create();
 
-		// Quarter-res temporal data (GTAO + RSM)
+		// Quarter-res general
 
 		final var qresWidth = Math.ceilDiv(screen.renderWidth(), 2);
 		final var qresHeight = Math.ceilDiv(screen.renderHeight(), 2);
@@ -201,6 +243,7 @@ public class Textures {
 				  )
 				  .size(qresWidth, qresHeight)
 				  .createEmpty();
+
 		// GTAO
 
 		gtaoOutputA
@@ -222,7 +265,7 @@ public class Textures {
 			= pipeline.reference("tex_gtao_output_prev", gtaoOutputA.format())
 				  .size(qresWidth, qresHeight)
 				  .createEmpty();
-		
+
 		// RSM
 
 		rsmOutputA
@@ -236,8 +279,7 @@ public class Textures {
 				  .size(qresWidth, qresHeight)
 				  .create();
 		rsmOutputCurrent
-			= pipeline
-				  .reference("tex_rsm_output_current", rsmOutputA.format())
+			= pipeline.reference("tex_rsm_output_current", rsmOutputA.format())
 				  .size(qresWidth, qresHeight)
 				  .createEmpty();
 		rsmOutputPrevious
@@ -308,10 +350,15 @@ public class Textures {
 			= state.uniforms().getInt("ap.timing.frameCounter");
 		final var oddFrame = (frameCounter & 1) == 0;
 
+		taaOutputCurrent.set(oddFrame ? taaOutputA : taaOutputB);
+		taaOutputPrevious.set(oddFrame ? taaOutputB : taaOutputA);
+
 		gtaoOutputCurrent.set(oddFrame ? gtaoOutputA : gtaoOutputB);
 		gtaoOutputPrevious.set(oddFrame ? gtaoOutputB : gtaoOutputA);
+
 		rsmOutputCurrent.set(oddFrame ? rsmOutputA : rsmOutputB);
 		rsmOutputPrevious.set(oddFrame ? rsmOutputB : rsmOutputA);
+
 		qresTemporalDataCurrent.set(
 			oddFrame ? qresTemporalDataA : qresTemporalDataB
 		);

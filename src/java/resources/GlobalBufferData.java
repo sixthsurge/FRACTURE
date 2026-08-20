@@ -1,11 +1,13 @@
 package resources;
 import dev.irisshaders.aperture.api.pipeline.FrameState;
+import org.joml.Vector2f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 import util.AtmosphereTransmittance;
 import util.Util;
 
 public record GlobalBufferData(
+	Vector2f taa_jitter,
 	Vector3f light_dir_world,
 	Vector3f sun_dir_world,
 	Vector3f moon_dir_world,
@@ -15,6 +17,15 @@ public record GlobalBufferData(
 	float celestial_light_angular_radius
 ) {
 	public static GlobalBufferData get(FrameState state) {
+		final var frameCounter
+			= state.uniforms().getInt("ap.timing.frameCounter");
+		final var renderSize = state.uniforms().getInt2("ap.game.renderSize");
+		final var taaJitter = state.settings().getBoolValue("TAA_ENABLED")
+			? (Util.r2(frameCounter)
+				   .sub(new Vector2f(0.5f)))
+				  .div(new Vector2f(renderSize.x, renderSize.y))
+			: new Vector2f(0.0f);
+
 		final var lightDirWorld
 			= state.uniforms().getFloat3("ap.celestial.position").normalize();
 		final var sunDirWorld = state.uniforms()
@@ -31,7 +42,9 @@ public record GlobalBufferData(
 		// the CIE (2006) 2-deg LMS cone fundamentals
 		final var sunRadiosity = new Vector3f(1.051f, 0.985f, 0.940f);
 
-		final var moonRadiosity = new Vector3f(sunRadiosity).mul(new Vector3f(0.001f, 0.008f, 0.005f));
+		final var moonRadiosity
+			= new Vector3f(sunRadiosity)
+				  .mul(new Vector3f(0.001f, 0.004f, 0.003f));
 
 		final boolean isDay = lightDirWorld.dot(moonDirWorld) < 0.0;
 
@@ -63,6 +76,7 @@ public record GlobalBufferData(
 				* ((float) Math.TAU / 360.0f);
 
 		return new GlobalBufferData(
+			taaJitter,
 			lightDirWorld,
 			sunDirWorld,
 			moonDirWorld,

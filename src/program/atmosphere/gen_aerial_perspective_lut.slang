@@ -1,5 +1,5 @@
 import aperture;
-import lib.atmosphere;
+import lib.atmospherics.atmosphere;
 import lib.util.math;
 import lib.util.space_conversion;
 import settings;
@@ -12,7 +12,7 @@ static const atmosphere.AtmosphereParameters ATMOSPHERE_PARAMS
 	= atmosphere.EARTH_PARAMS;
 
 [shader("compute")]
-[numthreads(16, 16, 1)]
+[numthreads(16, 16)]
 void main(int3 icoord: SV_DispatchThreadID) {
 	float w, h, d;
 	tex_atmosphere_aerial_perspective.GetDimensions(w, h, d);

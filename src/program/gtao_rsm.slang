@@ -19,7 +19,7 @@ Texture2D<uint4> tex_gbuffer_solid;
 Texture2D<float> tex_blue_noise;
 
 [shader("compute")]
-[numthreads(16, 16, 1)]
+[numthreads(16, 16)]
 void main(int2 icoord: SV_DispatchThreadID) {
 	int2 fullres_icoord = icoord * 2;
 	if (any(fullres_icoord >= ap.game.renderSize)) {
@@ -49,12 +49,12 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float3 pos_prev_screen
 		= view_to_screen(pos_prev_view, ap.temporal.projection);
 
-	float4 gtao_output_prev = tex_gtao_output_prev.catmull_rom_filter_fast(
+	float4 gtao_output_prev = tex_gtao_output_prev.sample_catmull_rom_fast(
 		pos_prev_screen.xy,
 		0,
 		0.65
 	);
-	float3 rsm_output_prev = tex_rsm_output_prev.catmull_rom_filter_fast(
+	float3 rsm_output_prev = tex_rsm_output_prev.sample_catmull_rom_fast(
 		pos_prev_screen.xy,
 		0,
 		0.65

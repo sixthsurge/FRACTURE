@@ -5,7 +5,7 @@ Texture2D<float3> input;
 extern static const int INPUT_LOD;
 
 [shader("compute")]
-[numthreads(16, 16, 1)]
+[numthreads(16, 16)]
 void main(int2 icoord: SV_DispatchThreadID) {
 	const int DST_LOD = INPUT_LOD + 1;
 

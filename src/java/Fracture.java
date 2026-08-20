@@ -1,7 +1,11 @@
-import dev.irisshaders.aperture.api.*;
-import dev.irisshaders.aperture.api.objects.*;
-import dev.irisshaders.aperture.api.pipeline.*;
-import dev.irisshaders.aperture.api.renderer.*;
+import dev.irisshaders.aperture.api.ShaderPack;
+import dev.irisshaders.aperture.api.objects.IBlockState;
+import dev.irisshaders.aperture.api.objects.Screen;
+import dev.irisshaders.aperture.api.pipeline.FrameState;
+import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
+import dev.irisshaders.aperture.api.pipeline.ProgramStage;
+import dev.irisshaders.aperture.api.renderer.RendererConfig;
+import org.joml.Vector2f;
 import pipeline.ObjectShaders;
 import pipeline.PostRenderPasses;
 import pipeline.PostShadowPasses;
@@ -9,13 +13,17 @@ import pipeline.PreRenderPasses;
 import pipeline.PreTranslucentPasses;
 import resources.Buffers;
 import resources.Textures;
+import util.Util;
 
 public class Fracture implements ShaderPack {
+	private boolean taaEnabled;
 	Textures textures;
 	Buffers buffers;
 
 	@Override
 	public void configurePipeline(Screen screen, PipelineConfig pipeline) {
+		taaEnabled = pipeline.settings().getBoolValue("TAA_ENABLED");
+
 		textures = new Textures(pipeline, screen);
 		buffers = new Buffers(pipeline);
 

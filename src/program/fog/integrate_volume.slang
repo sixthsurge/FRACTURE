@@ -1,5 +1,5 @@
 import aperture;
-import lib.fog;
+import lib.atmospherics.fog;
 import settings;
 
 RWTexture3D<float3> tex_fog_volume_integrated_light;
@@ -40,7 +40,7 @@ void integrate(
 }
 
 [shader("compute")]
-[numthreads(16, 16, 1)]
+[numthreads(16, 16)]
 void main(int3 icoord: SV_DispatchThreadID) {
 	if ((ap.timing.frameCounter & 1) == 0) {
 		integrate(tex_fog_volume_light_a, tex_fog_volume_extinction_a, icoord);
