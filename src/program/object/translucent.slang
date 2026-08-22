@@ -12,6 +12,11 @@ import lib.util.space_conversion;
 import object_shader;
 import settings;
 
+extern static const int USAGE_CURRENT;
+extern static const int USAGE_TRANSLUCENT;
+extern static const int USAGE_HAND;
+extern static const int USAGE_EMISSIVE;
+
 Texture2D<float> tex_blue_noise;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
@@ -28,11 +33,12 @@ struct VertexOutput {
 
 	nointerpolation uint id;
 	nointerpolation uint color_packed;
+	nointerpolation uint overlay_color_packed;
 	nointerpolation uint normal_packed;
 	nointerpolation uint tangent_packed;
 }
 
-struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
+struct Object : Shader<VertexOutput, FragmentOutput> {
 	static void
 	emitVertex(Vertex v, out VertexOutput output, out float4 pos_scene) {
 		pos_scene = v.pos();
@@ -47,6 +53,8 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 		output.id
 			= select(v.blockID().hasValue, v.blockID().value.data.customId, 0);
 		output.color_packed = packUnorm4x8(v.color());
+		output.overlay_color_packed
+			= packUnorm4x8(v.overlayColor().orElse(float4(0.0, 0.0, 0.0, 1.0)));
 		output.normal_packed
 			= packUnorm4x8(float4(normal_world * 0.5 + 0.5, 1.0));
 		output.tangent_packed = packUnorm4x8(tangent_world * 0.5 + 0.5);
@@ -97,6 +105,10 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 		float4 tangent_world
 			= unpackUnorm4x8ToFloat(input.tangent_packed) * 2.0 - 1.0;
 
+		float4 overlay_color
+			= unpackUnorm4x8ToFloat(input.overlay_color_packed);
+		albedo.rgb = lerp(overlay_color.rgb, albedo.rgb, overlay_color.a);
+
 		float3 detail_normal_world = flat_normal_world;
 		if (userSettings.LABPBR_SUPPORT_ENABLED) {
 			if (max_of(abs(tangent_world)) > EPS
@@ -117,6 +129,9 @@ struct TranslucentObject : Shader<VertexOutput, FragmentOutput> {
 		Material material = Material.get(srgb_eotf_inv(albedo.rgb), input.id);
 		if (userSettings.LABPBR_SUPPORT_ENABLED && input.id != MAT_WATER) {
 			material.apply_specular_map(specular_map);
+		}
+		if (USAGE_CURRENT == USAGE_EMISSIVE) {
+			material.emission = material.albedo;
 		}
 
 		if (userSettings.TAA_ENABLED) {

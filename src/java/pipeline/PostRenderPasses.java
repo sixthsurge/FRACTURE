@@ -1,7 +1,6 @@
 package pipeline;
 
 import dev.irisshaders.aperture.api.objects.Screen;
-import dev.irisshaders.aperture.api.objects.Texture2D;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import resources.Textures;
@@ -9,8 +8,6 @@ import resources.Textures;
 public class PostRenderPasses {
 	public static void
 	setup(PipelineConfig pipeline, Screen screen, Textures textures) {
-		setupHiZ(pipeline, screen, textures);
-
 		pipeline.stage(ProgramStage.POST_RENDER)
 			.compute("specular", "program/specular", "main")
 			.dispatch2D(
@@ -32,7 +29,7 @@ public class PostRenderPasses {
 					Math.ceilDiv(screen.windowHeight(), 16)
 				)
 				.overrideObject("tex_scene", textures.scene.front().name());
-			nextPassInput = textures.taaOutputPrevious.name();
+			nextPassInput = textures.taaOutputCurrent.name();
 		} else {
 			nextPassInput = textures.scene.front().name();
 		}
@@ -42,24 +39,6 @@ public class PostRenderPasses {
 		pipeline.combinationPass("program/post/combination")
 			.overrideObject("tex_input", nextPassInput)
 			.overrideObject("tex_bloom", textures.bloom.front().name());
-	}
-
-	private static void
-	setupHiZ(PipelineConfig pipeline, Screen screen, Textures textures) {
-		final var maxLod = (int) Math.ceil(
-			Math.log(Math.max(screen.windowWidth(), screen.windowHeight()))
-			/ Math.log(2.0)
-		);
-		final var lodCount = Math.min(maxLod, 11);
-		final var workGroupsX = Math.ceilDiv(screen.renderWidth(), 64);
-		final var workGroupsY = Math.ceilDiv(screen.renderHeight(), 64);
-
-		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
-			.compute("hiz_downsample", "program/hiz_downsample", "main")
-			.overrideObject("imgDst", textures.depthHizMinMax.name())
-			.exportInt("mips", lodCount)
-			.exportInt("numWorkGroups", workGroupsX * workGroupsY)
-			.dispatch2D(workGroupsX, workGroupsY);
 	}
 
 	private static void

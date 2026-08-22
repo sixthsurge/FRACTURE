@@ -12,7 +12,7 @@ struct VertexOutput {
 	nointerpolation uint normal_packed;
 }
 
-struct ShadowObject : Shader<VertexOutput, FragmentOutput> {
+struct Object : Shader<VertexOutput, FragmentOutput> {
 	static void emitVertex(Vertex v, out VertexOutput output, out float4 pos) {
 		pos = v.pos();
 		output.uv = v.uv();

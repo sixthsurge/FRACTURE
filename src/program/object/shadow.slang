@@ -7,7 +7,7 @@ struct VertexOutput {
 	float2 uv : TEXCOORD;
 }
 
-struct ShadowObject : Shader<VertexOutput, FragmentOutput> {
+struct Object : Shader<VertexOutput, FragmentOutput> {
 	static void emitVertex(Vertex v, out VertexOutput output, out float4 pos) {
 		pos = v.pos();
 		output.uv = v.uv();

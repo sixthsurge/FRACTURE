@@ -21,8 +21,7 @@ public record GlobalBufferData(
 			= state.uniforms().getInt("ap.timing.frameCounter");
 		final var renderSize = state.uniforms().getInt2("ap.game.renderSize");
 		final var taaJitter = state.settings().getBoolValue("TAA_ENABLED")
-			? (Util.r2(frameCounter)
-				   .sub(new Vector2f(0.5f)))
+			? (Util.r2(frameCounter).sub(new Vector2f(0.5f)))
 				  .div(new Vector2f(renderSize.x, renderSize.y))
 			: new Vector2f(0.0f);
 

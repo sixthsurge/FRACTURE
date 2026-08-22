@@ -209,6 +209,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		return;
 	}
 
+	float hand_depth = ap.handDepth[icoord];
+
 	float2 ncoord = (float2(icoord) + 0.5) * rcp(float2(ap.game.renderSize));
 	float3 closest_pos_screen = get_closest_fragment(icoord);
 
@@ -230,6 +232,13 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		)
 			  .xy;
 	float2 ncoord_prev = ncoord - velocity;
+
+	[flatten]
+	if (hand_depth != 0.0) {
+		closest_pos_screen = float3(ncoord, hand_depth);
+		ncoord_prev = ncoord;
+		velocity = float2(0.0);
+	}
 
 	float3 history_color
 		= tex_taa_output_prev.sample_catmull_rom_fast(ncoord_prev, 0, 0.6, )

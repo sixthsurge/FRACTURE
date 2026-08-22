@@ -78,11 +78,13 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float2 ncoord = coord / float2(ap.game.renderSize);
 
 	float front_depth = ap.depth[icoord];
+	float hand_depth = ap.handDepth[icoord];
 	float back_depth = ap.opaqueDepth[icoord];
 	float3 radiance = tex_scene[icoord];
 	uint4 gbuffer_solid = tex_gbuffer_solid[icoord];
 	uint2 gbuffer_translucent = tex_gbuffer_translucent[icoord];
 
+	front_depth = max(front_depth, hand_depth);
 	if (front_depth == 0.0) {
 		// FIXME work out if we need to write here.
 		tex_scene_write[icoord] = radiance;
