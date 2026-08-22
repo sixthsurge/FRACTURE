@@ -21,7 +21,13 @@ Texture2D<float> tex_blue_noise;
 [shader("compute")]
 [numthreads(16, 16)]
 void main(int2 icoord: SV_DispatchThreadID) {
-	int2 fullres_icoord = icoord * 2;
+	int w, h;
+	tex_gtao_output_current.GetDimensions(w, h);
+	float2 output_pixel_size = rcp(float2(w, h));
+
+	int2 fullres_icoord = int2(
+		float2(icoord) * (float2(ap.game.renderSize) * output_pixel_size)
+	);
 	if (any(fullres_icoord >= ap.game.renderSize)) {
 		return;
 	}
@@ -35,11 +41,11 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 	if (depth == 0.0) {
 		tex_gtao_output_current[icoord] = float4(1.0, 0.0, 0.0, 0.0);
+		tex_rsm_output_current[icoord] = float3(0.0);
 		tex_qres_temporal_data_current[icoord] = float2(0.0);
 		return;
 	}
-	float3 pos_screen
-		= float3((float2(fullres_icoord) + 1.0) / ap.game.renderSize, depth);
+	float3 pos_screen = float3((icoord + 0.5) * output_pixel_size, depth);
 	float3 pos_view = screen_to_view(pos_screen);
 	float3 pos_scene = view_to_scene(pos_view);
 	float3 pos_prev_view = scene_to_view(
@@ -134,13 +140,11 @@ void main(int2 icoord: SV_DispatchThreadID) {
 				max0(gtao_output_prev.y),
 				history_weight
 			);
-			if (abs(length_squared(bent_normal_prev) - 1.0) < EPS) {
-				gtao_result.bent_normal = slerp(
-					gtao_result.bent_normal,
-					bent_normal_prev,
-					history_weight
-				);
-			}
+			gtao_result.bent_normal = slerp(
+				gtao_result.bent_normal,
+				normalize(bent_normal_prev),
+				history_weight
+			);
 		}
 		if (all(isfinite(rsm_output_prev))) {
 			rsm = lerp(rsm, max0(rsm_output_prev), history_weight);

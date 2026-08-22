@@ -132,7 +132,7 @@ float3 calculate_outgoing_radiance(
 
 	radiance += material.emission * 0.25;
 
-	return radiance;
+	return max0(radiance);
 }
 
 
