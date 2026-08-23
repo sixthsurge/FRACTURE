@@ -26,14 +26,8 @@ public class ObjectShaders {
 				ProgramUsage.TRANSLUCENT,
 				"USAGE_TRANSLUCENT"
 			),
-			new ObjectShaderUsage(
-				ProgramUsage.HAND,
-				"USAGE_HAND"
-			),
-			new ObjectShaderUsage(
-				ProgramUsage.EMISSIVE,
-				"USAGE_EMISSIVE"
-			),
+			new ObjectShaderUsage(ProgramUsage.HAND, "USAGE_HAND"),
+			new ObjectShaderUsage(ProgramUsage.EMISSIVE, "USAGE_EMISSIVE"),
 		};
 		createObjectShaders((ProgramUsage usage) -> {
 			return pipeline

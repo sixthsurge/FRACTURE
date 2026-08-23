@@ -8,7 +8,7 @@ import lib.util.phase_functions;
 import lib.util.space_conversion;
 import settings;
 
-ConstantBuffer<SkyShBuffer> buf_sky_sh;
+internal ConstantBuffer<SkyShBuffer> buf_sky_sh;
 
 namespace fog {
 struct FogMedia<int NUM_SCATTERING_PARTICLE_KINDS> {

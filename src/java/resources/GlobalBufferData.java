@@ -1,5 +1,6 @@
 package resources;
 import dev.irisshaders.aperture.api.pipeline.FrameState;
+import org.joml.Matrix3f;
 import org.joml.Vector2f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -11,6 +12,9 @@ public record GlobalBufferData(
 	Vector3f light_dir_world,
 	Vector3f sun_dir_world,
 	Vector3f moon_dir_world,
+	Vector3f light_dir_view,
+	Vector3f sun_dir_view,
+	Vector3f moon_dir_view,
 	Vector3f sun_radiosity,
 	Vector3f moon_radiosity,
 	Vector3f celestial_light_irradiance,
@@ -20,6 +24,8 @@ public record GlobalBufferData(
 		final var frameCounter
 			= state.uniforms().getInt("ap.timing.frameCounter");
 		final var renderSize = state.uniforms().getInt2("ap.game.renderSize");
+		final var cameraView = state.uniforms().getFloat4x4("ap.camera.view");
+
 		final var taaJitter = state.settings().getBoolValue("TAA_ENABLED")
 			? (Util.r2(frameCounter).sub(new Vector2f(0.5f)))
 				  .div(new Vector2f(renderSize.x, renderSize.y))
@@ -79,6 +85,9 @@ public record GlobalBufferData(
 			lightDirWorld,
 			sunDirWorld,
 			moonDirWorld,
+			cameraView.transformDirection(new Vector3f(lightDirWorld)),
+			cameraView.transformDirection(new Vector3f(sunDirWorld)),
+			cameraView.transformDirection(new Vector3f(moonDirWorld)),
 			sunRadiosity,
 			moonRadiosity,
 			celestialLightIrradiance,

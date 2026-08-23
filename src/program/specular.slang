@@ -4,11 +4,13 @@
 import aperture;
 import lib.atmospherics.atmosphere;
 import lib.atmospherics.fog;
+import lib.buffer.sky_sh;
 import lib.gbuffer_packing;
 import lib.lighting.brdf;
 import lib.lighting.material;
 import lib.mat_ids;
 import lib.ssrt;
+import lib.water_medium;
 import lib.util.color;
 import lib.util.math;
 import lib.util.space_conversion;
@@ -22,45 +24,45 @@ Texture2D<uint2> tex_gbuffer_translucent;
 Texture2D<float3> tex_atmosphere_sky_view;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
 
+ConstantBuffer<SkyShBuffer> buf_sky_sh;
+
 float3 calculate_reflection(
 	Material material,
 	float3 pos_screen,
 	float3 pos_view,
 	float3 dir_view,
-	float3 normal_view
+	float3 normal_view,
+	float skylight
 ) {
-	float3 ray_dir_view = reflect(dir_view, normal_view);
-	float3 halfway_dir_view = normalize(-dir_view + ray_dir_view);
-
 	// As there is no rough SSR yet, just fade smooth SSR with roughness.
 	float fresnel_multiplier = pow2(linstep(0.5, 0.05, material.roughness));
 	float3 fresnel
-		= calculate_fresnel(material, dot(ray_dir_view, halfway_dir_view))
+		= fresnel_dielectric_n(-dot(dir_view, normal_view), WATER_IOR / AIR_IOR)
 		* fresnel_multiplier;
-	if (all(fresnel < float3(1e-2))) {
+	if (all(fresnel < 1e-2)) {
 		return float3(0.0);
 	}
+
+	float3 ray_dir_view = reflect(dir_view, normal_view);
 
 	Ray ray = Ray(
 		pos_screen,
 		ssrt.screen_space_ray_direction(pos_screen, pos_view, ray_dir_view)
 	);
 
-	float3 reflected_radiance;
 	if (let hit_pos_screen = ssrt.trace_hiz(
 			ray,
 			ssrt.screen_space_ray_length(ray),
 			ssrt.thickness_heuristic(pos_view, ray.d)
 		)) {
-		reflected_radiance = tex_scene.sampleLinear(hit_pos_screen.xy);
+		return tex_scene.sampleLinear(hit_pos_screen.xy) * fresnel;
 	} else {
-		reflected_radiance = atmosphere.lookup_sky_radiance(
-			tex_atmosphere_sky_view,
-			mul(float3x3(ap.camera.viewInv), ray_dir_view)
-		);
+		return atmosphere.lookup_sky_radiance(
+				   tex_atmosphere_sky_view,
+				   mul(float3x3(ap.camera.viewInv), ray_dir_view)
+			   )
+			* fresnel * pow4(skylight);
 	}
-
-	return reflected_radiance * fresnel;
 }
 
 struct FragmentOutput {
@@ -107,7 +109,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float skylight;
 	int mat_id;
 	float2 specular_map_rg;
-	float3 albedo_for_albedo_metals = float3(0.0);
+	float3 albedo = float3(0.0);
 
 	if (front_depth > back_depth) {
 		// Translucent.
@@ -118,9 +120,9 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		mat_id = gbuffer.mat_id;
 
 		if (userSettings.LABPBR_SUPPORT_ENABLED) {
-			specular_map_rg = gbuffer.specular_map_rg.get().value;
-			if (let albedo = gbuffer.albedo_for_albedo_metals.get()) {
-				albedo_for_albedo_metals = albedo.orElse(0.0);
+			specular_map_rg = gbuffer.specular_map_rg;
+			if (let albedo_val = gbuffer.albedo) {
+				albedo = albedo_val;
 			}
 		}
 	} else {
@@ -133,12 +135,49 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		mat_id = gbuffer.mat_id;
 		if (userSettings.LABPBR_SUPPORT_ENABLED) {
 			specular_map_rg = gbuffer.specular_map.get().value.rg;
-			albedo_for_albedo_metals = gbuffer.albedo;
+			albedo = gbuffer.albedo;
 		}
 	}
-	Material material = Material.get(albedo_for_albedo_metals, mat_id);
+	albedo = srgb_eotf_inv(albedo);
+	Material material = Material.get(albedo, mat_id);
 	if (userSettings.LABPBR_SUPPORT_ENABLED && mat_id != MAT_WATER) {
 		material.apply_specular_map(float4(specular_map_rg, float2(0.0)));
+	}
+
+	// Water medium participation.
+	if (mat_id == MAT_WATER && ap.camera.fluid != 1) {
+		float3 back_pos_view = screen_to_view(float3(ncoord, back_depth));
+
+		float3 absorption_coeff = calculate_water_absorption_coeff(albedo);
+
+		WaterMedium water_medium = calculate_water_medium_participation(
+			view_to_scene(front_pos_view),
+			buf_global.celestial_light_irradiance
+				* max0(buf_global.light_dir_world.y)
+				* linstep(0.0, 0.25, skylight),
+			buf_sky_sh.irradiance_up * pow3(skylight),
+			absorption_coeff,
+			distance(front_pos_view, back_pos_view),
+			dot(dir_view, buf_global.light_dir_view)
+		);
+
+		radiance = water_medium.apply(radiance);
+	}
+
+	float3 normal_view = mul(float3x3(ap.camera.view), normal_world);
+
+	// Water surface transmission.
+	if (mat_id == MAT_WATER) {
+		float NoV = -dot(normal_view, dir_view);
+		radiance *= 1.0
+			- fresnel_dielectric_n(
+						NoV,
+						select(
+							ap.camera.fluid == 1,
+							AIR_IOR / WATER_IOR,
+							WATER_IOR / AIR_IOR
+						)
+			);
 	}
 
 	radiance += calculate_reflection(
@@ -146,7 +185,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 					front_pos_screen,
 					front_pos_view,
 					dir_view,
-					mul(float3x3(ap.camera.view), normal_world)
+					normal_view,
+					skylight
 				)
 		* exp(-fog_extinction);
 

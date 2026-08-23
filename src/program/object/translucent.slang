@@ -68,6 +68,22 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 
 	static FragmentOutput
 	shadeSurface(PixelData object_data, VertexOutput input) {
+		if (input.id == MAT_WATER) {
+			float3 flat_normal_world
+				= unpackUnorm4x8ToFloat(input.normal_packed).xyz * 2.0 - 1.0;
+
+			TranslucentGbuffer gbuffer;
+			gbuffer.normal_world = flat_normal_world;
+			gbuffer.mat_id = input.id;
+			gbuffer.skylight = input.lightmap.y;
+			if (userSettings.LABPBR_SUPPORT_ENABLED) {
+				gbuffer.specular_map_rg = float2(0.0);
+				gbuffer.albedo = unpackUnorm4x8ToFloat(input.color_packed).rgb;
+			}
+
+			return FragmentOutput(float4(0.0), gbuffer.pack());
+		}
+
 		var albedo = unpackUnorm4x8ToFloat(input.color_packed);
 		if (let albedo_tex = object_data.albedo()) {
 			albedo *= albedo_tex.sampleTexture(input.uv);
@@ -161,10 +177,8 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 		gbuffer.skylight = input.lightmap.y;
 		if (userSettings.LABPBR_SUPPORT_ENABLED) {
 			bool is_albedo_metal = all(material.f0 == material.albedo);
-			gbuffer.specular_map_rg.set(specular_map.rg);
-			gbuffer.albedo_for_albedo_metals.set(
-				select(is_albedo_metal, material.albedo, none)
-			);
+			gbuffer.specular_map_rg = specular_map.rg;
+			gbuffer.albedo = select(is_albedo_metal, material.albedo, none);
 		}
 
 		return FragmentOutput(float4(radiance, albedo.a), gbuffer.pack());

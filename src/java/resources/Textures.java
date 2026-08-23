@@ -130,8 +130,6 @@ public class Textures {
 		final var solidGbufferFormat = labPbrEnabled
 			? TextureFormat.RGBA32_UINT
 			: TextureFormat.RG32_UINT;
-		final var translucentGbufferFormat
-			= labPbrEnabled ? TextureFormat.RG32_UINT : TextureFormat.R32_UINT;
 
 		gbufferSolid
 			= pipeline.texture2D("tex_gbuffer_solid", solidGbufferFormat)
@@ -140,10 +138,7 @@ public class Textures {
 
 		gbufferTranslucent
 			= pipeline
-				  .texture2D(
-					  "tex_gbuffer_translucent",
-					  translucentGbufferFormat
-				  )
+				  .texture2D("tex_gbuffer_translucent", TextureFormat.RG32_UINT)
 				  .renderSize()
 				  .create();
 

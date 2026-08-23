@@ -6,6 +6,9 @@ struct GlobalBufferData {
     float3 light_dir_world;
     float3 sun_dir_world;
     float3 moon_dir_world;
+    float3 light_dir_view;
+    float3 sun_dir_view;
+    float3 moon_dir_view;
     float3 sun_radiosity;
     float3 moon_radiosity;
     float3 celestial_light_irradiance;

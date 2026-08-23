@@ -57,9 +57,9 @@ struct TranslucentGbuffer {
 	float3 normal_world;
 	int mat_id;
 	float skylight;
-	Conditional<float2, userSettings.LABPBR_SUPPORT_ENABLED> specular_map_rg;
-	Conditional<Optional<float3>, userSettings.LABPBR_SUPPORT_ENABLED>
-		albedo_for_albedo_metals;
+	float2 specular_map_rg;
+	// Used for hardcoded metals and biome-based water aborption.
+	Optional<float3> albedo;
 
 	static TranslucentGbuffer unpack(uint2 packed) {
 		float4 unpacked0 = unpackUnorm4x8ToFloat(packed.x);
@@ -72,16 +72,17 @@ struct TranslucentGbuffer {
 		if (userSettings.LABPBR_SUPPORT_ENABLED) {
 			float4 unpacked1 = unpackUnorm4x8ToFloat(packed.y);
 			float f0 = 0.0;
-			bool is_albedo_metal = any(unpacked1.zw >= EPS);
+			// Water or albedo metal.
+			bool stores_albedo = any(unpacked1.zw >= EPS);
 
-			if (is_albedo_metal) {
-				unpacked.specular_map_rg.set(float2(unpacked1.x, 0.0));
-				unpacked.albedo_for_albedo_metals.set(
-					saturate((unpacked1.yzw * (255.0 / 245.0) - (1.0 / 254.0)))
+			if (stores_albedo) {
+				unpacked.specular_map_rg = float2(unpacked1.x, 0.0);
+				unpacked.albedo = saturate(
+					(unpacked1.yzw * (255.0 / 245.0) - (1.0 / 254.0))
 				);
 			} else {
-				unpacked.specular_map_rg.set(unpacked1.xy);
-				unpacked.albedo_for_albedo_metals.set(none);
+				unpacked.specular_map_rg = unpacked1.xy;
+				unpacked.albedo = none;
 			}
 		}
 
@@ -95,17 +96,14 @@ struct TranslucentGbuffer {
 			skylight,
 			float(mat_id) * rcp(255.0)
 		));
-		if (userSettings.LABPBR_SUPPORT_ENABLED) {
-			if (let metal_f0 = albedo_for_albedo_metals.get().value) {
-				packed.y = packUnorm4x8(float4(
-					specular_map_rg.get().value.r,
-					metal_f0 * (254.0 / 255.0) + (1.0 / 255.0)
-				));
-			} else {
-				packed.y = packUnorm4x8(
-					float4(specular_map_rg.get().value, float2(0.0))
-				);
-			}
+		if (let albedo_val = albedo) {
+			// Water or hardcoded metal.
+			packed.y = packUnorm4x8(float4(
+				specular_map_rg.r,
+				albedo_val * (254.0 / 255.0) + (1.0 / 255.0)
+			));
+		} else {
+			packed.y = packUnorm4x8(float4(specular_map_rg, float2(0.0)));
 		}
 		return packed;
 	}
