@@ -105,6 +105,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	);
 
 	float3 dir_view = normalize(front_pos_view);
+	float view_distance = length(front_pos_view);
 
 	// Get front surface info.
 	float3 normal_world;
@@ -146,8 +147,10 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		material.apply_specular_map(float4(specular_map_rg, float2(0.0)));
 	}
 
-	// Water waves.
+	[branch]
 	if (mat_id == MAT_WATER) {
+		// Waves
+
 		float3x3 tbn = make_tbn_matrix(normal_world);
 
 		float3 pos_tangent = mul(tbn, front_pos_scene + ap.camera.position);
@@ -167,26 +170,51 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			= WaterWaves.calculate_normal(wave_params, pos_tangent.xy);
 
 		normal_world = mul(normal_tangent, tbn);
-	}
 
-	// Water medium participation.
-	if (mat_id == MAT_WATER && ap.camera.fluid != 1) {
+		// Refraction
+
 		float3 back_pos_view = screen_to_view(float3(ncoord, back_depth));
+		float layer_distance = distance(front_pos_view, back_pos_view);
 
-		float3 absorption_coeff = calculate_water_absorption_coeff(albedo);
+		float2 refracted_ncoord = ncoord
+			+ normal_tangent.xy * rcp(view_distance + 1.0)
+				* min(layer_distance, 16.0) * 0.1;
 
-		WaterMedium water_medium = calculate_water_medium_participation(
-			front_pos_scene,
-			buf_global.celestial_light_irradiance
-				* max0(buf_global.light_dir_world.y)
-				* linstep(0.0, 0.25, skylight),
-			buf_sky_sh.irradiance_up * pow3(skylight),
-			absorption_coeff,
-			distance(front_pos_view, back_pos_view),
-			dot(dir_view, buf_global.light_dir_view)
-		);
+		[flatten]
+		if (all(refracted_ncoord == saturate(refracted_ncoord))) {
+			float refracted_depth
+				= ap.opaqueDepth.sampleLinear(refracted_ncoord);
 
-		radiance = water_medium.apply(radiance);
+			// Make sure the refracted pixel is behind the water.
+			refracted_ncoord = select(
+				refracted_depth < front_depth,
+				refracted_ncoord,
+				ncoord
+			);
+
+			radiance = tex_scene.sampleLinear(refracted_ncoord);
+			back_pos_view
+				= screen_to_view(float3(refracted_ncoord, refracted_depth));
+		}
+
+		// Water medium participation
+
+		if (ap.camera.fluid != 1) {
+			float3 absorption_coeff = calculate_water_absorption_coeff(albedo);
+
+			WaterMedium water_medium = calculate_water_medium_participation(
+				front_pos_scene,
+				buf_global.celestial_light_irradiance
+					* max0(buf_global.light_dir_world.y)
+					* linstep(0.0, 0.25, skylight),
+				buf_sky_sh.irradiance_up * pow3(skylight),
+				absorption_coeff,
+				distance(front_pos_view, back_pos_view),
+				dot(dir_view, buf_global.light_dir_view)
+			);
+
+			radiance = water_medium.apply(radiance);
+		}
 	}
 
 	float3 normal_view = mul(float3x3(ap.camera.view), normal_world);
