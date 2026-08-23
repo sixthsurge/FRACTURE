@@ -178,26 +178,35 @@ calculate_atmosphere_participation(float3 dir) {
 	);
 }
 
-float3 calculate_sky_radiance(float3 dir) {
-	float3 radiance = float3(0.0);
+float3 calculate_space_radiance(
+	float3 dir,
+	float sun_visiblity,
+	float moon_visibility
+) {
 	// Use shadow view matrix to orient ray direction with the sun and moon.
 	float3 space_dir = mul(float3x3(ap.celestial.view), dir);
 	float3 galaxy = lookup_galaxy_texture(
 		space_dir.zyx
 	); // Swizzle to get a look I like at midnight.
 
-	atmosphere.AtmosphereParticipation atmosphere_participation
-		= calculate_atmosphere_participation(dir);
-
-	// Space.
-	radiance += calculate_sun_radiance(dir);
+	float3 radiance = float3(0.0);
+	radiance += calculate_sun_radiance(dir) * sun_visiblity;
 	radiance += srgb_eotf_inv(galaxy) * 0.0015;
 	radiance += calculate_star_radiance(
 		space_dir,
 		dot(galaxy, LUMINANCE_WEIGHTS_REC709)
 	);
 	float4 moon = calculate_moon_radiance_and_opacity(dir);
-	radiance = radiance * (1.0 - moon.a) + moon.rgb;
+	radiance = radiance * (1.0 - moon.a) + moon.rgb * moon_visibility;
+	return radiance;
+}
+
+float3 calculate_sky_radiance(float3 dir) {
+	atmosphere.AtmosphereParticipation atmosphere_participation
+		= calculate_atmosphere_participation(dir);
+
+	// Space.
+	float3 radiance = calculate_space_radiance(dir, 1.0, 1.0);
 	radiance
 		= select(atmosphere_participation.hit_planet, float3(0.0), radiance);
 

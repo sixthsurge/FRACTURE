@@ -8,16 +8,6 @@ import resources.Textures;
 public class PostRenderPasses {
 	public static void
 	setup(PipelineConfig pipeline, Screen screen, Textures textures) {
-		pipeline.stage(ProgramStage.POST_RENDER)
-			.compute("specular", "program/specular", "main")
-			.dispatch2D(
-				Math.ceilDiv(screen.renderWidth(), 16),
-				Math.ceilDiv(screen.renderHeight(), 16)
-			)
-			.overrideObject("tex_scene_write", textures.scene.back().name())
-			.overrideObject("tex_scene", textures.scene.front().name());
-		textures.scene.flip();
-
 		setupExposure(pipeline, screen, textures);
 
 		String nextPassInput = null;

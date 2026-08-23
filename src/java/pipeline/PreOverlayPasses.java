@@ -9,6 +9,16 @@ public class PreOverlayPasses {
 	public static void
 	setup(PipelineConfig pipeline, Screen screen, Textures textures) {
 		setupHiZ(pipeline, screen, textures);
+
+		pipeline.stage(ProgramStage.PRE_OVERLAY)
+			.compute("specular", "program/specular", "main")
+			.dispatch2D(
+				Math.ceilDiv(screen.renderWidth(), 16),
+				Math.ceilDiv(screen.renderHeight(), 16)
+			)
+			.overrideObject("tex_scene_write", textures.scene.back().name())
+			.overrideObject("tex_scene", textures.scene.front().name());
+		textures.scene.flip();
 	}
 
 	private static void
@@ -21,7 +31,7 @@ public class PreOverlayPasses {
 		final var workGroupsX = Math.ceilDiv(screen.renderWidth(), 64);
 		final var workGroupsY = Math.ceilDiv(screen.renderHeight(), 64);
 
-		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
+		pipeline.stage(ProgramStage.PRE_OVERLAY)
 			.compute("hiz_downsample", "program/hiz_downsample", "main")
 			.overrideObject("imgDst", textures.depthHizMinMax.name())
 			.exportInt("mips", lodCount)

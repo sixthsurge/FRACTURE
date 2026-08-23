@@ -1,10 +1,18 @@
 public module material;
 
+import aperture;
 import lib.surface.mat_ids;
 import lib.util.math;
 
 static const float AIR_IOR = 1.000293; // for 0°C and 1 atm
 static const float WATER_IOR = 1.333; // for 20°C
+
+constexpr float f0_to_ior(float f0) {
+	float sqrt_f0 = sqrt(f0) * 0.99999;
+	return (1.0 + sqrt_f0) / (1.0 - sqrt_f0);
+}
+
+constexpr float ior_to_f0(float ior) { return pow2((ior - 1.0) / (ior + 1.0)); }
 
 struct Material {
 	float3 albedo;
@@ -20,7 +28,13 @@ struct Material {
 	// Create material with default values.
 	static Material get(float3 albedo, int mat_id) {
 		if (mat_id == MAT_WATER) {
-			return WATER_MATERIAL;
+			Material material = WATER_MATERIAL;
+			material.f0 = select(
+				ap.camera.fluid == 1,
+				ior_to_f0(AIR_IOR / WATER_IOR),
+				ior_to_f0(WATER_IOR / AIR_IOR),
+			);
+			return material;
 		}
 
 		Material material;

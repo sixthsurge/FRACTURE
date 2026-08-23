@@ -39,12 +39,12 @@ struct WaterMedium {
 	}
 }
 
-struct WaterMediumShadow {
+struct WaterShadow {
 	float visibility; // Visibility from opaque shadow map.
 	float depth; // Depth through the water.
 }
 
-WaterMediumShadow calculate_water_medium_shadow(float3 pos_scene) {
+WaterShadow calculate_water_shadow(float3 pos_scene) {
 	float3 pos_shadow_view = transform(ap.celestial.view, pos_scene);
 
 	int cascade;
@@ -53,7 +53,7 @@ WaterMediumShadow calculate_water_medium_shadow(float3 pos_scene) {
 		cascade = result.cascade;
 		pos_shadow_screen = result.pos_shadow_screen;
 	} else {
-		return WaterMediumShadow(1.0, 0.0);
+		return WaterShadow(1.0, 0.0);
 	}
 
 	float opaque_shadow = ap.opaqueShadow.compare(
@@ -64,14 +64,16 @@ WaterMediumShadow calculate_water_medium_shadow(float3 pos_scene) {
 	float translucent_depth
 		= ap.shadow.sampleLinear(pos_shadow_screen.xy, cascade);
 
-	return WaterMediumShadow(
+	return WaterShadow(
 		opaque_shadow,
 		max0(pos_shadow_screen.z - translucent_depth)
+			/ abs(ap.celestial.projection[cascade][2].z)
 	);
 }
 
 // Simple water fog applied behind water or when volumetric fog is disabled
 WaterMedium calculate_water_medium_participation(
+	WaterShadow shadow,
 	float3 pos_scene,
 	float3 direct_irradiance,
 	float3 ambient_irradiance,
@@ -79,8 +81,6 @@ WaterMedium calculate_water_medium_participation(
 	float dist,
 	float LoV
 ) {
-	WaterMediumShadow shadow = calculate_water_medium_shadow(pos_scene);
-
 	float3 scattering_coeff = float3(WATER_SCATTERING_COEFF);
 	float3 extinction_coeff = scattering_coeff + absorption_coeff;
 

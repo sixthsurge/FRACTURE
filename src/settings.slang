@@ -3,6 +3,7 @@ public module settings;
 
 struct GlobalBufferData {
     float2 taa_jitter;
+    float sun_angle;
     float3 light_dir_world;
     float3 sun_dir_world;
     float3 moon_dir_world;

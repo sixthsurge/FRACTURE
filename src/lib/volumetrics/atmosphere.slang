@@ -59,13 +59,18 @@ struct AtmosphereParticipation {
 static const float AERIAL_PERSPECTIVE_DEPTH_SCALE
 	= 1e5; // meters divided by terrain scale.
 static const float AERIAL_PERSPECTIVE_TERRAIN_SCALE = 3.0;
+static const float SEA_LEVEL = 63.0;
 
 // Camera position in planet space.
 float3 camera_pos() {
 	return float3(
 		0.0,
 		EARTH_PARAMS.planet_radius
-			+ ap.camera.position.y * AERIAL_PERSPECTIVE_TERRAIN_SCALE + 10.0,
+			+ max0(
+				(ap.camera.position.y - SEA_LEVEL)
+				* AERIAL_PERSPECTIVE_TERRAIN_SCALE
+			)
+			+ 1.0,
 		0.0
 	);
 }

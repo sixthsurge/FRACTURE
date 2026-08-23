@@ -3,11 +3,6 @@ public module brdf;
 import lib.surface.material;
 import lib.util.math;
 
-float f0_to_ior(float f0) {
-	float sqrt_f0 = sqrt(f0) * 0.99999;
-	return (1.0 + sqrt_f0) / (1.0 - sqrt_f0);
-}
-
 // I honestly can't remember the original source for the D, V and dielectric
 // fresnel functions; they are quite standard though.
 
@@ -32,24 +27,24 @@ float3 fresnel_schlick(float cos_theta, float3 f0) {
 	return f + f0 * (1.0 - f);
 }
 
-float3 fresnel_dielectric_n(float cos_theta, float n) {
+float fresnel_dielectric_n(float cos_theta, float n) {
 	float g_sq = pow2(n) + pow2(cos_theta) - 1.0;
 
 	if (g_sq < 0.0) {
-		return float3(1.0); // Imaginary g => TIR
+		return 1.0; // Imaginary g => TIR
 	}
 
 	float g = sqrt(g_sq);
 	float a = g - cos_theta;
 	float b = g + cos_theta;
 
-	return saturate(float3(
+	return saturate(
 		0.5 * pow2(a / b)
 		* (1.0 + pow2((b * cos_theta - 1.0) / (a * cos_theta + 1.0)))
-	));
+	);
 }
 
-float3 fresnel_dielectric(float cos_theta, float f0) {
+float fresnel_dielectric(float cos_theta, float f0) {
 	float n = f0_to_ior(f0);
 	return fresnel_dielectric_n(cos_theta, n);
 }
