@@ -1,6 +1,6 @@
 public module brdf;
 
-import lib.lighting.material;
+import lib.surface.material;
 import lib.util.math;
 
 float f0_to_ior(float f0) {

@@ -2,15 +2,15 @@
 // - Calculate reflection and refraction.
 
 import aperture;
-import lib.atmospherics.atmosphere;
-import lib.atmospherics.fog;
+import lib.volumetrics.atmosphere;
+import lib.volumetrics.fog;
 import lib.buffer.sky_sh;
-import lib.gbuffer_packing;
+import lib.surface.gbuffer_packing;
 import lib.lighting.brdf;
-import lib.lighting.material;
-import lib.mat_ids;
-import lib.ssrt;
-import lib.water_medium;
+import lib.surface.material;
+import lib.surface.mat_ids;
+import lib.lighting.ssrt;
+import lib.volumetrics.water_medium;
 import lib.util.color;
 import lib.util.math;
 import lib.util.space_conversion;

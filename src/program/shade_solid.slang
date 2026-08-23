@@ -1,10 +1,10 @@
 import aperture;
-import lib.atmospherics.atmosphere;
-import lib.atmospherics.fog;
-import lib.atmospherics.sky;
-import lib.gbuffer_packing;
+import lib.volumetrics.atmosphere;
+import lib.volumetrics.fog;
+import lib.volumetrics.sky;
+import lib.surface.gbuffer_packing;
 import lib.lighting.main_lighting;
-import lib.lighting.material;
+import lib.surface.material;
 import lib.util.color;
 import lib.util.math;
 import lib.util.random;

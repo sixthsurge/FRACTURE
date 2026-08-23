@@ -1,6 +1,6 @@
 public module material;
 
-import lib.mat_ids;
+import lib.surface.mat_ids;
 import lib.util.math;
 
 static const float AIR_IOR = 1.000293; // for 0°C and 1 atm

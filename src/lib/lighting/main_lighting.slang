@@ -2,7 +2,7 @@ public module main_lighting;
 
 import lib.buffer.sky_sh;
 import lib.lighting.brdf;
-import lib.lighting.material;
+import lib.surface.material;
 import lib.lighting.shadow;
 import lib.util.color;
 import lib.util.phase_functions;

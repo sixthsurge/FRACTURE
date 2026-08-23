@@ -1,7 +1,7 @@
 public module sky;
 
 import aperture;
-import lib.atmospherics.atmosphere;
+import lib.volumetrics.atmosphere;
 import lib.util.color;
 import lib.util.math;
 import lib.util.random;

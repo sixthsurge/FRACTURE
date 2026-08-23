@@ -1,5 +1,5 @@
 import aperture;
-import lib.atmospherics.atmosphere;
+import lib.volumetrics.atmosphere;
 import lib.util.math;
 import lib.util.space_conversion;
 import settings;

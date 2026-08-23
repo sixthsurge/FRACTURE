@@ -1,5 +1,5 @@
 import aperture;
-import lib.gbuffer_packing;
+import lib.surface.gbuffer_packing;
 import lib.lighting.gtao;
 import lib.lighting.rsm;
 import lib.util.filtering;

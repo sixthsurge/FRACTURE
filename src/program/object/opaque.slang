@@ -1,6 +1,6 @@
 import aperture;
-import lib.gbuffer_packing;
-import lib.lighting.material;
+import lib.surface.gbuffer_packing;
+import lib.surface.material;
 import lib.util.math;
 import object_shader;
 import settings;
