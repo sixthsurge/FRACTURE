@@ -25,7 +25,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float cos_sun_zenith_angle = ncoord.x * 2.0 - 1.0;
 	float r = lerp(
 		ATMOSPHERE_PARAMS.planet_radius,
-		ATMOSPHERE_PARAMS.atmosphere_radius(),
+		ATMOSPHERE_PARAMS.outer_limit_radius,
 		ncoord.y
 	);
 

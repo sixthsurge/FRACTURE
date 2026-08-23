@@ -14,7 +14,10 @@ import settings;
 namespace atmosphere {
 struct AtmosphereParameters {
 	float planet_radius;
-	float thickness;
+	// Physically this should be the planet radius, but it can be smaller to
+	// allow sky below the horizon.
+	float inner_limit_radius;
+	float outer_limit_radius;
 	float mie_albedo;
 	float mie_kn_energy;
 	float2 scale_heights;
@@ -22,8 +25,6 @@ struct AtmosphereParameters {
 	float3 mie_coeff;
 	float3 ozone_coeff;
 	float3 planet_albedo;
-
-	float atmosphere_radius() { return planet_radius + thickness; }
 
 	float2x3 scattering_coeff() {
 		return float2x3(rayleigh_coeff, mie_coeff * mie_albedo);
@@ -36,7 +37,8 @@ struct AtmosphereParameters {
 
 static const AtmosphereParameters EARTH_PARAMS = {
 	6371e3, // Planet radius (m)
-	110e3, // Atmosphere thickness (m)
+	6371e3 - 5e3, // Inner limit radius (m)
+	6371e3 + 110e3, // Outer limit radius (m)
 	0.9, // Mie albedo
 	1000.0, // Mie Klein-Nishina energy parameter
 	float2(8.4e3, 1.25e3), // Rayleigh/mie scale height (m)
@@ -89,10 +91,11 @@ struct LightSource {
 };
 
 float3 calculate_density(AtmosphereParameters params, float r) {
-	float altitude = max0(r - params.planet_radius);
+	float altitude = r - params.planet_radius;
 	float2 rm = exp(-altitude * rcp(params.scale_heights));
 
 	// Source for ozone density curve: Jessie in shaderLABS.
+	altitude = max0(altitude);
 	float altitude_km = altitude * 1e-3;
 	float o1 = 12.5 * exp(rcp(8.0) * (0.0 - altitude_km));
 	float o2
@@ -122,7 +125,7 @@ float3 calculate_transmittance(
 			  .x;
 	if (planet_dist >= 0.0) return float3(0.0);
 	float ray_length
-		= intersect_sphere(ray_origin, ray_dir, params.atmosphere_radius()).y;
+		= intersect_sphere(ray_origin, ray_dir, params.outer_limit_radius).y;
 
 	float3 ray_step = ray_dir * ray_length * rcp(float(step_count - 1));
 	float3 ray_pos = ray_origin;
@@ -149,8 +152,8 @@ float3 lookup_transmittance(
 	transmittance_lut.GetDimensions(w, h);
 
 	float r = length(ray_origin);
-	if (r > params.atmosphere_radius()) {
-		return intersect_sphere(ray_origin, ray_dir, params.atmosphere_radius())
+	if (r > params.outer_limit_radius) {
+		return intersect_sphere(ray_origin, ray_dir, params.outer_limit_radius)
 					.x
 				< 0
 			? 1.0
@@ -160,7 +163,7 @@ float3 lookup_transmittance(
 	float cos_zenith_angle = dot(ray_origin, ray_dir) / r;
 	float2 uv = float2(
 		cos_zenith_angle * 0.5 + 0.5,
-		linstep(params.planet_radius, params.atmosphere_radius(), r)
+		linstep(params.inner_limit_radius, params.outer_limit_radius, r)
 	);
 	uv = get_uv_from_unit_range(uv, float2(w, h));
 	return transmittance_lut.sampleLinear(uv);
@@ -279,7 +282,7 @@ float2x3 calculate_2nd_order_scattering_and_f_ms(
 		ray_origin,
 		ray_dir,
 		params.planet_radius * (1.0 - EPS),
-		params.atmosphere_radius()
+		params.outer_limit_radius,
 	);
 	float ray_length = dists.y - dists.x;
 	float step_length = ray_length / float(step_count);
@@ -397,7 +400,7 @@ float3 lookup_multiscatter_energy(
 	float cos_zenith_angle = dot(ray_origin, ray_dir) / r;
 	float2 uv = float2(
 		cos_zenith_angle * 0.5 + 0.5,
-		linstep(params.planet_radius, params.atmosphere_radius(), r)
+		linstep(params.planet_radius, params.outer_limit_radius, r)
 	);
 	uv = get_uv_from_unit_range(uv, float2(w, h));
 	return multiscatter_lut.sampleLinear(uv);
@@ -417,8 +420,8 @@ AtmosphereParticipation calculate_scattering<int LightSourceCount>(
 	float2 dists = intersect_spherical_shell(
 		ray_origin,
 		ray_dir,
-		params.planet_radius,
-		params.atmosphere_radius()
+		params.inner_limit_radius,
+		params.outer_limit_radius,
 	);
 
 	float ray_length = dists.y - dists.x;

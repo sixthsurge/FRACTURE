@@ -152,7 +152,7 @@ calculate_atmosphere_participation(float3 dir) {
 	// sky map.
 
 	if (atmosphere.camera_pos().y
-		< atmosphere.EARTH_PARAMS.atmosphere_radius()) {
+		< atmosphere.EARTH_PARAMS.outer_limit_radius) {
 		atmosphere.AtmosphereParticipation participation;
 		participation.scattering
 			= atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, dir);
