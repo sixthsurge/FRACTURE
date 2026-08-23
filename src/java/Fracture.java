@@ -1,4 +1,6 @@
 import dev.irisshaders.aperture.api.ShaderPack;
+import dev.irisshaders.aperture.api.objects.AddressMode;
+import dev.irisshaders.aperture.api.objects.FilterMode;
 import dev.irisshaders.aperture.api.objects.IBlockState;
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.pipeline.FrameState;
@@ -40,6 +42,12 @@ public class Fracture implements ShaderPack {
 		ObjectShaders.setupTranslucent(pipeline, textures);
 		PreOverlayPasses.setup(pipeline, screen, textures);
 		PostRenderPasses.setup(pipeline, screen, textures);
+
+		pipeline.sampler("sampler_linear_repeat")
+			.addressMode(AddressMode.REPEAT)
+			.magFilter(FilterMode.LINEAR)
+			.minFilter(FilterMode.LINEAR)
+			.create();
 	}
 
 	@Override

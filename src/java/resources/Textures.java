@@ -75,6 +75,10 @@ public class Textures {
 
 	public Textures(PipelineConfig pipeline, Screen screen) {
 		pipeline.loadPNGTexture("tex_blue_noise", "texture/blue_noise.png");
+		pipeline.loadPNGTexture(
+			"tex_worley_noise_2d",
+			"texture/worley_noise_2d.png"
+		);
 		pipeline.loadPNGTexture("tex_galaxy", "texture/galaxy.png");
 
 		final var sceneTexA

@@ -2,18 +2,19 @@
 // - Calculate reflection and refraction.
 
 import aperture;
-import lib.volumetrics.atmosphere;
-import lib.volumetrics.fog;
 import lib.buffer.sky_sh;
-import lib.surface.gbuffer_packing;
 import lib.lighting.brdf;
+import lib.lighting.ssrt;
+import lib.surface.gbuffer_packing;
 import lib.surface.material;
 import lib.surface.mat_ids;
-import lib.lighting.ssrt;
+import lib.surface.water_waves;
 import lib.volumetrics.water_medium;
 import lib.util.color;
 import lib.util.math;
 import lib.util.space_conversion;
+import lib.volumetrics.atmosphere;
+import lib.volumetrics.fog;
 import settings;
 
 RWTexture2D<float3> tex_scene_write;
@@ -95,6 +96,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 	float3 front_pos_screen = float3(ncoord, front_depth);
 	float3 front_pos_view = screen_to_view(front_pos_screen);
+	float3 front_pos_scene = view_to_scene(front_pos_view);
 	// Lookup fog extinction to apply on top of the reflection.
 	float3 fog_extinction = fog.lookup_fog(
 		tex_fog_volume_integrated_extinction,
@@ -144,6 +146,29 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		material.apply_specular_map(float4(specular_map_rg, float2(0.0)));
 	}
 
+	// Water waves.
+	if (mat_id == MAT_WATER) {
+		float3x3 tbn = make_tbn_matrix(normal_world);
+
+		float3 pos_tangent = mul(tbn, front_pos_scene + ap.camera.position);
+		float3 dir_world = normalize(front_pos_scene);
+		float3 dir_tangent = mul(tbn, dir_world);
+
+		WaterWaves.Params wave_params
+			= WaterWaves.init_params(tbn, dir_world, normal_world, skylight);
+
+		pos_tangent = WaterWaves.calculate_parallax(
+			wave_params,
+			pos_tangent,
+			dir_tangent
+		);
+
+		float3 normal_tangent
+			= WaterWaves.calculate_normal(wave_params, pos_tangent.xy);
+
+		normal_world = mul(normal_tangent, tbn);
+	}
+
 	// Water medium participation.
 	if (mat_id == MAT_WATER && ap.camera.fluid != 1) {
 		float3 back_pos_view = screen_to_view(float3(ncoord, back_depth));
@@ -151,7 +176,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		float3 absorption_coeff = calculate_water_absorption_coeff(albedo);
 
 		WaterMedium water_medium = calculate_water_medium_participation(
-			view_to_scene(front_pos_view),
+			front_pos_scene,
 			buf_global.celestial_light_irradiance
 				* max0(buf_global.light_dir_world.y)
 				* linstep(0.0, 0.25, skylight),
