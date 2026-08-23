@@ -156,11 +156,10 @@ calculate_atmosphere_participation(float3 dir) {
 		atmosphere.AtmosphereParticipation participation;
 		participation.scattering
 			= atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, dir);
-		participation.transmittance = atmosphere.lookup_transmittance(
+		participation.transmittance = atmosphere.calculate_transmittance_approx(
 			atmosphere.EARTH_PARAMS,
-			tex_atmosphere_transmittance,
-			atmosphere.camera_pos(),
-			dir
+			atmosphere.camera_pos().y,
+			dir.y
 		);
 		participation.hit_planet
 			= false; // Not needed as included in transmittance.

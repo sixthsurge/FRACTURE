@@ -4,7 +4,7 @@ import lib.util.encoding;
 import lib.util.math;
 import settings;
 
-struct SolidGbuffer {
+struct OpaqueGbuffer {
 	float3 albedo;
 	float3 flat_normal_world;
 	float2 lightmap;
@@ -13,11 +13,11 @@ struct SolidGbuffer {
 		detail_normal_world;
 	Conditional<float4, userSettings.LABPBR_SUPPORT_ENABLED> specular_map;
 
-	static SolidGbuffer unpack(uint4 packed) {
+	static OpaqueGbuffer unpack(uint4 packed) {
 		float4 unpacked0 = unpackUnorm4x8ToFloat(packed.x);
 		float4 unpacked1 = unpackUnorm4x8ToFloat(packed.y);
 
-		SolidGbuffer unpacked;
+		OpaqueGbuffer unpacked;
 		unpacked.albedo = unpacked0.xyz;
 		unpacked.mat_id = uint(unpacked0.w * 255.0);
 		unpacked.flat_normal_world = decode_octahedral(unpacked1.xy);
@@ -51,8 +51,7 @@ struct SolidGbuffer {
 	}
 }
 
-// Only stores data needed for reflection and refraction.
-// Albedo is not stored so albedo metals are unsupported for translucents.
+// Only stores data needed for SSR and water rendering.
 struct TranslucentGbuffer {
 	float3 normal_world;
 	int mat_id;

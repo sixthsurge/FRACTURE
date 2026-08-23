@@ -126,7 +126,8 @@ float3 calculate_outgoing_radiance(
 
 	ambient_irradiance += pow3(lightmap.x) * float3(0.05, 0.02, 0.02) * ao;
 
-	radiance += ambient_irradiance * material.albedo / PI;
+	radiance += ambient_irradiance * material.albedo
+		* (rcp(PI) + ambient_sss * material.sss_amount);
 
 	// Emission
 

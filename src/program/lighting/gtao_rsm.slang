@@ -1,3 +1,5 @@
+// GTAO, RSM.
+
 import aperture;
 import lib.surface.gbuffer_packing;
 import lib.lighting.gtao;
@@ -15,7 +17,7 @@ RWTexture2D<float2> tex_qres_temporal_data_current;
 Texture2D<float4> tex_gtao_output_prev;
 Texture2D<float3> tex_rsm_output_prev;
 Texture2D<float2> tex_qres_temporal_data_prev;
-Texture2D<uint4> tex_gbuffer_solid;
+Texture2D<uint4> tex_gbuffer_opaque;
 Texture2D<float> tex_blue_noise;
 
 [shader("compute")]
@@ -33,7 +35,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	}
 
 	float depth = ap.depth[fullres_icoord];
-	uint4 gbuffer_packed = tex_gbuffer_solid[fullres_icoord];
+	uint4 gbuffer_packed = tex_gbuffer_opaque[fullres_icoord];
 	float2 dither = float2(
 		tex_blue_noise[icoord & 511],
 		tex_blue_noise[(icoord + int2(93, 41)) & 511]
@@ -68,7 +70,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float2 temporal_data_prev
 		= tex_qres_temporal_data_prev.sampleLinear(pos_prev_screen.xy);
 
-	SolidGbuffer gbuffer = SolidGbuffer.unpack(gbuffer_packed);
+	OpaqueGbuffer gbuffer = OpaqueGbuffer.unpack(gbuffer_packed);
 	float3 normal_world
 		= gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world);
 	float3 normal_view = mul(float3x3(ap.camera.view), normal_world);

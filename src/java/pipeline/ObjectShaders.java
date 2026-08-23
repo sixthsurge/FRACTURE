@@ -15,7 +15,7 @@ public class ObjectShaders {
 		};
 		createObjectShaders((ProgramUsage usage) -> {
 			return pipeline.object(usage, "program/object/opaque", "Object")
-				.writes("gbuffer", textures.gbufferSolid);
+				.writes("gbuffer", textures.gbufferOpaque);
 		}, usages);
 	}
 
@@ -43,14 +43,14 @@ public class ObjectShaders {
 				pipeline
 					.object(
 						ProgramUsage.SHADOW,
-						"program/object/shadow_color",
+						"program/object/shadow_opaque_rsm",
 						"Object"
 					)
 					.writes("color_and_normal", textures.shadowColor);
 			} else {
 				pipeline.object(
 					ProgramUsage.SHADOW,
-					"program/object/shadow",
+					"program/object/shadow_opaque",
 					"Object"
 				);
 			}
@@ -62,7 +62,7 @@ public class ObjectShaders {
 				ProgramUsage.SHADOW_PARTICLES_TRANSLUCENT
 			};
 			for (var usage : translucentShadowUsages) {
-				pipeline.object(usage, "program/object/shadow_color", "Object")
+				pipeline.object(usage, "program/object/shadow_translucent", "Object")
 					.writes("color_and_normal", textures.shadowColor);
 			}
 		}

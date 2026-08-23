@@ -16,7 +16,7 @@ public class PostShadowPasses {
 			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Z");
 
 		pipeline.stage(ProgramStage.POST_SHADOW)
-			.compute("fog/create_volume a", "program/fog/create_volume", "main")
+			.compute("fog/create_volume a", "program/volumetrics/fog/create_volume", "main")
 			.dispatch3D(
 				Math.ceilDiv(fogVolumeSizeX, 8),
 				Math.ceilDiv(fogVolumeSizeY, 8),
@@ -38,7 +38,7 @@ public class PostShadowPasses {
 			);
 
 		pipeline.stage(ProgramStage.POST_SHADOW)
-			.compute("fog/create_volume b", "program/fog/create_volume", "main")
+			.compute("fog/create_volume b", "program/volumetrics/fog/create_volume", "main")
 			.dispatch3D(
 				Math.ceilDiv(fogVolumeSizeX, 8),
 				Math.ceilDiv(fogVolumeSizeY, 8),
@@ -62,7 +62,7 @@ public class PostShadowPasses {
 		pipeline.stage(ProgramStage.POST_SHADOW)
 			.compute(
 				"fog/integrate_volume",
-				"program/fog/integrate_volume",
+				"program/volumetrics/fog/integrate_volume",
 				"main"
 			)
 			.dispatch3D(

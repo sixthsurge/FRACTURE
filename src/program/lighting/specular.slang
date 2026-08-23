@@ -1,5 +1,4 @@
-// - Calculate water normal and absorption.
-// - Calculate reflection and refraction.
+// Specular reflections, water rendering.
 
 import aperture;
 import lib.buffer.sky_sh;
@@ -21,7 +20,7 @@ import settings;
 RWTexture2D<float3> tex_scene_write;
 
 Texture2D<float3> tex_scene;
-Texture2D<uint4> tex_gbuffer_solid;
+Texture2D<uint4> tex_gbuffer_opaque;
 Texture2D<uint2> tex_gbuffer_translucent;
 Texture2D<float3> tex_atmosphere_sky_view;
 Texture3D<float3> tex_fog_volume_integrated_light;
@@ -101,7 +100,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float hand_depth = ap.handDepth[icoord];
 	float back_depth = ap.opaqueDepth[icoord];
 	float3 radiance = tex_scene[icoord];
-	uint4 gbuffer_solid = tex_gbuffer_solid[icoord];
+	uint4 gbuffer_solid = tex_gbuffer_opaque[icoord];
 	uint2 gbuffer_translucent = tex_gbuffer_translucent[icoord];
 
 	front_depth = max(front_depth, hand_depth);
@@ -141,7 +140,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		}
 	} else {
 		// Solid.
-		SolidGbuffer gbuffer = SolidGbuffer.unpack(gbuffer_solid);
+		OpaqueGbuffer gbuffer = OpaqueGbuffer.unpack(gbuffer_solid);
 		normal_world = gbuffer.detail_normal_world.get().orElse(
 			gbuffer.flat_normal_world
 		);
@@ -161,8 +160,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float water_shadow_visibility = 0.0;
 	[branch]
 	if (mat_id == MAT_WATER) {
-		// Waves
-
+		// Water waves.
 		float3x3 tbn = make_tbn_matrix(normal_world);
 
 		float3 pos_tangent = mul(tbn, front_pos_scene + ap.camera.position);
@@ -183,8 +181,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 		normal_world = mul(normal_tangent, tbn);
 
-		// Refraction
-
+		// Refraction.
 		float3 back_pos_view = screen_to_view(float3(ncoord, back_depth));
 		float layer_distance = distance(front_pos_view, back_pos_view);
 
@@ -217,8 +214,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		WaterShadow shadow = calculate_water_shadow(front_pos_scene);
 		water_shadow_visibility = shadow.visibility;
 
-		// Water medium participation
-
+		// Water medium participation.
 		float LoV = dot(-dir_view, buf_global.light_dir_view);
 		if (ap.camera.fluid != 1) {
 			float3 absorption_coeff = calculate_water_absorption_coeff(albedo);
@@ -248,10 +244,9 @@ void main(int2 icoord: SV_DispatchThreadID) {
 				WATER_IOR / AIR_IOR,
 			)
 		);
-
 		radiance *= 1.0 - fresnel;
 
-		// Sun specular.
+		// Sun specular reflection.
 		float NoL = dot(normal_world, buf_global.light_dir_world);
 		if (buf_global.sun_angle < 0.5 && NoL > EPS) {
 			float NoV = saturate(dot(normal_world, -dir_world));
@@ -268,7 +263,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 							LoV,
 							LoH
 						)
-				* NoL * buf_global.celestial_light_irradiance;
+				* NoL * buf_global.celestial_light_irradiance
+				* shadow.visibility;
 		}
 	}
 
@@ -279,6 +275,11 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		front_pos_screen,
 		front_pos_view
 	);
+
+	// Apply fog on top of water.
+	if (mat_id == MAT_WATER) {
+		radiance = fog.apply(radiance);
+	}
 
 	radiance
 		+= calculate_reflection(
@@ -292,14 +293,6 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			   mat_id == MAT_WATER,
 		   )
 		* exp(-fog.extinction);
-
-	if (mat_id == MAT_WATER) {
-		// Apply fog on top of water.
-		radiance = fog.apply(radiance);
-	} else {
-		// Just scale reflection by fog transmittance.
-		radiance *= exp(-fog.extinction);
-	}
 
 	tex_scene_write[icoord] = radiance;
 }

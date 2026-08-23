@@ -203,6 +203,47 @@ float3 calculate_transmittance_between_points(
 	return transmittance_p1_to_space / transmittance_p2_to_space;
 }
 
+// The Chapman function gives the ratio between the slant depth and the vertical
+// column depth, where the slant depth is the airmass for a given altitude r and
+// zenith angle theta, and the vertical column depth which is the slant depth
+// with theta=0, which can be calculated analytically. The parameter x is
+// the planet center distance divided by the scale height.
+float2 chapman_function_approx(float2 x, float cos_theta) {
+	// Source: http://www.thetenthplanet.de/archives/4519
+	float2 c = sqrt((0.5 * PI) * x);
+
+	if (cos_theta >= 0.0) { // => theta <= 90 deg
+		return c / ((c - 1.0) * cos_theta + 1.0);
+	} else {
+		float sin_theta = sqrt(saturate(1.0 - pow2(cos_theta)));
+		return c / ((c - 1.0) * cos_theta - 1.0)
+			+ 2.0 * c * exp(x - x * sin_theta) * sqrt(sin_theta);
+	}
+}
+
+// Approximate transmittance calculation using approximation for Chapman
+// function. No ozone absorption.
+float3 calculate_transmittance_approx(
+	AtmosphereParameters params,
+	float r,
+	float cos_light_zenith_angle
+) {
+	float altitude = max0(r - params.planet_radius);
+	float3 vertical_column_depth_r = params.rayleigh_coeff
+		* params.scale_heights.x * exp(-altitude / params.scale_heights.x);
+	float3 vertical_column_depth_m = params.mie_coeff * params.scale_heights.y
+		* exp(-altitude / params.scale_heights.y);
+	float2 chapmap_rm = chapman_function_approx(
+		r / params.scale_heights,
+		cos_light_zenith_angle
+	);
+
+	return exp(
+		-(vertical_column_depth_r * chapmap_rm.x
+		  + vertical_column_depth_m * chapmap_rm.y)
+	);
+}
+
 float3 calculate_planet_radiance<int LightSourceCount>(
 	AtmosphereParameters params,
 	float3 ray_origin,

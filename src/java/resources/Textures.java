@@ -35,7 +35,7 @@ public class Textures {
 
 	// G-Buffer
 
-	public final Texture2D gbufferSolid;
+	public final Texture2D gbufferOpaque;
 	public final Texture2D gbufferTranslucent;
 
 	// Hi-Z depth
@@ -131,12 +131,12 @@ public class Textures {
 		// Select texture format for the amount of data needed.
 		final var labPbrEnabled
 			= pipeline.settings().getBoolValue("LABPBR_SUPPORT_ENABLED");
-		final var solidGbufferFormat = labPbrEnabled
+		final var OpaqueGbufferFormat = labPbrEnabled
 			? TextureFormat.RGBA32_UINT
 			: TextureFormat.RG32_UINT;
 
-		gbufferSolid
-			= pipeline.texture2D("tex_gbuffer_solid", solidGbufferFormat)
+		gbufferOpaque
+			= pipeline.texture2D("tex_gbuffer_opaque", OpaqueGbufferFormat)
 				  .renderSize()
 				  .create();
 

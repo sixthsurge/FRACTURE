@@ -11,7 +11,7 @@ public class PreRenderPasses {
 		setupAtmosphere(pipeline, textures);
 
 		pipeline.stage(ProgramStage.PRE_RENDER)
-			.compute("gen_sky_sh", "program/gen_sky_sh", "main")
+			.compute("gen_sky_sh", "program/lighting/gen_sky_sh", "main")
 			.dispatch1D(1);
 	}
 
@@ -20,7 +20,7 @@ public class PreRenderPasses {
 		pipeline.stage(ProgramStage.PRE_RENDER)
 			.compute(
 				"atmosphere/gen_transmittance_lut",
-				"program/atmosphere/gen_transmittance_lut",
+				"program/volumetrics/atmosphere/gen_transmittance_lut",
 				"main"
 			)
 			.dispatch2D(
@@ -31,7 +31,7 @@ public class PreRenderPasses {
 		pipeline.stage(ProgramStage.PRE_RENDER)
 			.compute(
 				"atmosphere/gen_multiscatter_lut",
-				"program/atmosphere/gen_multiscatter_lut",
+				"program/volumetrics/atmosphere/gen_multiscatter_lut",
 				"main"
 			)
 			.dispatch2D(
@@ -42,7 +42,7 @@ public class PreRenderPasses {
 		pipeline.stage(ProgramStage.PRE_RENDER)
 			.compute(
 				"atmosphere/gen_sky_view_lut",
-				"program/atmosphere/gen_sky_view_lut",
+				"program/volumetrics/atmosphere/gen_sky_view_lut",
 				"main"
 			)
 			.dispatch2D(
@@ -54,7 +54,7 @@ public class PreRenderPasses {
 			pipeline.stage(ProgramStage.PRE_RENDER)
 				.compute(
 					"atmosphere/gen_aerial_perspective_lut",
-					"program/atmosphere/gen_aerial_perspective_lut",
+					"program/volumetrics/atmosphere/gen_aerial_perspective_lut",
 					"main"
 				)
 				.dispatch3D(

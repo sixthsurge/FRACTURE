@@ -104,7 +104,7 @@ trace_hiz(Ray ray_screen, float ray_length, float thickness_heuristic) {
 		floor(ray_screen.o.xy * initial_cell_count),
 		initial_cell_count,
 		nearest_cell_boundary,
-		cross_offset * 64.0 // See discussion in the article for why a
+		cross_offset * 65.0 // See discussion in the article for why a
 							// larger cross offset is used here.
 	);
 	bool travelling_towards_screen

@@ -29,7 +29,7 @@ public class Fracture implements ShaderPack {
 		pipeline.stage(ProgramStage.SCREEN_SETUP)
 			.compute(
 				"zero_spd_global_atomic",
-				"program/hiz_downsample",
+				"program/lighting/hiz_downsample",
 				"zero_spd_global_atomic"
 			)
 			.dispatch1D(1);

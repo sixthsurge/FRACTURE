@@ -13,10 +13,6 @@ Texture2D<uint> tex_exposure_histogram;
 
 float3 apply_bloom(int2 icoord, float2 ncoord, float3 input) {
 	// Final upsampling step from lod 1 to lod 0
-	// Blurred lod 0 in bloom_tiles_a
-	// Blurred lod 1 in:
-	//   Even tile count => bloom_tiles_tex_a
-	//   Odd  tile count => bloom_tiles_tex_b
 
 	if (!userSettings.BLOOM_ENABLED) {
 		return input;

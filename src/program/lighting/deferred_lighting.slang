@@ -1,3 +1,5 @@
+// Deferred shading for opaque layer, draw sky.
+
 import aperture;
 import lib.volumetrics.atmosphere;
 import lib.volumetrics.fog;
@@ -12,7 +14,7 @@ import lib.util.space_conversion;
 import settings;
 
 RWTexture2D<float3> tex_scene_write;
-Texture2D<uint4> tex_gbuffer_solid;
+Texture2D<uint4> tex_gbuffer_opaque;
 Texture3D<float3> tex_atmosphere_aerial_perspective;
 Texture2D<float3> tex_atmosphere_transmittance;
 Texture3D<float3> tex_fog_volume_integrated_light;
@@ -115,7 +117,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float2 ncoord = coord / float2(ap.game.renderSize);
 
 	float depth = ap.opaqueDepth[icoord];
-	uint4 packed_gbuffer = tex_gbuffer_solid[icoord];
+	uint4 packed_gbuffer = tex_gbuffer_opaque[icoord];
 	float2 dither = float2(
 		tex_blue_noise[icoord & 511],
 		tex_blue_noise[(icoord + int2(93, 41)) & 511]
@@ -150,7 +152,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float2 qres_pos_f = frac(qres_pos);
 	QuarterResLighting qres = QuarterResLighting.load(qres_pos_i);
 
-	SolidGbuffer gbuffer = SolidGbuffer.unpack(packed_gbuffer);
+	OpaqueGbuffer gbuffer = OpaqueGbuffer.unpack(packed_gbuffer);
 
 	float3 albedo = srgb_eotf_inv(gbuffer.albedo);
 

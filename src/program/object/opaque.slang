@@ -76,7 +76,7 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 			= unpackUnorm4x8ToFloat(input.overlay_color_packed);
 		albedo.rgb = lerp(overlay_color.rgb, albedo.rgb, overlay_color.a);
 
-		SolidGbuffer gbuffer;
+		OpaqueGbuffer gbuffer;
 		gbuffer.albedo = albedo.rgb;
 		gbuffer.flat_normal_world = flat_normal_world;
 		gbuffer.lightmap = input.lightmap;

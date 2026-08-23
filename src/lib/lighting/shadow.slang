@@ -26,9 +26,8 @@ float2 calculate_blocker_depth_and_sss_depth(
 ) {
 	const int STEP_COUNT = 12;
 
-	float radius = BLOCKER_SEARCH_RADIUS
-		* ap.celestial.projection[cascade][0][0]
-		* (0.5 + 0.5 * linstep(0.2, 0.4, buf_global.light_dir_world.y));
+	float radius
+		= BLOCKER_SEARCH_RADIUS * ap.celestial.projection[cascade][0][0];
 
 	float weight_sum = 0.0;
 	float blocker_depth = 0.0;

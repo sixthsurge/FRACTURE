@@ -48,17 +48,15 @@ void main() {
 
 	// Calculate exposure.
 
+	float target = exposure.luminance_to_exposure(target_luminance);
+	float previous = max0(buf_exposure[0].previous_value);
 	float current_weight = select(
 		ap.timing.frameCounter > 1,
-		saturate(4.0 * ap.timing.lastFrameTime),
+		saturate(ap.timing.lastFrameTime * select(previous < target, 1.5, 4.0)),
 		1.0
 	);
 
-	buf_exposure[0].value = lerp(
-		max0(buf_exposure[0].previous_value),
-		exposure.luminance_to_exposure(target_luminance),
-		current_weight
-	);
+	buf_exposure[0].value = lerp(previous, target, current_weight);
 	buf_exposure[0].previous_value = buf_exposure[0].value;
 	buf_exposure[0].bin_a = bin_a.orElse(0);
 	buf_exposure[0].bin_b = bin_b.orElse(0);
