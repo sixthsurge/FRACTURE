@@ -5,22 +5,30 @@ import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramUsage;
 import java.util.function.Function;
 import resources.Textures;
+import util.ProgramFactory;
 
 public class ObjectShaders {
 	private record ObjectShaderUsage(ProgramUsage usage, String constant) {}
 
-	public static void setupOpaque(PipelineConfig pipeline, Textures textures) {
+	public static void setupOpaque(
+		PipelineConfig pipeline,
+		ProgramFactory factory,
+		Textures textures
+	) {
 		final var usages = new ObjectShaderUsage[] {
 			new ObjectShaderUsage(ProgramUsage.BASIC, "USAGE_BASIC"),
 		};
 		createObjectShaders((ProgramUsage usage) -> {
-			return pipeline.object(usage, "program/object/opaque", "Object")
+			return factory.object(usage, "program/object/opaque", "Object")
 				.writes("gbuffer", textures.gbufferOpaque);
 		}, usages);
 	}
 
-	public static void
-	setupTranslucent(PipelineConfig pipeline, Textures textures) {
+	public static void setupTranslucent(
+		PipelineConfig pipeline,
+		ProgramFactory factory,
+		Textures textures
+	) {
 		final var usages = new ObjectShaderUsage[] {
 			new ObjectShaderUsage(
 				ProgramUsage.TRANSLUCENT,
@@ -30,36 +38,38 @@ public class ObjectShaders {
 			new ObjectShaderUsage(ProgramUsage.EMISSIVE, "USAGE_EMISSIVE"),
 		};
 		createObjectShaders((ProgramUsage usage) -> {
-			return pipeline
-				.object(usage, "program/object/translucent", "Object")
+			return factory.object(usage, "program/object/translucent", "Object")
 				.writes("color", textures.scene.front())
 				.writes("gbuffer", textures.gbufferTranslucent);
 		}, usages);
 	}
 
-	public static void
-	setupHand(PipelineConfig pipeline, Textures textures) {
+	public static void setupHand(
+		PipelineConfig pipeline,
+		ProgramFactory factory,
+		Textures textures
+	) {
 		final var usages = new ObjectShaderUsage[] {
-			new ObjectShaderUsage(
-				ProgramUsage.HAND,
-				"USAGE_HAND"
-			),
+			new ObjectShaderUsage(ProgramUsage.HAND, "USAGE_HAND"),
 			new ObjectShaderUsage(
 				ProgramUsage.TRANSLUCENT_HAND,
 				"USAGE_TRANSLUCENT_HAND"
 			),
 		};
 		createObjectShaders((ProgramUsage usage) -> {
-			return pipeline
-				.object(usage, "program/object/hand", "Object")
+			return factory.object(usage, "program/object/hand", "Object")
 				.writes("color", textures.scene.front());
 		}, usages);
 	}
 
-	public static void setupShadow(PipelineConfig pipeline, Textures textures) {
+	public static void setupShadow(
+		PipelineConfig pipeline,
+		ProgramFactory factory,
+		Textures textures
+	) {
 		if (pipeline.settings().getBoolValue("SHADOW_ENABLED")) {
 			if (pipeline.settings().getBoolValue("RSM_ENABLED")) {
-				pipeline
+				factory
 					.object(
 						ProgramUsage.SHADOW,
 						"program/object/shadow_opaque_rsm",
@@ -67,7 +77,7 @@ public class ObjectShaders {
 					)
 					.writes("data", textures.shadowRsmData);
 			} else {
-				pipeline.object(
+				factory.object(
 					ProgramUsage.SHADOW,
 					"program/object/shadow_opaque",
 					"Object"
@@ -81,7 +91,12 @@ public class ObjectShaders {
 				ProgramUsage.SHADOW_PARTICLES_TRANSLUCENT
 			};
 			for (var usage : translucentShadowUsages) {
-				pipeline.object(usage, "program/object/shadow_translucent", "Object")
+				factory
+					.object(
+						usage,
+						"program/object/shadow_translucent",
+						"Object"
+					)
 					.writes("color", textures.shadowColor);
 			}
 		}

@@ -50,10 +50,11 @@ public record GlobalBufferData(
 		final var moonRadiosity
 			= new Vector3f(sunRadiosity)
 				  .mul(new Vector3f(0.001f, 0.004f, 0.003f));
-		
+
 		final var isDay = lightDirWorld.dot(moonDirWorld) < 0.0;
 
-		final var sunAngle = state.uniforms().getFloat("ap.celestial.angle") + (isDay ? 0.0f : 0.5f);
+		final var sunAngle = state.uniforms().getFloat("ap.celestial.angle")
+			+ (isDay ? 0.0f : 0.5f);
 
 		final var celestialLightRadiosity
 			= isDay ? sunRadiosity : moonRadiosity;

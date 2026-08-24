@@ -4,10 +4,17 @@ import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import resources.Textures;
+import util.ProgramFactory;
 
 public class PostShadowPasses {
-	public static void
-	setup(PipelineConfig pipeline, Screen screen, Textures textures) {
+	public static void setup(
+		PipelineConfig pipeline,
+		Screen screen,
+		ProgramFactory factory,
+		Textures textures
+	) {
+		factory.setCurrentStage(pipeline.stage(ProgramStage.POST_SHADOW));
+
 		final var fogVolumeSizeX
 			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_X");
 		final var fogVolumeSizeY
@@ -15,12 +22,17 @@ public class PostShadowPasses {
 		final var fogVolumeSizeZ
 			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Z");
 
-		pipeline.stage(ProgramStage.POST_SHADOW)
-			.compute("fog/create_volume a", "program/volumetrics/fog/create_volume", "main")
-			.dispatch3D(
-				Math.ceilDiv(fogVolumeSizeX, 8),
-				Math.ceilDiv(fogVolumeSizeY, 8),
-				Math.ceilDiv(fogVolumeSizeZ, 4)
+		factory
+			.compute3d(
+				"fog/create_volume a",
+				"program/volumetrics/fog/create_volume",
+				"main",
+				fogVolumeSizeX,
+				fogVolumeSizeY,
+				fogVolumeSizeZ,
+				8,
+				8,
+				4
 			)
 			.exportInt("ACTIVE_FRAME", 0)
 			.overrideObject("tex_fog_volume_light", "tex_fog_volume_light_a")
@@ -37,12 +49,17 @@ public class PostShadowPasses {
 				"tex_fog_volume_extinction_b"
 			);
 
-		pipeline.stage(ProgramStage.POST_SHADOW)
-			.compute("fog/create_volume b", "program/volumetrics/fog/create_volume", "main")
-			.dispatch3D(
-				Math.ceilDiv(fogVolumeSizeX, 8),
-				Math.ceilDiv(fogVolumeSizeY, 8),
-				Math.ceilDiv(fogVolumeSizeZ, 4)
+		factory
+			.compute3d(
+				"fog/create_volume b",
+				"program/volumetrics/fog/create_volume",
+				"main",
+				fogVolumeSizeX,
+				fogVolumeSizeY,
+				fogVolumeSizeZ,
+				8,
+				8,
+				4
 			)
 			.exportInt("ACTIVE_FRAME", 1)
 			.overrideObject("tex_fog_volume_light", "tex_fog_volume_light_b")
@@ -59,16 +76,14 @@ public class PostShadowPasses {
 				"tex_fog_volume_extinction_a"
 			);
 
-		pipeline.stage(ProgramStage.POST_SHADOW)
-			.compute(
-				"fog/integrate_volume",
-				"program/volumetrics/fog/integrate_volume",
-				"main"
-			)
-			.dispatch3D(
-				Math.ceilDiv(fogVolumeSizeX, 16),
-				Math.ceilDiv(fogVolumeSizeY, 16),
-				1
-			);
+		factory.compute2d(
+			"fog/integrate_volume",
+			"program/volumetrics/fog/integrate_volume",
+			"main",
+			fogVolumeSizeX,
+			fogVolumeSizeY,
+			16,
+			16
+		);
 	}
 }

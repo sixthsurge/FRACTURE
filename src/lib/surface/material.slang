@@ -3,6 +3,7 @@ public module material;
 import aperture;
 import lib.surface.mat_ids;
 import lib.util.math;
+import settings;
 
 static const float AIR_IOR = 1.000293; // for 0°C and 1 atm
 static const float WATER_IOR = 1.333; // for 20°C
@@ -38,7 +39,7 @@ struct Material {
 		}
 
 		Material material;
-		material.albedo = albedo;
+		material.albedo = select(userSettings.WHITE_WORLD, float3(1.0), albedo);
 		material.emission = float3(0.0);
 		material.f0 = float3(0.02);
 		material.f82 = float3(0.0);

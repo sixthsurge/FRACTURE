@@ -25,6 +25,7 @@ public class Textures {
 
 	public final Flipper<Texture2D> scene;
 	public final Flipper<Texture2D> bloom;
+	public Texture2D debug;
 
 	// TAA
 
@@ -89,6 +90,10 @@ public class Textures {
 				  .renderSize()
 				  .create();
 		scene = new Flipper<>(sceneTexA, sceneTexB);
+
+		debug = pipeline.texture2D("tex_debug", TextureFormat.RGBA8_UNORM)
+					.windowSize()
+					.create();
 
 		// Bloom
 
@@ -273,7 +278,10 @@ public class Textures {
 				  .create();
 		rsmOutputFiltered
 			= pipeline
-				  .texture2D("tex_rsm_output_filtered", TextureFormat.RGBA16_SFLOAT)
+				  .texture2D(
+					  "tex_rsm_output_filtered",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
 				  .size(qresWidth, qresHeight)
 				  .create();
 

@@ -11,6 +11,8 @@ public class FractureSettings implements PackSettings {
 			OptionType.boolType(false),
 			false
 		);
+		screen.option("DEBUG", OptionType.boolType(false), false);
+		screen.option("WHITE_WORLD", OptionType.boolType(false), true);
 
 		final var screenLighting = screen.child("lighting");
 

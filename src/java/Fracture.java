@@ -1,5 +1,3 @@
-import org.joml.Vector4f;
-
 import dev.irisshaders.aperture.api.ShaderPack;
 import dev.irisshaders.aperture.api.objects.AddressMode;
 import dev.irisshaders.aperture.api.objects.FilterMode;
@@ -9,6 +7,7 @@ import dev.irisshaders.aperture.api.pipeline.FrameState;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import dev.irisshaders.aperture.api.renderer.RendererConfig;
+import org.joml.Vector4f;
 import pipeline.ObjectShaders;
 import pipeline.PostRenderPasses;
 import pipeline.PostShadowPasses;
@@ -17,6 +16,7 @@ import pipeline.PreRenderPasses;
 import pipeline.PreTranslucentPasses;
 import resources.Buffers;
 import resources.Textures;
+import util.ProgramFactory;
 
 public class Fracture implements ShaderPack {
 	Textures textures;
@@ -24,6 +24,8 @@ public class Fracture implements ShaderPack {
 
 	@Override
 	public void configurePipeline(Screen screen, PipelineConfig pipeline) {
+		ProgramFactory factory = new ProgramFactory(pipeline, screen);
+
 		textures = new Textures(pipeline, screen);
 		buffers = new Buffers(pipeline);
 
@@ -36,15 +38,15 @@ public class Fracture implements ShaderPack {
 			)
 			.dispatch1D(1);
 
-		PreRenderPasses.setup(pipeline, screen, textures);
-		ObjectShaders.setupShadow(pipeline, textures);
-		PostShadowPasses.setup(pipeline, screen, textures);
-		ObjectShaders.setupOpaque(pipeline, textures);
-		PreTranslucentPasses.setup(pipeline, screen, textures);
-		ObjectShaders.setupTranslucent(pipeline, textures);
-		PreOverlayPasses.setup(pipeline, screen, textures);
-		ObjectShaders.setupHand(pipeline, textures);
-		PostRenderPasses.setup(pipeline, screen, textures);
+		PreRenderPasses.setup(pipeline, screen, factory, textures);
+		ObjectShaders.setupShadow(pipeline, factory, textures);
+		PostShadowPasses.setup(pipeline, screen, factory, textures);
+		ObjectShaders.setupOpaque(pipeline, factory, textures);
+		PreTranslucentPasses.setup(pipeline, screen, factory, textures);
+		ObjectShaders.setupTranslucent(pipeline, factory, textures);
+		PreOverlayPasses.setup(pipeline, screen, factory, textures);
+		ObjectShaders.setupHand(pipeline, factory, textures);
+		PostRenderPasses.setup(pipeline, screen, factory, textures);
 
 		pipeline.sampler("sampler_linear_repeat")
 			.addressMode(AddressMode.REPEAT)

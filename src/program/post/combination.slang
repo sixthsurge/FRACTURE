@@ -6,6 +6,7 @@ import settings;
 
 Texture2D<float3> tex_input;
 Texture2D<float3> tex_bloom;
+Texture2D<float4> tex_debug;
 Texture2D<float> tex_blue_noise;
 
 ConstantBuffer<ExposureBuffer> buf_exposure;
@@ -62,6 +63,11 @@ float4 main(float2 coord: SV_Position) {
 				color += float3(0.0, 0.5, 0.0);
 			}
 		}
+	}
+
+	if (userSettings.DEBUG) {
+		float4 debug = tex_debug[icoord];
+		color = lerp(color, debug.rgb, debug.a);
 	}
 
 	return float4(color, 1.0);

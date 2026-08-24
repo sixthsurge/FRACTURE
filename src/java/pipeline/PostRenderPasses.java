@@ -4,40 +4,47 @@ import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import resources.Textures;
+import util.ProgramFactory;
 
 public class PostRenderPasses {
-	public static void
-	setup(PipelineConfig pipeline, Screen screen, Textures textures) {
-		setupExposure(pipeline, screen, textures);
+	public static void setup(
+		PipelineConfig pipeline,
+		Screen screen,
+		ProgramFactory factory,
+		Textures textures
+	) {
+		factory.setCurrentStage(pipeline.stage(ProgramStage.POST_RENDER));
+
+		setupExposure(pipeline, screen, factory, textures);
 
 		String nextPassInput = null;
 		if (pipeline.settings().getBoolValue("TAA_ENABLED")) {
-			pipeline.stage(ProgramStage.POST_RENDER)
-				.compute("taa", "program/post/taa", "main")
-				.dispatch2D(
-					Math.ceilDiv(screen.windowWidth(), 16),
-					Math.ceilDiv(screen.windowHeight(), 16)
-				)
+			factory
+				.windowSizedCompute("taa", "program/post/taa", "main", 16, 16)
 				.overrideObject("tex_scene", textures.scene.front().name());
 			nextPassInput = textures.taaOutputCurrent.name();
 		} else {
 			nextPassInput = textures.scene.front().name();
 		}
 
-		setupBloom(pipeline, screen, textures, nextPassInput);
+		setupBloom(pipeline, screen, factory, textures, nextPassInput);
 
 		pipeline.combinationPass("program/post/combination")
 			.overrideObject("tex_input", nextPassInput)
 			.overrideObject("tex_bloom", textures.bloom.front().name());
 	}
 
-	private static void
-	setupExposure(PipelineConfig pipeline, Screen screen, Textures textures) {
+	private static void setupExposure(
+		PipelineConfig pipeline,
+		Screen screen,
+		ProgramFactory factory,
+		Textures textures
+	) {
 		if (!pipeline.settings().getBoolValue("AUTO_EXPOSURE_ENABLED")) {
 			return;
 		}
 
-		pipeline.stage(ProgramStage.POST_RENDER)
+		factory
 			.compute(
 				"exposure/clear_histogram",
 				"program/post/exposure/clear_histogram",
@@ -45,19 +52,19 @@ public class PostRenderPasses {
 			)
 			.dispatch1D(1);
 
-		pipeline.stage(ProgramStage.POST_RENDER)
-			.compute(
+		factory
+			.compute2d(
 				"exposure/build_histogram",
 				"program/post/exposure/build_histogram",
-				"main"
-			)
-			.dispatch2D(
-				Math.ceilDiv(screen.renderWidth(), 32),
-				Math.ceilDiv(screen.renderHeight(), 32)
+				"main",
+				Math.ceilDiv(screen.renderWidth(), 2),
+				Math.ceilDiv(screen.renderHeight(), 2),
+				16,
+				16
 			)
 			.overrideObject("tex_scene", textures.scene.front().name());
 
-		pipeline.stage(ProgramStage.POST_RENDER)
+		factory
 			.compute(
 				"exposure/calculate_exposure",
 				"program/post/exposure/calculate_exposure",
@@ -69,6 +76,7 @@ public class PostRenderPasses {
 	private static void setupBloom(
 		PipelineConfig pipeline,
 		Screen screen,
+		ProgramFactory factory,
 		Textures textures,
 		String sourceTexture
 	) {
@@ -93,15 +101,15 @@ public class PostRenderPasses {
 				= srcLod == 0 ? sourceTexture : textures.bloom.front().name();
 			int destMipScale = Math.powExact(2, srcLod + 1);
 
-			pipeline.stage(ProgramStage.POST_RENDER)
-				.compute(
+			factory
+				.compute2d(
 					"bloom/downsample " + srcLod,
 					"program/post/bloom/downsample",
-					"main"
-				)
-				.dispatch2D(
-					Math.ceilDiv(screen.windowWidth(), 16 * destMipScale),
-					Math.ceilDiv(screen.windowHeight(), 16 * destMipScale)
+					"main",
+					Math.ceilDiv(screen.windowWidth(), destMipScale),
+					Math.ceilDiv(screen.windowHeight(), destMipScale),
+					16,
+					16
 				)
 				.overrideObject("dest", textures.bloom.back().name())
 				.overrideObject("input", srcTex)
@@ -122,36 +130,30 @@ public class PostRenderPasses {
 				= lod == 0 ? sourceTexture : textures.bloom.front().name();
 			final var mipScale = Math.powExact(2, lod);
 
-			pipeline.stage(ProgramStage.POST_RENDER)
-				.compute(
+			factory
+				.compute2d(
 					"bloom/blur horizontal " + lod,
 					"program/post/bloom/blur",
-					"horizontal_main"
-				)
-				.dispatch2D(
-					Math.ceilDiv(
-						screen.windowWidth(),
-						workGroupSize * mipScale
-					),
-					Math.ceilDiv(screen.windowHeight(), mipScale)
+					"horizontal_main",
+					Math.ceilDiv(screen.windowWidth(), mipScale),
+					Math.ceilDiv(screen.windowHeight(), mipScale),
+					workGroupSize,
+					1
 				)
 				.overrideObject("input", srcTex)
 				.overrideObject("dest", textures.bloom.back().name())
 				.exportInt("LOD", lod);
 			textures.bloom.flip();
 
-			pipeline.stage(ProgramStage.POST_RENDER)
-				.compute(
+			factory
+				.compute2d(
 					"bloom/blur vertical " + lod,
 					"program/post/bloom/blur",
-					"vertical_main"
-				)
-				.dispatch2D(
+					"vertical_main",
 					Math.ceilDiv(screen.windowWidth(), mipScale),
-					Math.ceilDiv(
-						screen.windowHeight(),
-						workGroupSize * mipScale
-					)
+					Math.ceilDiv(screen.windowHeight(), mipScale),
+					1,
+					workGroupSize
 				)
 				.overrideObject("input", textures.bloom.front().name())
 				.overrideObject("dest", textures.bloom.back().name())
@@ -169,15 +171,15 @@ public class PostRenderPasses {
 				: textures.bloom.front();
 			final var destMipScale = Math.powExact(2, dstLod);
 
-			pipeline.stage(ProgramStage.POST_RENDER)
-				.compute(
+			factory
+				.compute2d(
 					"bloom/upsample " + dstLod,
 					"program/post/bloom/upsample",
-					"main"
-				)
-				.dispatch2D(
-					Math.ceilDiv(screen.windowWidth(), 16 * destMipScale),
-					Math.ceilDiv(screen.windowHeight(), 16 * destMipScale)
+					"main",
+					Math.ceilDiv(screen.windowWidth(), destMipScale),
+					Math.ceilDiv(screen.windowHeight(), destMipScale),
+					16,
+					16
 				)
 				.overrideObject("dest", textures.bloom.back().name())
 				.overrideObject("input_smaller", smallerInputTex.name())
