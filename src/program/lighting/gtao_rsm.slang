@@ -144,11 +144,13 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		}
 	}
 
-	tex_gtao_output_current[icoord] = float4(
-		gtao_result.ao,
-		gtao_result.ambient_sss,
-		gtao_result.bent_normal.xy
-	);
+	if (userSettings.GTAO_ENABLED) {
+		tex_gtao_output_current[icoord] = float4(
+			gtao_result.ao,
+			gtao_result.ambient_sss,
+			gtao_result.bent_normal.xy
+		);
+	}
 	if (userSettings.RSM_ENABLED) {
 		tex_rsm_output_raw[icoord] = rsm;
 	}

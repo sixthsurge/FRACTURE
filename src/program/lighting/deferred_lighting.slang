@@ -178,13 +178,23 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		dot(gbuffer.flat_normal_world, dir_world),
 		qres_pos_f
 	);
-	float3 bent_normal_world = mul(
-		float3x3(ap.camera.viewInv),
-		normalize(float3(
-			upscaled.gtao_output.zw,
-			sqrt(saturate(1.0 - length_squared(upscaled.gtao_output.zw)))
-		))
-	);
+	float ao, ambient_sss;
+	float3 bent_normal_world;
+	if (userSettings.GTAO_ENABLED) {
+		ao = upscaled.gtao_output.x;
+		ambient_sss = upscaled.gtao_output.y;
+		bent_normal_world = mul(
+			float3x3(ap.camera.viewInv),
+			normalize(float3(
+				upscaled.gtao_output.zw,
+				sqrt(saturate(1.0 - length_squared(upscaled.gtao_output.zw)))
+			))
+		);
+	} else {
+		ao = 1.0;
+		ambient_sss = 0.0;
+		bent_normal_world = gbuffer.flat_normal_world;
+	}
 
 	if (userSettings.TAA_ENABLED) {
 		// Animate dither when TAA is enabled so it can help a little with
@@ -199,14 +209,16 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		gbuffer.flat_normal_world,
 		gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world),
 		gbuffer.lightmap,
-		upscaled.gtao_output.x,
-		upscaled.gtao_output.y,
+		ao,
+		ambient_sss,
 		bent_normal_world,
 		dither
 	);
 
-	radiance += material.albedo * upscaled.rsm_output
-		* buf_global.celestial_light_irradiance;
+	if (userSettings.RSM_ENABLED) {
+		radiance += material.albedo * upscaled.rsm_output
+			* buf_global.celestial_light_irradiance;
+	}
 
 	if (userSettings.ATMOSPHERE_AP_LUT_ENABLED) {
 		radiance = atmosphere.apply_aerial_perspective(

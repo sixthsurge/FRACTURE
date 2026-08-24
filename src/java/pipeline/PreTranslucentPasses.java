@@ -15,12 +15,14 @@ public class PreTranslucentPasses {
 				Math.ceilDiv(screen.renderHeight(), 16 * 2)
 			);
 
+		if (pipeline.settings().getBoolValue("RSM_ENABLED")) {
 		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
 			.compute("filter_rsm", "program/lighting/filter_rsm", "main")
 			.dispatch2D(
 				Math.ceilDiv(screen.renderWidth(), 16 * 2),
 				Math.ceilDiv(screen.renderHeight(), 16 * 2)
 			);
+		}
 
 		pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
 			.compute("shade_solid", "program/lighting/deferred_lighting", "main")
