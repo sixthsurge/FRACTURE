@@ -43,6 +43,7 @@ public class Fracture implements ShaderPack {
 		PreTranslucentPasses.setup(pipeline, screen, textures);
 		ObjectShaders.setupTranslucent(pipeline, textures);
 		PreOverlayPasses.setup(pipeline, screen, textures);
+		ObjectShaders.setupHand(pipeline, textures);
 		PostRenderPasses.setup(pipeline, screen, textures);
 
 		pipeline.sampler("sampler_linear_repeat")

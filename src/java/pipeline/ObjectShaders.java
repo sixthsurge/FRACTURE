@@ -37,6 +37,25 @@ public class ObjectShaders {
 		}, usages);
 	}
 
+	public static void
+	setupHand(PipelineConfig pipeline, Textures textures) {
+		final var usages = new ObjectShaderUsage[] {
+			new ObjectShaderUsage(
+				ProgramUsage.HAND,
+				"USAGE_HAND"
+			),
+			new ObjectShaderUsage(
+				ProgramUsage.TRANSLUCENT_HAND,
+				"USAGE_TRANSLUCENT_HAND"
+			),
+		};
+		createObjectShaders((ProgramUsage usage) -> {
+			return pipeline
+				.object(usage, "program/object/hand", "Object")
+				.writes("color", textures.scene.front());
+		}, usages);
+	}
+
 	public static void setupShadow(PipelineConfig pipeline, Textures textures) {
 		if (pipeline.settings().getBoolValue("SHADOW_ENABLED")) {
 			if (pipeline.settings().getBoolValue("RSM_ENABLED")) {
