@@ -78,7 +78,8 @@ float3 calculate_reflection(
 			);
 		}
 
-		return atmosphere_participation.apply(space_radiance) * fresnel;
+		return atmosphere_participation.apply(space_radiance) * fresnel
+			* pow2(skylight);
 	}
 }
 

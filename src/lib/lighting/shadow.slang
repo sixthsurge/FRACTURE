@@ -73,13 +73,15 @@ pcf(float3 pos_shadow_screen, int cascade, float penumbra_size, float dither) {
 
 		shadow += ap.opaqueShadow.compare(uv, cascade, pos_shadow_screen.z);
 
+		float opaque_depth = ap.opaqueShadow.sampleNearest(uv, cascade);
 		float translucent_depth = ap.shadow.sampleNearest(uv, cascade);
 		float3 translucent_color
 			= tex_shadow_color.Sample(apt_nearestSampler, float3(uv, cascade));
-		color += lerp(
-			float3(1.0),
+		color += select(
+			translucent_depth < pos_shadow_screen.z
+				&& translucent_depth != opaque_depth,
 			translucent_color,
-			step(translucent_depth, pos_shadow_screen.z)
+			float3(1.0),
 		);
 	}
 

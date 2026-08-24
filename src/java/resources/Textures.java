@@ -70,6 +70,7 @@ public class Textures {
 	// Shadow
 
 	public final ShadowTexture shadowColor;
+	public final ShadowTexture shadowRsmData;
 
 	public Textures(PipelineConfig pipeline, Screen screen) {
 		pipeline.loadPNGTexture("tex_blue_noise", "texture/blue_noise.png");
@@ -323,7 +324,11 @@ public class Textures {
 
 		shadowColor = pipeline.shadowTexture(
 			"tex_shadow_color",
-			TextureFormat.RGBA8_UNORM
+			TextureFormat.RG11B10_UFLOAT
+		);
+		shadowRsmData = pipeline.shadowTexture(
+			"tex_shadow_rsm_data",
+			TextureFormat.RG32_UINT
 		);
 
 		// Exposure histogram

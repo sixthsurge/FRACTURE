@@ -79,7 +79,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	gtao.Result gtao_result
 		= gtao.calculate(pos_screen, pos_view, normal_view, dither);
 
-	float3 rsm = rsm.calculate(pos_scene, normal_world, dither);
+	float3 rsm
+		= rsm.calculate(pos_scene, normal_world, dither, gbuffer.lightmap.y);
 
 	// Accumulation.
 	float pixel_age = 0.0;

@@ -1,3 +1,5 @@
+import org.joml.Vector4f;
+
 import dev.irisshaders.aperture.api.ShaderPack;
 import dev.irisshaders.aperture.api.objects.AddressMode;
 import dev.irisshaders.aperture.api.objects.FilterMode;

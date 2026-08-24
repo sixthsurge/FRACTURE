@@ -9,10 +9,15 @@ import lib.util.random;
 import lib.util.sampling;
 import settings;
 
-internal Texture2DArray<float4> tex_shadow_color;
+internal Texture2DArray<uint2> tex_shadow_rsm_data;
 
 namespace rsm {
-float3 calculate(float3 pos_scene, float3 normal_world, float2 dither) {
+float3 calculate(
+	float3 pos_scene,
+	float3 normal_world,
+	float2 dither,
+	float skylight
+) {
 	if (!userSettings.RSM_ENABLED) {
 		return float3(0.0);
 	}
@@ -57,8 +62,7 @@ float3 calculate(float3 pos_scene, float3 normal_world, float2 dither) {
 			sample_pos_shadow_screen.xy * userSettings.SHADOW_RESOLUTION
 		);
 		float reflector_depth = ap.opaqueShadow[int3(shadow_icoord, cascade)];
-		float4 color_and_normal
-			= tex_shadow_color[int3(shadow_icoord, cascade)];
+		uint2 data = tex_shadow_rsm_data[int3(shadow_icoord, cascade)];
 
 		float3 reflector_pos_shadow_view = project_ortho_inv(
 			ap.celestial.projection[cascade],
@@ -69,20 +73,21 @@ float3 calculate(float3 pos_scene, float3 normal_world, float2 dither) {
 		float3 reflector_vector = reflector_pos_shadow_view - pos_shadow_view;
 		float dist_sq = max(EPS, length_squared(reflector_vector));
 
+		float4 unpacked_x = unpackUnorm4x8ToFloat(data.x);
+		float3 reflector_albedo = srgb_eotf_inv(unpacked_x.xyz);
+		float reflector_skylight = unpacked_x.w;
 		float3 reflector_normal
-			= decode_octahedral(unpack_unorm_arb(
-									uint(color_and_normal.w * 255.0),
-									uint4(4, 4, 0, 0)
-			)
-									.xy);
+			= decode_octahedral(unpackUnorm2x16ToFloat(data.y));
 
 		reflector_normal = mul(float3x3(ap.celestial.view), reflector_normal);
 		// Result is scaled by r, to account for sample density towards the edge
 		// of the disc being lower.
-		irradiance += r * srgb_eotf_inv(color_and_normal.xyz)
+		irradiance += r * reflector_albedo
 			* max0(dot(reflector_normal, light_dir_shadow_view))
 			* max0(-dot(reflector_vector, reflector_normal))
 			* max0(dot(reflector_vector, normal_shadow_view))
+			// Skylight trick to help with indoor leaking.
+			* linstep(0.75, 1.0, 1.0 - abs(skylight - reflector_skylight))
 			/ (dist_sq * dist_sq * PI * PI);
 	}
 

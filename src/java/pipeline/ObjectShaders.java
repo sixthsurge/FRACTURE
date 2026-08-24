@@ -46,7 +46,7 @@ public class ObjectShaders {
 						"program/object/shadow_opaque_rsm",
 						"Object"
 					)
-					.writes("color_and_normal", textures.shadowColor);
+					.writes("data", textures.shadowRsmData);
 			} else {
 				pipeline.object(
 					ProgramUsage.SHADOW,
@@ -63,7 +63,7 @@ public class ObjectShaders {
 			};
 			for (var usage : translucentShadowUsages) {
 				pipeline.object(usage, "program/object/shadow_translucent", "Object")
-					.writes("color_and_normal", textures.shadowColor);
+					.writes("color", textures.shadowColor);
 			}
 		}
 	}
