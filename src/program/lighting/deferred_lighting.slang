@@ -8,6 +8,7 @@ import lib.surface.gbuffer_packing;
 import lib.lighting.main_lighting;
 import lib.surface.material;
 import lib.util.color;
+import lib.util.encoding;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
@@ -19,9 +20,9 @@ Texture3D<float3> tex_atmosphere_aerial_perspective;
 Texture2D<float3> tex_atmosphere_transmittance;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
-Texture2D<float2> tex_qres_temporal_data_current;
+Texture2D<float4> tex_qres_temporal_data_current;
 Texture2D<float4> tex_gtao_output_current;
-Texture2D<float3> tex_rsm_output_current;
+Texture2D<float3> tex_rsm_output_filtered;
 Texture2D<float> tex_blue_noise;
 
 struct QuarterResLighting {
@@ -38,10 +39,10 @@ struct QuarterResLighting {
 	float3 rsm_output_01;
 	float3 rsm_output_10;
 	float3 rsm_output_11;
-	float qres_depth_00;
-	float qres_depth_01;
-	float qres_depth_10;
-	float qres_depth_11;
+	float4 qres_data_00;
+	float4 qres_data_01;
+	float4 qres_data_10;
+	float4 qres_data_11;
 
 	static QuarterResLighting load(int2 qres_pos) {
 		// FIXME Try using shared memory for this.
@@ -61,38 +62,48 @@ struct QuarterResLighting {
 			qres.gtao_output_11 = tex_gtao_output_current[p11];
 		}
 		if (userSettings.RSM_ENABLED) {
-			qres.rsm_output_00 = tex_rsm_output_current[qres_pos];
-			qres.rsm_output_01 = tex_rsm_output_current[p01];
-			qres.rsm_output_10 = tex_rsm_output_current[p10];
-			qres.rsm_output_11 = tex_rsm_output_current[p11];
+			qres.rsm_output_00 = tex_rsm_output_filtered[qres_pos];
+			qres.rsm_output_01 = tex_rsm_output_filtered[p01];
+			qres.rsm_output_10 = tex_rsm_output_filtered[p10];
+			qres.rsm_output_11 = tex_rsm_output_filtered[p11];
 		}
-		qres.qres_depth_00 = tex_qres_temporal_data_current[qres_pos].y;
-		qres.qres_depth_01 = tex_qres_temporal_data_current[p01].y;
-		qres.qres_depth_10 = tex_qres_temporal_data_current[p10].y;
-		qres.qres_depth_11 = tex_qres_temporal_data_current[p11].y;
+		qres.qres_data_00 = tex_qres_temporal_data_current[qres_pos];
+		qres.qres_data_01 = tex_qres_temporal_data_current[p01];
+		qres.qres_data_10 = tex_qres_temporal_data_current[p10];
+		qres.qres_data_11 = tex_qres_temporal_data_current[p11];
 
 		return qres;
 	}
 
 	private static float
-	depth_weight(float center_depth_view, float NoV, float depth_screen) {
+	depth_weight(float center_depth_view, float NoV, float4 data) {
 		const float STRENGTH = 10.0;
 		return exp2(
 			-STRENGTH
-			* abs(
-				(screen_to_view_depth(depth_screen) - center_depth_view) * NoV
-			)
+			* abs((screen_to_view_depth(data.y) - center_depth_view) * NoV)
 		);
 	}
 
-	Upscaled upscale(float depth_view, float NoV, float2 frac_pos) {
-		float w00 = depth_weight(depth_view, NoV, qres_depth_00)
-			* (1.0 - frac_pos.x) * (1.0 - frac_pos.y);
-		float w10 = depth_weight(depth_view, NoV, qres_depth_10)
+	private static float
+	normal_weight(float3 center_normal_world, float4 data) {
+		return pow16(
+			max0(dot(center_normal_world, decode_octahedral(data.zw)))
+		);
+	}
+
+	Upscaled
+	upscale(float3 normal_world, float depth_view, float NoV, float2 frac_pos) {
+		float w00 = depth_weight(depth_view, NoV, qres_data_00)
+			* normal_weight(normal_world, qres_data_00) * (1.0 - frac_pos.x)
+			* (1.0 - frac_pos.y);
+		float w10 = depth_weight(depth_view, NoV, qres_data_10)
+			* normal_weight(normal_world, qres_data_10)
 			* (frac_pos.x - frac_pos.x * frac_pos.y);
-		float w01 = depth_weight(depth_view, NoV, qres_depth_01)
+		float w01 = depth_weight(depth_view, NoV, qres_data_01)
+			* normal_weight(normal_world, qres_data_01)
 			* (frac_pos.y - frac_pos.x * frac_pos.y);
-		float w11 = depth_weight(depth_view, NoV, qres_depth_11)
+		float w11 = depth_weight(depth_view, NoV, qres_data_11)
+			* normal_weight(normal_world, qres_data_11)
 			* (frac_pos.x * frac_pos.y);
 		float w_sum = w00 + w10 + w01 + w11;
 		float rcp_w_sum = rcp(w_sum);
@@ -162,6 +173,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	}
 
 	QuarterResLighting.Upscaled upscaled = qres.upscale(
+		gbuffer.flat_normal_world,
 		screen_to_view_depth(depth),
 		dot(gbuffer.flat_normal_world, dir_world),
 		qres_pos_f

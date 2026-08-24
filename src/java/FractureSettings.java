@@ -50,7 +50,7 @@ public class FractureSettings implements PackSettings {
 		final var screenRsm = screenLighting.child("rsm");
 		screenRsm.option("RSM_ENABLED", OptionType.boolType(true), false);
 		screenRsm
-			.option("RSM_STEP_COUNT", OptionType.intType(1, 64, 1, 12), false);
+			.option("RSM_STEP_COUNT", OptionType.intType(1, 64, 1, 6), false);
 		screenRsm.option(
 			"RSM_RADIUS",
 			OptionType.floatType(0.25f, 16.0f, 0.25f, 6.0f),

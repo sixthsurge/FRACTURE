@@ -4,6 +4,7 @@ import aperture;
 import lib.surface.gbuffer_packing;
 import lib.lighting.gtao;
 import lib.lighting.rsm;
+import lib.util.encoding;
 import lib.util.filtering;
 import lib.util.math;
 import lib.util.random;
@@ -11,12 +12,12 @@ import lib.util.space_conversion;
 import settings;
 
 RWTexture2D<float4> tex_gtao_output_current;
-RWTexture2D<float3> tex_rsm_output_current;
-RWTexture2D<float2> tex_qres_temporal_data_current;
+RWTexture2D<float3> tex_rsm_output_raw;
+RWTexture2D<float4> tex_qres_temporal_data_current;
 
 Texture2D<float4> tex_gtao_output_prev;
-Texture2D<float3> tex_rsm_output_prev;
-Texture2D<float2> tex_qres_temporal_data_prev;
+Texture2D<float3> tex_rsm_output_filtered;
+Texture2D<float4> tex_qres_temporal_data_prev;
 Texture2D<uint4> tex_gbuffer_opaque;
 Texture2D<float> tex_blue_noise;
 
@@ -43,8 +44,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 	if (depth == 0.0) {
 		tex_gtao_output_current[icoord] = float4(1.0, 0.0, 0.0, 0.0);
-		tex_rsm_output_current[icoord] = float3(0.0);
-		tex_qres_temporal_data_current[icoord] = float2(0.0);
+		tex_rsm_output_raw[icoord] = float3(0.0);
+		tex_qres_temporal_data_current[icoord] = float4(0.0);
 		return;
 	}
 	float3 pos_screen = float3((icoord + 0.5) * output_pixel_size, depth);
@@ -62,13 +63,13 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		0,
 		0.65
 	);
-	float3 rsm_output_prev = tex_rsm_output_prev.sample_catmull_rom_fast(
+	float3 rsm_output_prev = tex_rsm_output_filtered.sample_catmull_rom_fast(
 		pos_prev_screen.xy,
 		0,
 		0.65
 	);
-	float2 temporal_data_prev
-		= tex_qres_temporal_data_prev.sampleLinear(pos_prev_screen.xy);
+	float4 temporal_data_prev
+		= tex_qres_temporal_data_prev.sampleNearest(pos_prev_screen.xy);
 
 	OpaqueGbuffer gbuffer = OpaqueGbuffer.unpack(gbuffer_packed);
 	float3 normal_world
@@ -85,12 +86,12 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float depth_prev = 0.0;
 	if (all(saturate(pos_prev_screen.xy) == pos_prev_screen.xy)
 		&& ap.timing.frameCounter > 1 && all(isfinite(temporal_data_prev))) {
-		const float MAX_ACCUMULATED_FRAMES = 10.0;
-		const float DEPTH_REJECTION_STRENGTH = 128.0;
-		const float OFFCENTER_REJECTION_STRENGTH = 0.25;
+		const float MAX_ACCUMULATED_FRAMES = 40.0;
+		const float DEPTH_REJECTION_STRENGTH = 16.0;
 
 		pixel_age = temporal_data_prev.x;
 		depth_prev = temporal_data_prev.y;
+		float3 normal_prev = decode_octahedral(temporal_data_prev.zw);
 
 		float3 bent_normal_prev;
 		bent_normal_prev.xy = gtao_output_prev.zw;
@@ -110,20 +111,11 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		float depth_weight
 			= exp2(-abs(z0 - z1) * DEPTH_REJECTION_STRENGTH * NoV * view_norm);
 
-		// Offcenter rejection from Jessie, which is originally by Zombye
-		// Reduces blur in motion
-		float2 pixel_offset = 1.0
-			- abs(2.0
-					  * frac(
-						  floor(0.5 * ap.game.renderSize) * pos_prev_screen.xy
-					  )
-				  - 1.0);
-		float offcenter_rejection = sqrt(pixel_offset.x * pixel_offset.y)
-				* OFFCENTER_REJECTION_STRENGTH
-			+ (1.0 - OFFCENTER_REJECTION_STRENGTH);
+		// Normal rejection
+		float normal_weight
+			= pow16(max0(dot(normal_prev, gbuffer.flat_normal_world)));
 
-		pixel_age
-			*= depth_weight * offcenter_rejection * float(depth_prev != 0.0);
+		pixel_age *= depth_weight * normal_weight * float(depth_prev != 0.0);
 
 		pixel_age = min(pixel_age, MAX_ACCUMULATED_FRAMES);
 		float history_weight = pixel_age / (pixel_age + 1.0);
@@ -157,9 +149,13 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		gtao_result.bent_normal.xy
 	);
 	if (userSettings.RSM_ENABLED) {
-		tex_rsm_output_current[icoord] = rsm;
+		tex_rsm_output_raw[icoord] = rsm;
 	}
-	tex_qres_temporal_data_current[icoord] = float2(pixel_age + 1.0, depth);
+	tex_qres_temporal_data_current[icoord] = float4(
+		pixel_age + 1.0,
+		depth,
+		encode_octahedral(gbuffer.flat_normal_world)
+	);
 }
 
 

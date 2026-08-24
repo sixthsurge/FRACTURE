@@ -120,7 +120,12 @@ constexpr float3 project_and_divide(float4x4 m, float3 pos) {
 
 [ForceInline]
 constexpr float3 project_ortho(float4x4 m, float3 pos) {
-	return diagonal(m).xyz * pos + m[3].xyz;
+	return diagonal(m).xyz * pos + float3(m[0].w, m[1].w, m[2].w);
+}
+
+[ForceInline]
+constexpr float3 project_ortho_inv(float4x4 m, float3 pos) {
+	return ((pos - float3(m[0].w, m[1].w, m[2].w)) / diagonal(m).xyz);
 }
 
 // Faster alternative to acos

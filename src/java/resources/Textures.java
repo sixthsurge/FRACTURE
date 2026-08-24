@@ -64,10 +64,8 @@ public class Textures {
 
 	// RSM
 
-	public final Texture2D rsmOutputA;
-	public final Texture2D rsmOutputB;
-	public final TextureReference rsmOutputCurrent;
-	public final TextureReference rsmOutputPrevious;
+	public final Texture2D rsmOutputRaw;
+	public final Texture2D rsmOutputFiltered;
 
 	// Shadow
 
@@ -214,7 +212,7 @@ public class Textures {
 			= pipeline
 				  .texture2D(
 					  "tex_qres_temporal_data_a",
-					  TextureFormat.RG16_SFLOAT
+					  TextureFormat.RGBA16_SFLOAT
 				  )
 				  .size(qresWidth, qresHeight)
 				  .create();
@@ -222,7 +220,7 @@ public class Textures {
 			= pipeline
 				  .texture2D(
 					  "tex_qres_temporal_data_b",
-					  TextureFormat.RG16_SFLOAT
+					  TextureFormat.RGBA16_SFLOAT
 				  )
 				  .size(qresWidth, qresHeight)
 				  .create();
@@ -267,24 +265,16 @@ public class Textures {
 
 		// RSM
 
-		rsmOutputA
+		rsmOutputRaw
 			= pipeline
-				  .texture2D("tex_rsm_output_a", TextureFormat.RGBA16_SFLOAT)
+				  .texture2D("tex_rsm_output_raw", TextureFormat.RGBA16_SFLOAT)
 				  .size(qresWidth, qresHeight)
 				  .create();
-		rsmOutputB
+		rsmOutputFiltered
 			= pipeline
-				  .texture2D("tex_rsm_output_b", TextureFormat.RGBA16_SFLOAT)
+				  .texture2D("tex_rsm_output_filtered", TextureFormat.RGBA16_SFLOAT)
 				  .size(qresWidth, qresHeight)
 				  .create();
-		rsmOutputCurrent
-			= pipeline.reference("tex_rsm_output_current", rsmOutputA.format())
-				  .size(qresWidth, qresHeight)
-				  .createEmpty();
-		rsmOutputPrevious
-			= pipeline.reference("tex_rsm_output_prev", rsmOutputA.format())
-				  .size(qresWidth, qresHeight)
-				  .createEmpty();
 
 		// Fog
 
@@ -354,9 +344,6 @@ public class Textures {
 
 		gtaoOutputCurrent.set(oddFrame ? gtaoOutputA : gtaoOutputB);
 		gtaoOutputPrevious.set(oddFrame ? gtaoOutputB : gtaoOutputA);
-
-		rsmOutputCurrent.set(oddFrame ? rsmOutputA : rsmOutputB);
-		rsmOutputPrevious.set(oddFrame ? rsmOutputB : rsmOutputA);
 
 		qresTemporalDataCurrent.set(
 			oddFrame ? qresTemporalDataA : qresTemporalDataB
