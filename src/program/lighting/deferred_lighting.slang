@@ -194,7 +194,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	);
 
 	radiance += material.albedo * upscaled.rsm_output
-		* buf_global.celestial_light_irradiance * upscaled.gtao_output.x;
+		* buf_global.celestial_light_irradiance;
 
 	if (userSettings.ATMOSPHERE_AP_LUT_ENABLED) {
 		radiance = atmosphere.apply_aerial_perspective(

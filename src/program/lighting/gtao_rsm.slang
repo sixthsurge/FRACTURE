@@ -75,8 +75,6 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		= gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world);
 	float3 normal_view = mul(float3x3(ap.camera.view), normal_world);
 
-	dither = r2(ap.timing.frameCounter, dither);
-
 	gtao.Result gtao_result
 		= gtao.calculate(pos_screen, pos_view, normal_view, dither);
 

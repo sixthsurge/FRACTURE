@@ -53,12 +53,7 @@ public class FractureSettings implements PackSettings {
 			.option("RSM_STEP_COUNT", OptionType.intType(1, 64, 1, 12), false);
 		screenRsm.option(
 			"RSM_RADIUS",
-			OptionType.floatType(0.25f, 16.0f, 0.25f, 4.0f),
-			true
-		);
-		screenRsm.option(
-			"RSM_DISTANCE_FALLOFF",
-			OptionType.floatType(0.01f, 1.0f, 0.1f, 0.25f),
+			OptionType.floatType(0.25f, 16.0f, 0.25f, 6.0f),
 			true
 		);
 

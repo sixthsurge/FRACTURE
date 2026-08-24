@@ -2,6 +2,7 @@ public module gtao;
 
 import aperture;
 import lib.util.math;
+import lib.util.random;
 import lib.util.space_conversion;
 import settings;
 
@@ -88,6 +89,8 @@ Result calculate(
 	if (!userSettings.GTAO_ENABLED) {
 		return Result(1.0, 0.0, normal_view);
 	}
+
+	dither = r2(ap.timing.frameCounter, dither);
 
 	float ao = 0.0;
 	float ambient_sss = 0.0;

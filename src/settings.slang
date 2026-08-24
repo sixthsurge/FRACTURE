@@ -57,7 +57,6 @@ struct Settings {
     float EXPOSURE_TARGET_B;
     float GTAO_RADIUS;
     float MANUAL_EXPOSURE_VALUE;
-    float RSM_DISTANCE_FALLOFF;
     float RSM_RADIUS;
     static const bool ATMOSPHERE_AP_LUT_ENABLED = value_ATMOSPHERE_AP_LUT_ENABLED;
     static const bool AUTO_EXPOSURE_ENABLED = value_AUTO_EXPOSURE_ENABLED;
