@@ -247,6 +247,13 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		);
 		radiance *= 1.0 - fresnel;
 
+		if (userSettings.MIRROR_WATER) {
+			// Turn water into a perfect mirror, for debugging the raytracer.
+			normal_world = tbn[2];
+			material.f0 = float3(1.0);
+			radiance = float3(0.0);
+		}
+
 		// Sun specular reflection.
 		float NoL = dot(normal_world, buf_global.light_dir_world);
 		if (buf_global.sun_angle < 0.5 && NoL > EPS) {

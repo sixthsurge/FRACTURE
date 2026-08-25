@@ -11,8 +11,6 @@ public class FractureSettings implements PackSettings {
 			OptionType.boolType(false),
 			false
 		);
-		screen.option("DEBUG", OptionType.boolType(false), false);
-		screen.option("WHITE_WORLD", OptionType.boolType(false), true);
 
 		final var screenLighting = screen.child("lighting");
 
@@ -182,8 +180,13 @@ public class FractureSettings implements PackSettings {
 		);
 		screenAgx.option(
 			"AGX_SAT",
-			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.1f),
+			OptionType.floatType(0.0f, 2.0f, 0.01f, 1.3f),
 			true
 		);
+
+		final var screenDev = screen.child("dev");
+		screenDev.option("DEBUG", OptionType.boolType(false), false);
+		screenDev.option("WHITE_WORLD", OptionType.boolType(false), false);
+		screenDev.option("MIRROR_WATER", OptionType.boolType(false), false);
 	}
 }

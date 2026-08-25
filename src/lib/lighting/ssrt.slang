@@ -41,8 +41,9 @@ float thickness_heuristic(float3 pos_view, float3 ray_dir_screen) {
 	return max(abs(ray_dir_screen.z) * 0.01, 0.02 / pow2(pos_view.z));
 }
 
-internal int2 depth_lod_size(int lod) {
-	return max(1, ap.game.renderSize >> lod);
+// Fractional!
+internal float2 depth_lod_size(int lod) {
+	return ap.game.renderSize * exp2(-lod);
 }
 
 // Returns the distance to the next boundary between cells in the pixel grid, in
@@ -94,8 +95,11 @@ trace_hiz(Ray ray_screen, float ray_length, float thickness_heuristic) {
 	float2 cross_offset = (nearest_cell_boundary * 2.0 - 1.0)
 		/ (float2(ap.game.renderSize) * 128.0);
 
+	int w, h, levels;
+	tex_depth_hiz_min_max.GetDimensions(0, w, h, levels);
+
 	int current_lod = 2;
-	int max_lod = int(ceil(log2(float(max_of(ap.game.renderSize))))) - 1;
+	int max_lod = levels + 1;
 
 	// Start the ray at the next cell boundary.
 	float2 initial_cell_count = depth_lod_size(current_lod);

@@ -32,6 +32,7 @@ extern static const bool value_GTAO_ENABLED;
 extern static const int value_GTAO_HORIZON_STEP_COUNT;
 extern static const int value_GTAO_SLICE_COUNT;
 extern static const bool value_LABPBR_SUPPORT_ENABLED;
+extern static const bool value_MIRROR_WATER;
 extern static const float value_MOON_ANGULAR_RADIUS;
 extern static const bool value_RSM_ENABLED;
 extern static const int value_RSM_STEP_COUNT;
@@ -41,6 +42,7 @@ extern static const bool value_SHADOW_ENABLED;
 extern static const int value_SHADOW_RESOLUTION;
 extern static const float value_SUN_ANGULAR_RADIUS;
 extern static const bool value_TAA_ENABLED;
+extern static const bool value_WHITE_WORLD;
 
 struct Settings {
     float AGX_OFFSET_B;
@@ -59,7 +61,6 @@ struct Settings {
     float GTAO_RADIUS;
     float MANUAL_EXPOSURE_VALUE;
     float RSM_RADIUS;
-    bool WHITE_WORLD;
     static const bool ATMOSPHERE_AP_LUT_ENABLED = value_ATMOSPHERE_AP_LUT_ENABLED;
     static const bool AUTO_EXPOSURE_ENABLED = value_AUTO_EXPOSURE_ENABLED;
     static const bool BLOOM_ENABLED = value_BLOOM_ENABLED;
@@ -73,6 +74,7 @@ struct Settings {
     static const int GTAO_HORIZON_STEP_COUNT = value_GTAO_HORIZON_STEP_COUNT;
     static const int GTAO_SLICE_COUNT = value_GTAO_SLICE_COUNT;
     static const bool LABPBR_SUPPORT_ENABLED = value_LABPBR_SUPPORT_ENABLED;
+    static const bool MIRROR_WATER = value_MIRROR_WATER;
     static const float MOON_ANGULAR_RADIUS = value_MOON_ANGULAR_RADIUS;
     static const bool RSM_ENABLED = value_RSM_ENABLED;
     static const int RSM_STEP_COUNT = value_RSM_STEP_COUNT;
@@ -82,6 +84,7 @@ struct Settings {
     static const int SHADOW_RESOLUTION = value_SHADOW_RESOLUTION;
     static const float SUN_ANGULAR_RADIUS = value_SUN_ANGULAR_RADIUS;
     static const bool TAA_ENABLED = value_TAA_ENABLED;
+    static const bool WHITE_WORLD = value_WHITE_WORLD;
 };
 
 ConstantBuffer<Settings, ScalarDataLayout> userSettings;

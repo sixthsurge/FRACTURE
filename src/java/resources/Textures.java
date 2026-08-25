@@ -8,6 +8,7 @@ import dev.irisshaders.aperture.api.objects.TextureReference;
 import dev.irisshaders.aperture.api.pipeline.FrameState;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import util.Flipper;
+import util.Util;
 
 public class Textures {
 	public static final int ATMOSPHERE_TRANSMITTANCE_LUT_WIDTH = 256;
@@ -152,10 +153,23 @@ public class Textures {
 
 		// Hi-Z depth
 
+		// The texture must be padded so that the all lods except the last are even-sized.
+		final var maxLod = (int) Math.ceil(
+			Math.log(Math.max(screen.windowWidth(), screen.windowHeight()))
+			/ Math.log(2.0)
+		);
+		final var lodCount = Math.min(maxLod, 11);
+		// Subtract 2, because:
+		// - last mip doesn't need to be even.
+		// - the first mip in the texture is actually the 2nd mip in the whole chain.
+		final var roundFactor = Math.powExact(2, lodCount - 2);
+		final var hiZWidth = Util.roundUp(Math.ceilDiv(screen.renderWidth(), 2), roundFactor);
+		final var hiZHeight = Util.roundUp(Math.ceilDiv(screen.renderHeight(), 2), roundFactor);
+
 		depthHizMinMax
 			= pipeline
 				  .texture2D("tex_depth_hiz_min_max", TextureFormat.RG32_SFLOAT)
-				  .size(screen.renderWidth() / 2, screen.renderHeight() / 2)
+				  .size(hiZWidth, hiZHeight)
 				  .usesMipmaps()
 				  .create();
 

@@ -47,7 +47,9 @@ groupshared AF4 spdIntermediate[16][16];
 groupshared AU1 spdCounter;
 
 // Load from source image
-AF4 SpdLoadSourceImage(ASU2 tex, AU1 slice) { return ap.depth[tex]; }
+AF4 SpdLoadSourceImage(ASU2 tex, AU1 slice) {
+	return ap.depth[clamp(tex, int2(0), ap.game.renderSize)];
+}
 
 // SpdLoad() takes a 32-bit signed integer 2D coordinate and loads color.
 // Loads the 5th mip level, each value is computed by a different thread group
