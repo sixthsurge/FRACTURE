@@ -95,11 +95,18 @@ trace_hiz(Ray ray_screen, float ray_length, float thickness_heuristic) {
 	float2 cross_offset = (nearest_cell_boundary * 2.0 - 1.0)
 		/ (float2(ap.game.renderSize) * 128.0);
 
-	int w, h, levels;
-	tex_depth_hiz_min_max.GetDimensions(0, w, h, levels);
+	// The number of levels in the Hi-Z depth texture is one less than the total
+	// number of levels, as the finest level (original depth texture) is not
+	// stored in tex_depth_hiz_min_max.
+	// The maximum lod index is one less than the total number of levels, so it
+	// is equal to the number of levels in the Hi-Z depth texture.
+	int w, h, max_lod;
+	tex_depth_hiz_min_max.GetDimensions(0, w, h, max_lod);
 
-	int current_lod = 2;
-	int max_lod = levels + 1;
+	// FidelityFX-SPD can only calculate up to 12 lods.
+	max_lod = min(max_lod, 11);
+
+	int current_lod = min(2, max_lod);
 
 	// Start the ray at the next cell boundary.
 	float2 initial_cell_count = depth_lod_size(current_lod);
