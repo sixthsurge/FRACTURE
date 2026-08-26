@@ -153,7 +153,8 @@ public class Textures {
 
 		// Hi-Z depth
 
-		// The texture must be padded so that the all lods except the last are even-sized.
+		// The texture must be padded so that the all lods except the last are
+		// even-sized.
 		final var maxLod = (int) Math.ceil(
 			Math.log(Math.max(screen.windowWidth(), screen.windowHeight()))
 			/ Math.log(2.0)
@@ -161,10 +162,13 @@ public class Textures {
 		final var lodCount = Math.min(maxLod, 11);
 		// Subtract 2, because:
 		// - last mip doesn't need to be even.
-		// - the first mip in the texture is actually the 2nd mip in the whole chain.
+		// - the first mip in the texture is actually the 2nd mip in the whole
+		// chain.
 		final var roundFactor = Math.powExact(2, lodCount - 2);
-		final var hiZWidth = Util.roundUp(Math.ceilDiv(screen.renderWidth(), 2), roundFactor);
-		final var hiZHeight = Util.roundUp(Math.ceilDiv(screen.renderHeight(), 2), roundFactor);
+		final var hiZWidth
+			= Util.roundUp(Math.ceilDiv(screen.renderWidth(), 2), roundFactor);
+		final var hiZHeight
+			= Util.roundUp(Math.ceilDiv(screen.renderHeight(), 2), roundFactor);
 
 		depthHizMinMax
 			= pipeline
@@ -358,6 +362,19 @@ public class Textures {
 		pipeline.texture2D("tex_exposure_histogram", TextureFormat.R32_UINT)
 			.size(256, 1)
 			.create();
+
+		// Voxel RT
+
+		if (pipeline.settings().getBoolValue("VOXEL_RT_ENABLED")) {
+			pipeline.texture3D("tex_voxel_face_data", TextureFormat.RG32_UINT)
+				.size(
+					pipeline.settings().getIntValue("VOXEL_RT_VOLUME_SIZE_X")
+						* 6,
+					pipeline.settings().getIntValue("VOXEL_RT_VOLUME_SIZE_Y"),
+					pipeline.settings().getIntValue("VOXEL_RT_VOLUME_SIZE_Z")
+				)
+				.create();
+		}
 	}
 
 	// Called in onNewFrame.

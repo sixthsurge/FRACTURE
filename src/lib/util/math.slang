@@ -233,7 +233,7 @@ float3 slerp(float3 v0, float3 v1, float t) {
 }
 
 float3x3 make_tbn_matrix(float3 normal) {
-	float3 tangent = normal.y == 1.0
+	float3 tangent = abs(normal.y) == 1.0
 		? float3(1.0, 0.0, 0.0)
 		: normalize(cross(float3(0.0, 1.0, 0.0), normal));
 	float3 bitangent = normalize(cross(tangent, normal));

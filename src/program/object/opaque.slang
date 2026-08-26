@@ -1,4 +1,6 @@
 import aperture;
+import lib.lighting.voxel_rt.write_face_data;
+import lib.lighting.voxel_rt.util;
 import lib.surface.gbuffer_packing;
 import lib.surface.material;
 import lib.util.math;
@@ -7,6 +9,9 @@ import settings;
 
 extern static const int USAGE_CURRENT;
 extern static const int USAGE_BASIC;
+extern static const int USAGE_TERRAIN_SOLID;
+
+Texture2D blockAtlas;
 
 struct FragmentOutput {
 	uint4 gbuffer;
@@ -36,12 +41,34 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 			= linstep(float2(1.0 / 32.0), float2(31.0 / 32.0), v.lightCoord());
 		output.id
 			= select(v.blockID().hasValue, v.blockID().value.data.customId, 0);
-		output.color_packed = packUnorm4x8(v.color());
+		output.color_packed = packUnorm4x8(
+			v.color() * float4(float3(0.5 * length(v.midBlock().value)), 1.0)
+		);
 		output.overlay_color_packed
 			= packUnorm4x8(v.overlayColor().orElse(float4(0.0, 0.0, 0.0, 1.0)));
 		output.normal_packed
 			= packUnorm4x8(float4(normal_world * 0.5 + 0.5, 1.0));
 		output.tangent_packed = packUnorm4x8(tangent_world * 0.5 + 0.5);
+
+		// world's worst voxelization
+		if (userSettings.VOXEL_RT_ENABLED
+			&& USAGE_CURRENT == USAGE_TERRAIN_SOLID
+			&& v.blockID().value.id != -1) {
+			int block_atlas_w, block_atlas_h;
+			blockAtlas.GetDimensions(block_atlas_w, block_atlas_h);
+			float2 atlas_dims = float2(block_atlas_w, block_atlas_h);
+
+			int3 pos = int3(floor(
+						   pos_scene.xyz + v.midBlock().orElse(float3(0.0))
+						   + frac(ap.camera.position)
+					   ))
+				+ VOXEL_RT_VOLUME_SIZE / 2;
+			float2 grid_size = atlas_dims * rcp(16.0);
+			float2 uv_topleft = floor(v.uv() * grid_size) / grid_size;
+			int face_index = face_index_from_normal(v.normal().value);
+
+			write_voxel_face_data(pos, face_index, uv_topleft, v.color());
+		}
 	}
 
 	override static float4

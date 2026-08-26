@@ -42,6 +42,10 @@ extern static const bool value_SHADOW_ENABLED;
 extern static const int value_SHADOW_RESOLUTION;
 extern static const float value_SUN_ANGULAR_RADIUS;
 extern static const bool value_TAA_ENABLED;
+extern static const bool value_VOXEL_RT_ENABLED;
+extern static const int value_VOXEL_RT_VOLUME_SIZE_X;
+extern static const int value_VOXEL_RT_VOLUME_SIZE_Y;
+extern static const int value_VOXEL_RT_VOLUME_SIZE_Z;
 extern static const bool value_WHITE_WORLD;
 
 struct Settings {
@@ -84,6 +88,10 @@ struct Settings {
     static const int SHADOW_RESOLUTION = value_SHADOW_RESOLUTION;
     static const float SUN_ANGULAR_RADIUS = value_SUN_ANGULAR_RADIUS;
     static const bool TAA_ENABLED = value_TAA_ENABLED;
+    static const bool VOXEL_RT_ENABLED = value_VOXEL_RT_ENABLED;
+    static const int VOXEL_RT_VOLUME_SIZE_X = value_VOXEL_RT_VOLUME_SIZE_X;
+    static const int VOXEL_RT_VOLUME_SIZE_Y = value_VOXEL_RT_VOLUME_SIZE_Y;
+    static const int VOXEL_RT_VOLUME_SIZE_Z = value_VOXEL_RT_VOLUME_SIZE_Z;
     static const bool WHITE_WORLD = value_WHITE_WORLD;
 };
 

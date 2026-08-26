@@ -1,6 +1,7 @@
 screen.root = General
 
 screen.lighting = Lighting
+screen.vxrt = Voxel RT
 screen.shadow = Shadows
 screen.gtao = GTAO
 screen.rsm = RSM 
@@ -14,4 +15,5 @@ screen.taa = TAA
 screen.bloom = Bloom 
 screen.exposure = Exposure 
 screen.agx = AGX Look Transform
+
 screen.dev = Development

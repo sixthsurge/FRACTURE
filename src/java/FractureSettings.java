@@ -14,6 +14,25 @@ public class FractureSettings implements PackSettings {
 
 		final var screenLighting = screen.child("lighting");
 
+		final var screenVxrt = screenLighting.child("vxrt");
+		screenVxrt
+			.option("VOXEL_RT_ENABLED", OptionType.boolType(false), false);
+		screenVxrt.option(
+			"VOXEL_RT_VOLUME_SIZE_X",
+			OptionType.intType(16, 1024, 16, 128),
+			false
+		);
+		screenVxrt.option(
+			"VOXEL_RT_VOLUME_SIZE_Y",
+			OptionType.intType(16, 1024, 16, 64),
+			false
+		);
+		screenVxrt.option(
+			"VOXEL_RT_VOLUME_SIZE_Z",
+			OptionType.intType(16, 1024, 16, 128),
+			false
+		);
+
 		final var screenShadow = screenLighting.child("shadow");
 		screenShadow.option("SHADOW_ENABLED", OptionType.boolType(true), false);
 		screenShadow.option(

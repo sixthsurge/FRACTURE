@@ -14,6 +14,11 @@ import lib.util.random;
 import lib.util.space_conversion;
 import settings;
 
+// TEMPORARY
+import lib.lighting.voxel_rt.trace;
+Texture2D blockAtlas;
+//
+
 RWTexture2D<float3> tex_scene_write;
 Texture2D<uint4> tex_gbuffer_opaque;
 Texture3D<float3> tex_atmosphere_aerial_perspective;
@@ -231,6 +236,32 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	}
 
 	radiance = fog_participation.apply(radiance);
+
+	if (userSettings.VOXEL_RT_ENABLED) {
+		Optional<vxrt.Hit> maybe_hit
+			= vxrt.trace(Ray(ap.camera.position, dir_world), 50);
+		if (let hit = maybe_hit) {
+			if (let face = vxrt.get_voxel_face_data(hit.voxel, hit.normal)) {
+				int block_atlas_w, block_atlas_h;
+				blockAtlas.GetDimensions(block_atlas_w, block_atlas_h);
+				float2 atlas_dims = float2(block_atlas_w, block_atlas_h);
+				float3x3 tbn = make_tbn_matrix(hit.normal);
+
+				float2 uv = abs(frac(float2(
+					dot(tbn[0], hit.pos_world),
+					dot(tbn[1], hit.pos_world)
+				)));
+				uv = face.uv_top_left
+					+ uv * (16.0 / float2(block_atlas_w, block_atlas_h));
+
+				radiance = srgb_eotf_inv(
+							   blockAtlas.sampleNearestLevel(uv, 0).rgb
+							   * face.color.rgb
+						   )
+					* 0.05;
+			}
+		}
+	}
 
 	tex_scene_write[icoord] = radiance;
 }

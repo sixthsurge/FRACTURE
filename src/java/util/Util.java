@@ -20,17 +20,11 @@ public class Util {
 	}
 
 	// Round x to the nearest n.
-	public static int round(int x, int n) {
-		return ((x + n / 2) / n) * n;
-	}
+	public static int round(int x, int n) { return ((x + n / 2) / n) * n; }
 
 	// Round x to the highest n.
-	public static int roundUp(int x, int n) {
-		return ((x + n - 1) / n) * n;
-	}
+	public static int roundUp(int x, int n) { return ((x + n - 1) / n) * n; }
 
 	// Round x to the lowest n.
-	public static int roundDown(int x, int n) {
-		return (x / n) * n;
-	}
+	public static int roundDown(int x, int n) { return (x / n) * n; }
 }

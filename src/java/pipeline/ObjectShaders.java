@@ -17,6 +17,10 @@ public class ObjectShaders {
 	) {
 		final var usages = new ObjectShaderUsage[] {
 			new ObjectShaderUsage(ProgramUsage.BASIC, "USAGE_BASIC"),
+			new ObjectShaderUsage(
+				ProgramUsage.TERRAIN_SOLID,
+				"USAGE_TERRAIN_SOLID"
+			),
 		};
 		createObjectShaders((ProgramUsage usage) -> {
 			return factory.object(usage, "program/object/opaque", "Object")
