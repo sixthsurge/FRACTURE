@@ -76,10 +76,8 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 			gbuffer.normal_world = flat_normal_world;
 			gbuffer.mat_id = input.id;
 			gbuffer.skylight = input.lightmap.y;
-			if (userSettings.LABPBR_SUPPORT_ENABLED) {
-				gbuffer.specular_map_rg = float2(0.0);
-				gbuffer.albedo = unpackUnorm4x8ToFloat(input.color_packed).rgb;
-			}
+			gbuffer.specular_map_rg = float2(0.0);
+			gbuffer.albedo = unpackUnorm4x8ToFloat(input.color_packed).rgb;
 
 			return FragmentOutput(float4(0.0), gbuffer.pack());
 		}
@@ -175,11 +173,11 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 		gbuffer.normal_world = detail_normal_world;
 		gbuffer.mat_id = input.id;
 		gbuffer.skylight = input.lightmap.y;
-		if (userSettings.LABPBR_SUPPORT_ENABLED) {
-			bool is_albedo_metal = all(material.f0 == material.albedo);
-			gbuffer.specular_map_rg = specular_map.rg;
-			gbuffer.albedo = select(is_albedo_metal, material.albedo, none);
-		}
+		gbuffer.albedo = select(
+			all(material.f0 == material.albedo),
+			material.albedo,
+			none
+		);
 
 		return FragmentOutput(float4(radiance, albedo.a), gbuffer.pack());
 	}

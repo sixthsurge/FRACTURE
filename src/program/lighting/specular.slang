@@ -133,11 +133,9 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		skylight = gbuffer.skylight;
 		mat_id = gbuffer.mat_id;
 
-		if (userSettings.LABPBR_SUPPORT_ENABLED) {
-			specular_map_rg = gbuffer.specular_map_rg;
-			if (let albedo_val = gbuffer.albedo) {
-				albedo = albedo_val;
-			}
+		specular_map_rg = gbuffer.specular_map_rg;
+		if (let albedo_val = gbuffer.albedo) {
+			albedo = albedo_val;
 		}
 	} else {
 		// Solid.

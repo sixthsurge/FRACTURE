@@ -62,27 +62,23 @@ struct TranslucentGbuffer {
 
 	static TranslucentGbuffer unpack(uint2 packed) {
 		float4 unpacked0 = unpackUnorm4x8ToFloat(packed.x);
+		float4 unpacked1 = unpackUnorm4x8ToFloat(packed.y);
 
 		TranslucentGbuffer unpacked;
 		unpacked.normal_world = decode_octahedral(unpacked0.xy);
 		unpacked.skylight = unpacked0.z;
 		unpacked.mat_id = int(unpacked0.w * 255.0);
 
-		if (userSettings.LABPBR_SUPPORT_ENABLED) {
-			float4 unpacked1 = unpackUnorm4x8ToFloat(packed.y);
-			float f0 = 0.0;
-			// Water or albedo metal.
-			bool stores_albedo = any(unpacked1.zw >= EPS);
+		// Water or albedo metal.
+		bool stores_albedo = any(unpacked1.zw >= EPS);
 
-			if (stores_albedo) {
-				unpacked.specular_map_rg = float2(unpacked1.x, 0.0);
-				unpacked.albedo = saturate(
-					(unpacked1.yzw * (255.0 / 245.0) - (1.0 / 254.0))
-				);
-			} else {
-				unpacked.specular_map_rg = unpacked1.xy;
-				unpacked.albedo = none;
-			}
+		if (stores_albedo) {
+			unpacked.specular_map_rg = float2(unpacked1.x, 0.0);
+			unpacked.albedo
+				= saturate((unpacked1.yzw * (255.0 / 245.0) - (1.0 / 254.0)));
+		} else {
+			unpacked.specular_map_rg = unpacked1.xy;
+			unpacked.albedo = none;
 		}
 
 		return unpacked;
