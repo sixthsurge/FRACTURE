@@ -112,7 +112,7 @@ float3 calculate_fresnel(Material material, float LoH) {
 	} else if (material.is_metal) {
 		return fresnel_schlick(LoH, material.albedo);
 	}
-	return fresnel_dielectric(LoH, material.f0.x);
+	return float3(fresnel_dielectric(LoH, material.f0.x));
 }
 
 float3 specular_smith_ggx(

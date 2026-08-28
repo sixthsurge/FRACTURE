@@ -14,6 +14,7 @@ import lib.util.random;
 import lib.util.space_conversion;
 import settings;
 
+import lib.util.debug;
 // TEMPORARY
 import lib.lighting.voxel_rt.trace;
 Texture2D blockAtlas;

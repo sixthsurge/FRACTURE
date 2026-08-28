@@ -41,9 +41,7 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 			= linstep(float2(1.0 / 32.0), float2(31.0 / 32.0), v.lightCoord());
 		output.id
 			= select(v.blockID().hasValue, v.blockID().value.data.customId, 0);
-		output.color_packed = packUnorm4x8(
-			v.color() * float4(float3(0.5 * length(v.midBlock().value)), 1.0)
-		);
+		output.color_packed = packUnorm4x8(v.color());
 		output.overlay_color_packed
 			= packUnorm4x8(v.overlayColor().orElse(float4(0.0, 0.0, 0.0, 1.0)));
 		output.normal_packed
