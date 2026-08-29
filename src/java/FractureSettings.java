@@ -119,6 +119,9 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
+		final var screenWater = screen.child("water");
+		screenWater.option("WATER_CAUSTICS", OptionType.boolType(false), false);
+
 		final var screenPost = screen.child("post");
 
 		final var screenTaa = screenPost.child("taa");

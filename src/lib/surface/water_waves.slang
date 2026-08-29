@@ -1,7 +1,9 @@
 public module water_waves;
 
 import aperture;
+import lib.surface.material;
 import lib.util.math;
+import settings;
 
 internal Texture2D<float> tex_worley_noise_2d;
 internal SamplerState sampler_linear_repeat;
@@ -70,6 +72,30 @@ interface IWaterWaves {
 			pos_tangent.z
 				+ dir_tangent.z
 					* max_of(abs(ray_pos - pos_tangent.xy) / dir_tangent.xy)
+		);
+	}
+
+	static float calculate_caustics(
+		Params params,
+		float3x3 tbn,
+		float3 pos_world,
+		float dist
+	) {
+		float3 pos_tangent = mul(tbn, pos_world);
+		float3 normal = mul(calculate_normal(params, pos_tangent.xy), tbn);
+
+		float3 refracted_pos_world = pos_world
+			+ refract(buf_global.light_dir_world, normal, AIR_IOR / WATER_IOR)
+				* dist;
+		float old_area
+			= length_squared(ddx(pos_world)) * length_squared(ddy(pos_world));
+		float new_area = length_squared(ddx(refracted_pos_world))
+			* length_squared(ddy(refracted_pos_world));
+
+		return select(
+			old_area == 0.0 || new_area == 0.0,
+			1.0,
+			rsqrt(old_area / new_area) / pow2(dist)
 		);
 	}
 }

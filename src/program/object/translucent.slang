@@ -1,5 +1,4 @@
 import aperture;
-import lib.volumetrics.atmosphere;
 import lib.lighting.celestial;
 import lib.lighting.emission;
 import lib.lighting.lightmap;
@@ -13,6 +12,7 @@ import lib.util.color;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
+import lib.volumetrics.atmosphere;
 import lib.volumetrics.fog;
 import object_shader;
 import settings;

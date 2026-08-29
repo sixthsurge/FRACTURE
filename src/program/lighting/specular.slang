@@ -186,7 +186,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 		float2 refracted_ncoord = ncoord
 			+ normal_tangent.xy * rcp(view_distance + 1.0)
-				* min(layer_distance, 16.0) * 0.1;
+				* min(layer_distance, 16.0) * 0.05;
 
 		[flatten]
 		if (all(refracted_ncoord == saturate(refracted_ncoord))) {

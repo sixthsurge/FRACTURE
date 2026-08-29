@@ -50,6 +50,7 @@ extern static const bool value_TEST_VXRT;
 extern static const int value_VOXEL_RT_VOLUME_SIZE_X;
 extern static const int value_VOXEL_RT_VOLUME_SIZE_Y;
 extern static const int value_VOXEL_RT_VOLUME_SIZE_Z;
+extern static const bool value_WATER_CAUSTICS;
 extern static const bool value_WHITE_WORLD;
 
 struct Settings {
@@ -100,6 +101,7 @@ struct Settings {
     static const int VOXEL_RT_VOLUME_SIZE_X = value_VOXEL_RT_VOLUME_SIZE_X;
     static const int VOXEL_RT_VOLUME_SIZE_Y = value_VOXEL_RT_VOLUME_SIZE_Y;
     static const int VOXEL_RT_VOLUME_SIZE_Z = value_VOXEL_RT_VOLUME_SIZE_Z;
+    static const bool WATER_CAUSTICS = value_WATER_CAUSTICS;
     static const bool WHITE_WORLD = value_WHITE_WORLD;
 };
 
