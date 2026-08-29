@@ -75,6 +75,8 @@ interface IWaterWaves {
 		);
 	}
 
+	// Caustics based on
+	// https://medium.com/@evanwallace/rendering-realtime-caustics-in-webgl-2a99a29a0b2c.
 	static float calculate_caustics(
 		Params params,
 		float3x3 tbn,
