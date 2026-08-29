@@ -1,16 +1,12 @@
-public module main_lighting;
+public module celestial;
 
-import lib.buffer.sky_sh;
 import lib.lighting.brdf;
 import lib.surface.material;
 import lib.lighting.shadow;
 import lib.util.color;
 import lib.util.phase_functions;
 import lib.util.math;
-import lib.util.spherical_harmonics;
 import settings;
-
-ConstantBuffer<SkyShBuffer> buf_sky_sh;
 
 internal float3 calculate_sss(
 	float3 albedo,
@@ -42,7 +38,7 @@ internal float3 calculate_sss(
 	return max0(sss) * albedo * SCALE;
 }
 
-internal float3 calculate_direct_celestial_light(
+float3 calculate_celestial_light(
 	Material material,
 	float3 pos_scene,
 	float3 dir_world,
@@ -95,45 +91,6 @@ internal float3 calculate_direct_celestial_light(
 		light += (diffuse + specular) * max0(NoL) * shadow.visibility;
 	}
 	return light * buf_global.celestial_light_irradiance;
-}
-
-float3 calculate_outgoing_radiance(
-	Material material,
-	float3 pos_scene,
-	float3 dir_world,
-	float3 flat_normal_world,
-	float3 detail_normal_world,
-	float2 lightmap,
-	float ao,
-	float ambient_sss,
-	float3 bent_normal,
-	float2 dither
-) {
-	float3 radiance = calculate_direct_celestial_light(
-		material,
-		pos_scene,
-		dir_world,
-		flat_normal_world,
-		detail_normal_world,
-		dither
-	);
-
-	// Ambient light
-
-	float3 ambient_irradiance
-		= sh_evaluate_irradiance(buf_sky_sh.coeff, bent_normal, ao)
-		* pow2(lightmap.y);
-
-	ambient_irradiance += pow3(lightmap.x) * float3(0.05, 0.02, 0.02) * ao;
-
-	radiance += ambient_irradiance * material.albedo
-		* (rcp(PI) + ambient_sss * material.sss_amount);
-
-	// Emission
-
-	radiance += material.emission * 0.25;
-
-	return max0(radiance);
 }
 
 

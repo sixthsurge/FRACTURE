@@ -1,8 +1,9 @@
 import aperture;
-import lib.lighting.voxel_rt.write_face_data;
-import lib.lighting.voxel_rt.util;
+import lib.lighting.vxrt.write_face_data;
+import lib.lighting.vxrt.util;
 import lib.surface.gbuffer_packing;
 import lib.surface.material;
+import lib.toggles;
 import lib.util.math;
 import object_shader;
 import settings;
@@ -10,6 +11,7 @@ import settings;
 extern static const int USAGE_CURRENT;
 extern static const int USAGE_BASIC;
 extern static const int USAGE_TERRAIN_SOLID;
+extern static const int USAGE_TERRAIN_CUTOUT;
 
 Texture2D blockAtlas;
 
@@ -49,8 +51,9 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 		output.tangent_packed = packUnorm4x8(tangent_world * 0.5 + 0.5);
 
 		// world's worst voxelization
-		if (userSettings.VOXEL_RT_ENABLED
-			&& USAGE_CURRENT == USAGE_TERRAIN_SOLID
+		if (toggle.VXRT_DATA
+			&& (USAGE_CURRENT == USAGE_TERRAIN_SOLID
+				|| USAGE_CURRENT == USAGE_TERRAIN_CUTOUT)
 			&& v.blockID().value.id != -1) {
 			int block_atlas_w, block_atlas_h;
 			blockAtlas.GetDimensions(block_atlas_w, block_atlas_h);

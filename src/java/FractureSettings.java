@@ -14,9 +14,13 @@ public class FractureSettings implements PackSettings {
 
 		final var screenLighting = screen.child("lighting");
 
+		final var screenPtgi = screenLighting.child("ptgi");
+		screenPtgi.option("PTGI_ENABLED", OptionType.boolType(false), false);
+		screenPtgi
+			.option("PTGI_MODE", OptionType.intType(new int[] {0}, 0), false);
+
 		final var screenVxrt = screenLighting.child("vxrt");
-		screenVxrt
-			.option("VOXEL_RT_ENABLED", OptionType.boolType(false), false);
+		screenVxrt.option("TEST_VXRT", OptionType.boolType(false), false);
 		screenVxrt.option(
 			"VOXEL_RT_VOLUME_SIZE_X",
 			OptionType.intType(16, 1024, 16, 128),
@@ -50,6 +54,9 @@ public class FractureSettings implements PackSettings {
 			OptionType.intType(16, 1024, 16, 160),
 			false
 		);
+
+		final var screenSsr = screenLighting.child("ssr");
+		screenSsr.option("SSR_ENABLED", OptionType.boolType(true), false);
 
 		final var screenGtao = screenLighting.child("gtao");
 		screenGtao.option("GTAO_ENABLED", OptionType.boolType(true), false);
@@ -116,6 +123,8 @@ public class FractureSettings implements PackSettings {
 
 		final var screenTaa = screenPost.child("taa");
 		screenTaa.option("TAA_ENABLED", OptionType.boolType(true), false);
+		screenTaa
+			.option("INFINITE_ACCUMULATION", OptionType.boolType(false), false);
 
 		final var screenBloom = screenPost.child("bloom");
 		screenBloom.option("BLOOM_ENABLED", OptionType.boolType(true), false);

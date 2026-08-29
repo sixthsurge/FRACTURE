@@ -7,7 +7,6 @@ import dev.irisshaders.aperture.api.pipeline.FrameState;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import dev.irisshaders.aperture.api.renderer.RendererConfig;
-import org.joml.Vector4f;
 import pipeline.ObjectShaders;
 import pipeline.PostRenderPasses;
 import pipeline.PostShadowPasses;
@@ -15,19 +14,24 @@ import pipeline.PreOverlayPasses;
 import pipeline.PreRenderPasses;
 import pipeline.PreTranslucentPasses;
 import resources.Buffers;
+import resources.FeatureToggles;
 import resources.Textures;
 import util.ProgramFactory;
 
 public class Fracture implements ShaderPack {
-	Textures textures;
-	Buffers buffers;
+	private FeatureToggles toggles;
+	private Textures textures;
+	private Buffers buffers;
 
 	@Override
 	public void configurePipeline(Screen screen, PipelineConfig pipeline) {
 		ProgramFactory factory = new ProgramFactory(pipeline, screen);
 
-		textures = new Textures(pipeline, screen);
+		toggles = FeatureToggles.get(pipeline);
+		textures = new Textures(pipeline, screen, toggles);
 		buffers = new Buffers(pipeline);
+
+		toggles.addGlobalExports(factory);
 
 		// Zero spdGlobalAtomic for FidelityFX SPD.
 		pipeline.stage(ProgramStage.SCREEN_SETUP)
@@ -38,7 +42,7 @@ public class Fracture implements ShaderPack {
 			)
 			.dispatch1D(1);
 
-		PreRenderPasses.setup(pipeline, screen, factory, textures);
+		PreRenderPasses.setup(pipeline, screen, factory, textures, toggles);
 		ObjectShaders.setupShadow(pipeline, factory, textures);
 		PostShadowPasses.setup(pipeline, screen, factory, textures);
 		ObjectShaders.setupOpaque(pipeline, factory, textures);

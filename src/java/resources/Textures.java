@@ -74,7 +74,11 @@ public class Textures {
 	public final ShadowTexture shadowColor;
 	public final ShadowTexture shadowRsmData;
 
-	public Textures(PipelineConfig pipeline, Screen screen) {
+	public Textures(
+		PipelineConfig pipeline,
+		Screen screen,
+		FeatureToggles toggles
+	) {
 		pipeline.loadPNGTexture("tex_blue_noise", "texture/blue_noise.png");
 		pipeline.loadPNGTexture(
 			"tex_worley_noise_2d",
@@ -114,14 +118,17 @@ public class Textures {
 
 		taaOutputA
 			= pipeline
-				  .texture2D("tex_taa_output_a", TextureFormat.RGBA16_SFLOAT)
+				  .texture2D(
+					  "tex_taa_output_a",
+					  pipeline.settings().getBoolValue("INFINITE_ACCUMULATION")
+						  ? TextureFormat.RGBA32_SFLOAT
+						  : TextureFormat.RGBA16_SFLOAT
+				  )
 				  .windowSize()
 				  .create();
-		taaOutputB
-			= pipeline
-				  .texture2D("tex_taa_output_b", TextureFormat.RGBA16_SFLOAT)
-				  .windowSize()
-				  .create();
+		taaOutputB = pipeline.texture2D("tex_taa_output_b", taaOutputA.format())
+						 .windowSize()
+						 .create();
 		taaOutputCurrent
 			= pipeline.reference("tex_taa_output_current", taaOutputA.format())
 				  .windowSize()
@@ -365,7 +372,7 @@ public class Textures {
 
 		// Voxel RT
 
-		if (pipeline.settings().getBoolValue("VOXEL_RT_ENABLED")) {
+		if (toggles.vxrtData()) {
 			pipeline.texture3D("tex_voxel_face_data", TextureFormat.RG32_UINT)
 				.size(
 					pipeline.settings().getIntValue("VOXEL_RT_VOLUME_SIZE_X")

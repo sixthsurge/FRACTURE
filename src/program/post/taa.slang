@@ -4,6 +4,7 @@ import lib.util.color;
 import lib.util.filtering;
 import lib.util.math;
 import lib.util.space_conversion;
+import settings;
 
 RWTexture2D<float4> tex_taa_output_current;
 Texture2D<float4> tex_taa_output_prev;
@@ -257,11 +258,19 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	// stability further away
 	float distance_factor = 1.0 - exp2(-0.025 * length(closest_view));
 
+	if (userSettings.INFINITE_ACCUMULATION) {
+		// Only accumulate if didn't move.
+		int2 icoord_prev = int2(ncoord_prev * ap.game.renderSize);
+		pixel_age = select(all(icoord == icoord_prev), pixel_age, 1.0);
+	}
+
 	// Dynamic blend weight lending equal weight to all frames in the history,
 	// drastically reducing time taken to converge when upscaling
-	float blend_weight = lerp(0.35, 0.10, distance_factor);
-	float alpha = max(1.0 / pixel_age, blend_weight);
-
+	float alpha = 1.0 / pixel_age;
+	if (!userSettings.INFINITE_ACCUMULATION) {
+		float blend_weight = lerp(0.35, 0.10, distance_factor);
+		alpha = max(alpha, blend_weight);
+	}
 	float3 current_color;
 
 	if (!TAAU_ENABLED) {
@@ -274,12 +283,14 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		current_color = reinhard(current_color);
 		history_color = reinhard(history_color);
 
-		history_color = neighborhood_clipping(
-			icoord,
-			current_color,
-			history_color,
-			distance_factor
-		);
+		if (!userSettings.INFINITE_ACCUMULATION) {
+			history_color = neighborhood_clipping(
+				icoord,
+				current_color,
+				history_color,
+				distance_factor
+			);
+		}
 	} else {
 		/*
 		// Temporal upscaling

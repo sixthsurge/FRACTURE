@@ -287,18 +287,20 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		radiance = fog.apply(radiance);
 	}
 
-	radiance
-		+= calculate_reflection(
-			   material,
-			   front_pos_screen,
-			   front_pos_view,
-			   dir_view,
-			   mul(float3x3(ap.camera.view), normal_world),
-			   skylight,
-			   water_shadow_visibility,
-			   mat_id == MAT_WATER,
-		   )
-		* exp(-fog.extinction);
+	if (userSettings.SSR_ENABLED) {
+		radiance
+			+= calculate_reflection(
+				   material,
+				   front_pos_screen,
+				   front_pos_view,
+				   dir_view,
+				   mul(float3x3(ap.camera.view), normal_world),
+				   skylight,
+				   water_shadow_visibility,
+				   mat_id == MAT_WATER,
+			   )
+			* exp(-fog.extinction);
+	}
 
 	tex_scene_write[icoord] = radiance;
 }

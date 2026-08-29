@@ -1,24 +1,22 @@
 // Deferred shading for opaque layer, draw sky.
 
 import aperture;
-import lib.volumetrics.atmosphere;
-import lib.volumetrics.fog;
-import lib.volumetrics.sky;
+import lib.lighting.celestial;
+import lib.lighting.emission;
+import lib.lighting.lightmap;
+import lib.lighting.vxrt.pt;
 import lib.surface.gbuffer_packing;
-import lib.lighting.main_lighting;
 import lib.surface.material;
 import lib.util.color;
 import lib.util.encoding;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
+import lib.volumetrics.atmosphere;
+import lib.volumetrics.fog;
+import lib.volumetrics.sky;
 import settings;
-
 import lib.util.debug;
-// TEMPORARY
-import lib.lighting.voxel_rt.trace;
-Texture2D blockAtlas;
-//
 
 RWTexture2D<float3> tex_scene_write;
 Texture2D<uint4> tex_gbuffer_opaque;
@@ -208,22 +206,39 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		dither = r2(ap.timing.frameCounter, dither);
 	}
 
-	float3 radiance = calculate_outgoing_radiance(
-		material,
-		pos_scene,
-		dir_world,
-		gbuffer.flat_normal_world,
-		gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world),
-		gbuffer.lightmap,
-		ao,
-		ambient_sss,
-		bent_normal_world,
-		dither
-	);
+	float3 detail_normal_world
+		= gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world);
 
-	if (userSettings.RSM_ENABLED) {
-		radiance += material.albedo * upscaled.rsm_output
-			* buf_global.celestial_light_irradiance;
+	float3 ambient_brdf
+		= material.albedo / PI * (1.0 + ambient_sss * material.sss_amount);
+	float3 radiance
+		= calculate_celestial_light(
+			  material,
+			  pos_scene,
+			  dir_world,
+			  gbuffer.flat_normal_world,
+			  detail_normal_world,
+			  dither
+		  )
+		+ calculate_emission(material.emission);
+
+	if (!userSettings.PTGI_ENABLED) {
+		radiance += calculate_lightmap_skylight(
+			ambient_brdf,
+			gbuffer.lightmap,
+			bent_normal_world,
+			ao,
+		);
+		radiance += calculate_lightmap_blocklight(
+			ambient_brdf,
+			gbuffer.lightmap,
+			ao
+		);
+
+		if (userSettings.RSM_ENABLED) {
+			radiance += ambient_brdf * upscaled.rsm_output * PI
+				* buf_global.celestial_light_irradiance;
+		}
 	}
 
 	if (userSettings.ATMOSPHERE_AP_LUT_ENABLED) {
@@ -238,30 +253,18 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 	radiance = fog_participation.apply(radiance);
 
-	if (userSettings.VOXEL_RT_ENABLED) {
-		Optional<vxrt.Hit> maybe_hit
-			= vxrt.trace(Ray(ap.camera.position, dir_world), 50);
-		if (let hit = maybe_hit) {
-			if (let face = vxrt.get_voxel_face_data(hit.voxel, hit.normal)) {
-				int block_atlas_w, block_atlas_h;
-				blockAtlas.GetDimensions(block_atlas_w, block_atlas_h);
-				float2 atlas_dims = float2(block_atlas_w, block_atlas_h);
-				float3x3 tbn = make_tbn_matrix(hit.normal);
-
-				float2 uv = abs(frac(float2(
-					dot(tbn[0], hit.pos_world),
-					dot(tbn[1], hit.pos_world)
-				)));
-				uv = face.uv_top_left
-					+ uv * (16.0 / float2(block_atlas_w, block_atlas_h));
-
-				radiance = srgb_eotf_inv(
-							   blockAtlas.sampleNearestLevel(uv, 0).rgb
-							   * face.color.rgb
-						   )
-					* 0.05;
-			}
-		}
+	if (userSettings.PTGI_ENABLED) {
+		uint seed = (ap.timing.frameCounter * ap.game.renderSize.x + icoord.y)
+				* ap.game.renderSize.y
+			+ icoord.x;
+		radiance += vxrt.pt<PcgRandom, 1, 3>(
+			PcgRandom(seed),
+			material,
+			pos_scene + ap.camera.position,
+			dir_world,
+			gbuffer.flat_normal_world,
+			detail_normal_world
+		);
 	}
 
 	tex_scene_write[icoord] = radiance;

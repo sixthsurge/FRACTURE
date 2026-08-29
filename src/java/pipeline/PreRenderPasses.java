@@ -4,6 +4,7 @@ import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import org.joml.Vector4f;
+import resources.FeatureToggles;
 import resources.Textures;
 import util.ProgramFactory;
 
@@ -12,13 +13,28 @@ public class PreRenderPasses {
 		PipelineConfig pipeline,
 		Screen screen,
 		ProgramFactory factory,
-		Textures textures
+		Textures textures,
+		FeatureToggles toggles
 	) {
 		factory.setCurrentStage(pipeline.stage(ProgramStage.PRE_RENDER));
 
 		if (pipeline.settings().getBoolValue("DEBUG")) {
 			pipeline.stage(ProgramStage.PRE_RENDER)
 				.clearTo(new Vector4f(0.0f), textures.debug);
+		}
+
+		if (toggles.vxrtData()) {
+			factory.compute3d(
+				"vxrt/clear_face_data",
+				"program/lighting/voxel_data/clear_face_data",
+				"main",
+				pipeline.settings().getIntValue("VOXEL_RT_VOLUME_SIZE_X") * 6,
+				pipeline.settings().getIntValue("VOXEL_RT_VOLUME_SIZE_Y"),
+				pipeline.settings().getIntValue("VOXEL_RT_VOLUME_SIZE_Z"),
+				8,
+				8,
+				4
+			);
 		}
 
 		setupAtmosphere(pipeline, textures, factory);

@@ -1,25 +1,31 @@
 import aperture;
 import lib.volumetrics.atmosphere;
+import lib.lighting.celestial;
+import lib.lighting.emission;
+import lib.lighting.lightmap;
+import lib.lighting.vxrt.write_face_data;
+import lib.lighting.vxrt.util;
 import lib.surface.mat_ids;
-import lib.lighting.main_lighting;
 import lib.surface.material;
 import lib.surface.gbuffer_packing;
-import lib.volumetrics.fog;
+import lib.toggles;
 import lib.util.color;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
+import lib.volumetrics.fog;
 import object_shader;
 import settings;
 
 extern static const int USAGE_CURRENT;
 extern static const int USAGE_TRANSLUCENT;
-extern static const int USAGE_HAND;
+extern static const int USAGE_TERRAIN_TRANSLUCENT;
 extern static const int USAGE_EMISSIVE;
 
 Texture2D<float> tex_blue_noise;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
+Texture2D blockAtlas;
 
 struct FragmentOutput {
 	float4 color;
@@ -58,6 +64,24 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 		output.normal_packed
 			= packUnorm4x8(float4(normal_world * 0.5 + 0.5, 1.0));
 		output.tangent_packed = packUnorm4x8(tangent_world * 0.5 + 0.5);
+
+		if (toggle.VXRT_DATA && USAGE_CURRENT == USAGE_TERRAIN_TRANSLUCENT
+			&& v.blockID().value.id != -1) {
+			int block_atlas_w, block_atlas_h;
+			blockAtlas.GetDimensions(block_atlas_w, block_atlas_h);
+			float2 atlas_dims = float2(block_atlas_w, block_atlas_h);
+
+			int3 pos = int3(floor(
+						   pos_scene.xyz + v.midBlock().orElse(float3(0.0))
+						   + frac(ap.camera.position)
+					   ))
+				+ VOXEL_RT_VOLUME_SIZE / 2;
+			float2 grid_size = atlas_dims * rcp(16.0);
+			float2 uv_topleft = floor(v.uv() * grid_size) / grid_size;
+			int face_index = face_index_from_normal(v.normal().value);
+
+			write_voxel_face_data(pos, face_index, uv_topleft, v.color());
+		}
 	}
 
 	override static float4
@@ -154,18 +178,24 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 			dither = r2(ap.timing.frameCounter, dither);
 		}
 
-		float3 radiance = calculate_outgoing_radiance(
-			material,
-			input.pos_scene,
-			normalize(input.pos_scene),
-			flat_normal_world,
-			detail_normal_world,
-			input.lightmap,
-			1.0,
-			0.0,
-			detail_normal_world,
-			dither
-		);
+		float3 ambient_brdf = material.albedo * rcp(PI);
+		float3 radiance
+			= calculate_celestial_light(
+				  material,
+				  input.pos_scene,
+				  normalize(input.pos_scene),
+				  flat_normal_world,
+				  detail_normal_world,
+				  dither
+			  )
+			+ calculate_lightmap_skylight(
+				  ambient_brdf,
+				  input.lightmap,
+				  detail_normal_world,
+				  1.0
+			)
+			+ calculate_lightmap_blocklight(ambient_brdf, input.lightmap, 1.0)
+			+ calculate_emission(material.emission);
 
 		radiance = fog_participation.apply(radiance);
 

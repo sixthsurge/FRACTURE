@@ -1,5 +1,90 @@
 public module random;
 
+interface IRandom {
+	[mutating]
+	uint next();
+
+	[mutating]
+	float next_float() {
+		// Source: https://stackoverflow.com/a/79656319.
+		return (next() >> 8) * 0x1p-24f;
+	}
+
+	[mutating]
+	float2 next_float2() { return float2(next_float(), next_float()); }
+
+	[mutating]
+	float3 next_float3() { return float3(next_float2(), next_float()); }
+
+	[mutating]
+	float4 next_float4() { return float4(next_float3(), next_float()); }
+}
+
+struct PcgRandom : IRandom {
+	uint state;
+
+	[mutating]
+	uint next() {
+		// Source:
+		// https://github.com/riccardoscalco/glsl-pcg-prng/blob/main/index.glsl
+
+		// ---------------------------------------------------------------------
+		// License for shader version:
+		// Copyright 2020 Riccardo Scalco
+
+		// Permission is hereby granted, free of charge, to any person obtaining
+		// a copy of this software and associated documentation files (the
+		// "Software"), to deal in the Software without restriction, including
+		// without limitation the rights to use, copy, modify, merge, publish,
+		// distribute, sublicense, and/or sell copies of the Software, and to
+		// permit persons to whom the Software is furnished to do so, subject to
+		// the following conditions:
+
+		// The above copyright notice and this permission notice shall be
+		// included in all copies or substantial portions of the Software.
+
+		// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+		// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+		// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+		// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+		// BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+		// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+		// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+		// SOFTWARE.
+
+		// ---------------------------------------------------------------------
+		// Original license for PCG:
+		// PCG Random Number Generation for C.
+		//
+		// Copyright 2014 Melissa O'Neill <oneill@pcg-random.org>
+		//
+		// Licensed under the Apache License, Version 2.0 (the "License");
+		// you may not use this file except in compliance with the License.
+		// You may obtain a copy of the License at
+		//
+		//     http://www.apache.org/licenses/LICENSE-2.0
+		//
+		// Unless required by applicable law or agreed to in writing, software
+		// distributed under the License is distributed on an "AS IS" BASIS,
+		// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+		// implied. See the License for the specific language governing
+		// permissions and limitations under the License.
+		//
+		// For additional information about the PCG random number generation
+		// scheme, including its license and other licensing options, visit
+		//
+		//     http://www.pcg-random.org
+
+		uint state = state * uint(747796405) + uint(2891336453);
+		uint word = ((state >> ((state >> uint(28)) + uint(4))) ^ state)
+			* uint(277803737);
+		this.state = (word >> uint(22)) ^ word;
+		return state;
+	}
+}
+
+// -----------------------------------------------------------------------------
+// R_n low-discrepency sequences from
 // http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
 
 static const float PHI_1
@@ -46,7 +131,8 @@ float3 r3_next(float3 u) {
 	return frac(u + alpha);
 }
 
-// Hash functions from https://www.shadertoy.com/view/4djSRW
+// -----------------------------------------------------------------------------
+// Float hash functions from https://www.shadertoy.com/view/4djSRW
 // License:
 /* Copyright (c)2014 David Hoskins.
 Permission is hereby granted, free of charge, to any person obtaining a copy

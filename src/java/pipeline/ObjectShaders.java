@@ -21,6 +21,10 @@ public class ObjectShaders {
 				ProgramUsage.TERRAIN_SOLID,
 				"USAGE_TERRAIN_SOLID"
 			),
+			new ObjectShaderUsage(
+				ProgramUsage.TERRAIN_CUTOUT,
+				"USAGE_TERRAIN_CUTOUT"
+			),
 		};
 		createObjectShaders((ProgramUsage usage) -> {
 			return factory.object(usage, "program/object/opaque", "Object")
@@ -38,7 +42,10 @@ public class ObjectShaders {
 				ProgramUsage.TRANSLUCENT,
 				"USAGE_TRANSLUCENT"
 			),
-			new ObjectShaderUsage(ProgramUsage.HAND, "USAGE_HAND"),
+			new ObjectShaderUsage(
+				ProgramUsage.TERRAIN_TRANSLUCENT,
+				"USAGE_TERRAIN_TRANSLUCENT"
+			),
 			new ObjectShaderUsage(ProgramUsage.EMISSIVE, "USAGE_EMISSIVE"),
 		};
 		createObjectShaders((ProgramUsage usage) -> {

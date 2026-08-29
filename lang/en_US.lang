@@ -1,10 +1,12 @@
 screen.root = General
 
 screen.lighting = Lighting
-screen.vxrt = Voxel RT
+screen.ptgi = Path Tracing
+screen.ssr = Screen-Space Reflections
 screen.shadow = Shadows
 screen.gtao = GTAO
 screen.rsm = RSM 
+screen.vxrt = Voxel Data
 
 screen.atmospherics = Atmospherics
 screen.fog = Fog

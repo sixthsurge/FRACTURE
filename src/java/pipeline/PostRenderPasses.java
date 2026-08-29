@@ -29,6 +29,16 @@ public class PostRenderPasses {
 
 		setupBloom(pipeline, screen, factory, textures, nextPassInput);
 
+		if (pipeline.settings().getBoolValue("TEST_VXRT")) {
+			factory.windowSizedCompute(
+				"test_vxrt",
+				"program/lighting/voxel_data/test",
+				"main",
+				16,
+				16
+			);
+		}
+
 		pipeline.combinationPass("program/post/combination")
 			.overrideObject("tex_input", nextPassInput)
 			.overrideObject("tex_bloom", textures.bloom.front().name());

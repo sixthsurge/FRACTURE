@@ -1,7 +1,9 @@
 import aperture;
 import lib.volumetrics.atmosphere;
 import lib.surface.mat_ids;
-import lib.lighting.main_lighting;
+import lib.lighting.celestial;
+import lib.lighting.emission;
+import lib.lighting.lightmap;
 import lib.surface.material;
 import lib.surface.gbuffer_packing;
 import lib.volumetrics.fog;
@@ -131,18 +133,24 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 			dither = r2(ap.timing.frameCounter, dither);
 		}
 
-		float3 radiance = calculate_outgoing_radiance(
-			material,
-			input.pos_scene,
-			normalize(input.pos_scene),
-			flat_normal_world,
-			detail_normal_world,
-			input.lightmap,
-			1.0,
-			0.0,
-			detail_normal_world,
-			dither
-		);
+		float3 ambient_brdf = material.albedo * rcp(PI);
+		float3 radiance
+			= calculate_celestial_light(
+				  material,
+				  input.pos_scene,
+				  normalize(input.pos_scene),
+				  flat_normal_world,
+				  detail_normal_world,
+				  dither
+			  )
+			+ calculate_lightmap_skylight(
+				  ambient_brdf,
+				  input.lightmap,
+				  detail_normal_world,
+				  1.0
+			)
+			+ calculate_lightmap_blocklight(ambient_brdf, input.lightmap, 1.0)
+			+ calculate_emission(material.emission);
 
 		radiance = fog_participation.apply(radiance);
 

@@ -181,4 +181,28 @@ float3 diffuse_hammon(
 	return albedo * multi + single;
 }
 
+// Improved GGX importance sampling function by from Zombye in shaderLABS
+// #snippets.
+// https://ggx-research.github.io/publication/2023/06/09/publication-ggx.html
+float3 sample_ggx_vndf(float3 viewer_dir, float2 alpha, float2 hash) {
+	// Transform viewer direction to the hemisphere configuration
+	viewer_dir = normalize(float3(alpha * viewer_dir.xy, viewer_dir.z));
+
+	// Sample a reflection direction off the hemisphere
+	const float tau = 6.2831853; // 2 * pi
+	float phi = tau * hash.x;
+	float cos_theta = fma(1.0 - hash.y, 1.0 + viewer_dir.z, -viewer_dir.z);
+	float sin_theta = sqrt(clamp(1.0 - cos_theta * cos_theta, 0.0, 1.0));
+	float3 reflected
+		= float3(float2(cos(phi), sin(phi)) * sin_theta, cos_theta);
+
+	// Evaluate halfway direction
+	// This gives the normal on the hemisphere
+	float3 halfway = reflected + viewer_dir;
+
+	// Transform the halfway direction back to hemiellispoid configuation
+	// This gives the final sampled normal
+	return normalize(float3(alpha * halfway.xy, halfway.z));
+}
+
 
