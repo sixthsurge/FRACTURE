@@ -1,4 +1,4 @@
-package util;
+package fracture.util;
 
 import org.joml.Vector2f;
 import org.joml.Vector3d;

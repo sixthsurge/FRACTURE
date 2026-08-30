@@ -1,4 +1,4 @@
-package util;
+package fracture.util;
 
 public class Flipper<T> {
 	private T first;

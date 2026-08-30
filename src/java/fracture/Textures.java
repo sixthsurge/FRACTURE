@@ -1,4 +1,4 @@
-package resources;
+package fracture;
 
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.ShadowTexture;
@@ -7,8 +7,8 @@ import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.objects.TextureReference;
 import dev.irisshaders.aperture.api.pipeline.FrameState;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
-import util.Flipper;
-import util.Util;
+import fracture.util.Flipper;
+import fracture.util.Util;
 
 public class Textures {
 	public static final int ATMOSPHERE_TRANSMITTANCE_LUT_WIDTH = 256;
@@ -372,7 +372,7 @@ public class Textures {
 
 		// Voxel RT
 
-		if (toggles.vxrtData()) {
+		if (toggles.vxrtData) {
 			pipeline.texture3D("tex_voxel_face_data", TextureFormat.RG32_UINT)
 				.size(
 					pipeline.settings().getIntValue("VOXEL_RT_VOLUME_SIZE_X")

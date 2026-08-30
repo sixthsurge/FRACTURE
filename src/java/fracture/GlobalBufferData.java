@@ -1,10 +1,10 @@
-package resources;
+package fracture;
 import dev.irisshaders.aperture.api.pipeline.FrameState;
+import fracture.util.AtmosphereTransmittance;
+import fracture.util.Util;
 import org.joml.Vector2f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
-import util.AtmosphereTransmittance;
-import util.Util;
 
 public record GlobalBufferData(
 	Vector2f taa_jitter,

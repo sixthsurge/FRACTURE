@@ -1,4 +1,4 @@
-package resources;
+package fracture;
 
 import dev.irisshaders.aperture.api.objects.MappedBuffer;
 import dev.irisshaders.aperture.api.pipeline.FrameState;

@@ -1,28 +1,21 @@
-package pipeline;
+package fracture.pipeline;
 
-import dev.irisshaders.aperture.api.objects.Screen;
-import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
-import resources.Textures;
-import util.ProgramFactory;
+import fracture.Resources;
+import fracture.util.PipelineBuilder;
 
-public class PostShadowPasses {
-	public static void setup(
-		PipelineConfig pipeline,
-		Screen screen,
-		ProgramFactory factory,
-		Textures textures
-	) {
-		factory.setCurrentStage(pipeline.stage(ProgramStage.POST_SHADOW));
+public class PostShadow {
+	public static void setup(PipelineBuilder builder, Resources resources) {
+		builder.setStage(ProgramStage.POST_SHADOW);
 
 		final var fogVolumeSizeX
-			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_X");
+			= builder.settings().getIntValue("FOG_VOLUME_SIZE_X");
 		final var fogVolumeSizeY
-			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Y");
+			= builder.settings().getIntValue("FOG_VOLUME_SIZE_Y");
 		final var fogVolumeSizeZ
-			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Z");
+			= builder.settings().getIntValue("FOG_VOLUME_SIZE_Z");
 
-		factory
+		builder
 			.compute3d(
 				"fog/create_volume a",
 				"program/volumetrics/fog/create_volume",
@@ -49,7 +42,7 @@ public class PostShadowPasses {
 				"tex_fog_volume_extinction_b"
 			);
 
-		factory
+		builder
 			.compute3d(
 				"fog/create_volume b",
 				"program/volumetrics/fog/create_volume",
@@ -76,7 +69,7 @@ public class PostShadowPasses {
 				"tex_fog_volume_extinction_a"
 			);
 
-		factory.compute2d(
+		builder.compute2d(
 			"fog/integrate_volume",
 			"program/volumetrics/fog/integrate_volume",
 			"main",

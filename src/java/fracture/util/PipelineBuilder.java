@@ -1,4 +1,4 @@
-package util;
+package fracture.util;
 
 import dev.irisshaders.aperture.api.commands.CompositeCommand;
 import dev.irisshaders.aperture.api.commands.ComputeCommand;
@@ -6,11 +6,13 @@ import dev.irisshaders.aperture.api.commands.StageList;
 import dev.irisshaders.aperture.api.objects.ObjectShaderBuilder;
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
+import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import dev.irisshaders.aperture.api.pipeline.ProgramUsage;
+import dev.irisshaders.aperture.api.settings.SettingsManager;
 import java.util.ArrayList;
 
 /// Helper for reducing boilerplate in program creation.
-public class ProgramFactory {
+public class PipelineBuilder {
 	private record IntExport(String name, int value) {}
 
 	private record FloatExport(String name, float value) {}
@@ -24,7 +26,7 @@ public class ProgramFactory {
 	private ArrayList<FloatExport> globalFloatExports;
 	private ArrayList<BoolExport> globalBoolExports;
 
-	public ProgramFactory(PipelineConfig pipeline, Screen screen) {
+	public PipelineBuilder(PipelineConfig pipeline, Screen screen) {
 		this.pipeline = pipeline;
 		this.screen = screen;
 		currentStage = null;
@@ -33,7 +35,15 @@ public class ProgramFactory {
 		globalBoolExports = new ArrayList<>();
 	}
 
-	public void setCurrentStage(StageList stage) { currentStage = stage; }
+	public PipelineConfig pipeline() { return pipeline; }
+
+	public Screen screen() { return screen; }
+
+	public SettingsManager settings() { return pipeline.settings(); }
+
+	public void setStage(ProgramStage stage) {
+		currentStage = pipeline.stage(stage);
+	}
 
 	public void exportIntGlobally(String name, int value) {
 		globalIntExports.add(new IntExport(name, value));

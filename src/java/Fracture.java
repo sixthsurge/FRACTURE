@@ -5,58 +5,52 @@ import dev.irisshaders.aperture.api.objects.IBlockState;
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.pipeline.FrameState;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
-import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import dev.irisshaders.aperture.api.renderer.RendererConfig;
-import pipeline.ObjectShaders;
-import pipeline.PostRenderPasses;
-import pipeline.PostShadowPasses;
-import pipeline.PreOverlayPasses;
-import pipeline.PreRenderPasses;
-import pipeline.PreTranslucentPasses;
-import resources.Buffers;
-import resources.FeatureToggles;
-import resources.Textures;
-import util.ProgramFactory;
+import fracture.Buffers;
+import fracture.FeatureToggles;
+import fracture.Resources;
+import fracture.Textures;
+import fracture.pipeline.ObjectShaders;
+import fracture.pipeline.PostRender;
+import fracture.pipeline.PostShadow;
+import fracture.pipeline.PreOverlay;
+import fracture.pipeline.PreRender;
+import fracture.pipeline.PreTranslucent;
+import fracture.pipeline.ScreenSetup;
+import fracture.util.BlockMapping;
+import fracture.util.PipelineBuilder;
 
 public class Fracture implements ShaderPack {
-	private FeatureToggles toggles;
-	private Textures textures;
-	private Buffers buffers;
+	private Resources resources;
+	private BlockMapping blockMapping;
 
 	@Override
 	public void configurePipeline(Screen screen, PipelineConfig pipeline) {
-		ProgramFactory factory = new ProgramFactory(pipeline, screen);
+		blockMapping = new BlockMapping();
+		setupBlockMapping(blockMapping);
 
-		toggles = FeatureToggles.get(pipeline);
-		textures = new Textures(pipeline, screen, toggles);
-		buffers = new Buffers(pipeline);
+		setupSamplers(pipeline);
 
-		toggles.addGlobalExports(factory);
+		final var toggles = new FeatureToggles(pipeline);
+		final var textures = new Textures(pipeline, screen, toggles);
+		final var buffers = new Buffers(pipeline);
 
-		// Zero spdGlobalAtomic for FidelityFX SPD.
-		pipeline.stage(ProgramStage.SCREEN_SETUP)
-			.compute(
-				"zero_spd_global_atomic",
-				"program/lighting/hiz_downsample",
-				"zero_spd_global_atomic"
-			)
-			.dispatch1D(1);
+		final var builder = new PipelineBuilder(pipeline, screen);
+		toggles.addGlobalExports(builder);
+		blockMapping.addGlobalExports(builder);
 
-		PreRenderPasses.setup(pipeline, screen, factory, textures, toggles);
-		ObjectShaders.setupShadow(pipeline, factory, textures);
-		PostShadowPasses.setup(pipeline, screen, factory, textures);
-		ObjectShaders.setupOpaque(pipeline, factory, textures);
-		PreTranslucentPasses.setup(pipeline, screen, factory, textures);
-		ObjectShaders.setupTranslucent(pipeline, factory, textures);
-		PreOverlayPasses.setup(pipeline, screen, factory, textures);
-		ObjectShaders.setupHand(pipeline, factory, textures);
-		PostRenderPasses.setup(pipeline, screen, factory, textures);
+		resources = new Resources(textures, buffers, toggles);
 
-		pipeline.sampler("sampler_linear_repeat")
-			.addressMode(AddressMode.REPEAT)
-			.magFilter(FilterMode.LINEAR)
-			.minFilter(FilterMode.LINEAR)
-			.create();
+		ScreenSetup.setup(builder, resources);
+		PreRender.setup(builder, resources);
+		ObjectShaders.setupShadow(builder, resources);
+		PostShadow.setup(builder, resources);
+		ObjectShaders.setupOpaque(builder, resources);
+		PreTranslucent.setup(builder, resources);
+		ObjectShaders.setupTranslucent(builder, resources);
+		PreOverlay.setup(builder, resources);
+		ObjectShaders.setupHand(builder, resources);
+		PostRender.setup(builder, resources);
 	}
 
 	@Override
@@ -75,23 +69,31 @@ public class Fracture implements ShaderPack {
 
 	@Override
 	public void onNewFrame(FrameState state) {
-		buffers.update(state);
-		textures.updateReferences(state);
+		resources.buffers().update(state);
+		resources.textures().updateReferences(state);
 	}
 
 	@Override
 	public int setBlockId(IBlockState block) {
-		final var id = block.getBlockId();
-		if (id.path() == "water") {
-			return 1;
-		}
-		if (block.hasTag("replaceable_by_trees") || block.hasTag("saplings")
-			|| block.hasTag("flowers")) {
-			return 2;
-		}
-		if (block.hasTag("leaves")) {
-			return 3;
-		}
-		return 0;
+		return blockMapping.getBlockId(block);
+	}
+
+	private void setupBlockMapping(BlockMapping blockMapping) {
+		blockMapping.material("MAT_WATER").id("minecraft:water");
+
+		blockMapping.material("MAT_PLANTS")
+			.tag("minecraft:replaceable_by_trees")
+			.tag("minecraft:saplings")
+			.tag("minecraft:flowers");
+
+		blockMapping.material("MAT_LEAVES").tag("minecraft:leaves");
+	}
+
+	private void setupSamplers(PipelineConfig pipeline) {
+		pipeline.sampler("sampler_linear_repeat")
+			.addressMode(AddressMode.REPEAT)
+			.magFilter(FilterMode.LINEAR)
+			.minFilter(FilterMode.LINEAR)
+			.create();
 	}
 }
