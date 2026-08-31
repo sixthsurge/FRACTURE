@@ -11,6 +11,10 @@ void show(int2 icoord, float3 color) {
 		tex_debug[icoord] = float4(srgb_eotf(color), 1.0);
 	}
 }
+
+void show_tonemapped(int2 icoord, float3 color) {
+	show(icoord, color / (color + 1.0));
+}
 }
 
 

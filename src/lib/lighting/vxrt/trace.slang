@@ -102,7 +102,7 @@ internal Surface get_hit_surface(Hit hit) {
 	uv = face.uv_top_left + uv * (16.0 / float2(block_atlas_w, block_atlas_h));
 
 	float4 albedo = blockAtlas.sampleNearestLevel(uv, 0) * face.color;
-	float4 specular_map;
+	float4 specular_map = float4(0.0);
 	if (userSettings.LABPBR_SUPPORT_ENABLED) {
 		specular_map = blockAtlasS.sampleNearestLevel(uv, 0);
 	}

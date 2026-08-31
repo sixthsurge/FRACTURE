@@ -38,7 +38,7 @@ internal float3 calculate_sss(
 	return max0(sss) * albedo * SCALE;
 }
 
-float3 calculate_celestial_light(
+float3 calculate_celestial_light<bool SIMPLE = false>(
 	Material material,
 	float3 pos_scene,
 	float3 dir_world,
@@ -47,20 +47,27 @@ float3 calculate_celestial_light(
 	float2 dither
 ) {
 	float3 light = float3(0.0);
-	shadow.Result shadow
-		= shadow.calculate(pos_scene, flat_normal_world, dither, true);
+	shadow.Result shadow_result;
+	if (SIMPLE) {
+		shadow_result = shadow.calculate_simple(pos_scene, flat_normal_world);
+	} else {
+		shadow_result
+			= shadow.calculate(pos_scene, flat_normal_world, dither, true);
+	}
 
 	float LoV = dot(buf_global.light_dir_world, -dir_world);
 
-	light += calculate_sss(
-		material.albedo,
-		material.sss_amount,
-		material.sss_amount,
-		shadow.sss_depth,
-		LoV
-	);
+	if (!SIMPLE) {
+		light += calculate_sss(
+			material.albedo,
+			material.sss_amount,
+			material.sss_amount,
+			shadow_result.sss_depth,
+			LoV
+		);
+	}
 
-	if (max_of(shadow.visibility) > EPS) {
+	if (max_of(shadow_result.visibility) > EPS) {
 		float NoL = dot(detail_normal_world, buf_global.light_dir_world);
 		float NoV = saturate(dot(detail_normal_world, -dir_world));
 		float halfway_norm = rsqrt(2.0 * LoV + 2.0);
@@ -88,7 +95,7 @@ float3 calculate_celestial_light(
 			LoH
 		);
 
-		light += (diffuse + specular) * max0(NoL) * shadow.visibility;
+		light += (diffuse + specular) * max0(NoL) * shadow_result.visibility;
 	}
 	return light * buf_global.celestial_light_irradiance;
 }

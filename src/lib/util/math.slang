@@ -99,8 +99,13 @@ constexpr float4 diagonal(float4x4 m) {
 }
 
 [ForceInline]
+constexpr float3 translation_part(float4x4 m) {
+	return float3(m[0].w, m[1].w, m[2].w);
+}
+
+[ForceInline]
 constexpr float3 transform(float4x4 m, float3 pos) {
-	return mul(float3x3(m), pos) + float3(m[0].w, m[1].w, m[2].w);
+	return mul(float3x3(m), pos) + translation_part(m);
 }
 
 [ForceInline]

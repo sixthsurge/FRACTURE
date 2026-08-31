@@ -14,7 +14,7 @@ import lib.volumetrics.atmosphere;
 internal Texture2D<float3> tex_atmosphere_sky_view;
 
 namespace vxrt {
-float3 pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
+float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 	Random random,
 	Material material,
 	float3 ray_origin_world,
@@ -53,7 +53,7 @@ float3 pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 			float fresnel_choice = dot(fresnel, float3(rcp(3.0)));
 
 			float3 ray_dir, brdf_over_pdf;
-			if (fresnel_choice < random.next_float()) {
+			if (true) {
 				// Diffuse.
 				ray_dir = sample_cos_weighted_hemisphere(
 					current_detail_normal,
@@ -63,7 +63,7 @@ float3 pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 					ray_dir = -ray_dir;
 				}
 
-				brdf_over_pdf = material.albedo * (fresnel_choice / fresnel);
+				brdf_over_pdf = current_material.albedo;
 			} else {
 				// FIXME account for G terms.
 				ray_dir = reflect(last_dir, microfacet_normal);
@@ -72,7 +72,7 @@ float3 pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 
 			bool hit_sky = false;
 			float3 bounce_radiance;
-			float3 tint;
+			float3 tint = float3(1.0);
 			if (let hit
 				= trace(Ray(current_pos, ray_dir), INTERSECTION_STEPS, tint)) {
 				bounce_radiance
@@ -105,7 +105,7 @@ float3 pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 			}
 		}
 
-		return max0(radiance);
+		return max0(radiance) * rcp(float(RAY_COUNT));
 	}
 }
 } // namespace vxrt

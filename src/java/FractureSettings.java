@@ -15,9 +15,11 @@ public class FractureSettings implements PackSettings {
 		final var screenLighting = screen.child("lighting");
 
 		final var screenPtgi = screenLighting.child("ptgi");
-		screenPtgi.option("PTGI_ENABLED", OptionType.boolType(false), false);
 		screenPtgi
-			.option("PTGI_MODE", OptionType.intType(new int[] {0}, 0), false);
+			.option("REFERENCE_PT_ENABLED", OptionType.boolType(false), false);
+
+		screenPtgi
+			.option("RESTIR_GI_ENABLED", OptionType.boolType(false), false);
 
 		final var screenVxrt = screenLighting.child("vxrt");
 		screenVxrt.option("TEST_VXRT", OptionType.boolType(false), false);

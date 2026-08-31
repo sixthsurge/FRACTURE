@@ -83,6 +83,15 @@ struct PcgRandom : IRandom {
 	}
 }
 
+// From thebbq in shaderLABS.
+uint xorshift(uint value) {
+	// Xorshift*32
+	value ^= value << 13;
+	value ^= value >> 17;
+	value ^= value << 5;
+	return value;
+}
+
 // -----------------------------------------------------------------------------
 // R_n low-discrepency sequences from
 // http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/

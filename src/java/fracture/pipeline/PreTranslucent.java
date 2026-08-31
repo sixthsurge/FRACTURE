@@ -30,6 +30,16 @@ public class PreTranslucent {
 			);
 		}
 
+		if (builder.settings().getBoolValue("RESTIR_GI_ENABLED")) {
+			builder.renderSizedCompute(
+				"restir_gi/initial_sample_temporal_reuse",
+				"program/lighting/restir_gi/initial_sample_temporal_reuse",
+				"main",
+				16,
+				16
+			);
+		}
+
 		builder
 			.renderSizedCompute(
 				"shade_solid",

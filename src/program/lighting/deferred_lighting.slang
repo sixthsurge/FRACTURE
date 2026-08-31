@@ -4,7 +4,8 @@ import aperture;
 import lib.lighting.celestial;
 import lib.lighting.emission;
 import lib.lighting.lightmap;
-import lib.lighting.vxrt.pt;
+import lib.lighting.restir_gi;
+import lib.lighting.vxrt.reference_pt;
 import lib.surface.gbuffer_packing;
 import lib.surface.material;
 import lib.util.color;
@@ -28,6 +29,11 @@ Texture2D<float4> tex_qres_temporal_data_current;
 Texture2D<float4> tex_gtao_output_current;
 Texture2D<float3> tex_rsm_output_filtered;
 Texture2D<float> tex_blue_noise;
+
+Texture2D tex_reserviour_temporal_1;
+Texture2D tex_reserviour_temporal_2;
+Texture2D tex_reserviour_temporal_3;
+Texture2D tex_reserviour_temporal_4;
 
 struct QuarterResLighting {
 	struct Upscaled {
@@ -222,7 +228,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		  )
 		+ calculate_emission(material.emission);
 
-	if (!userSettings.PTGI_ENABLED) {
+	if (!userSettings.REFERENCE_PT_ENABLED && !userSettings.RESTIR_GI_ENABLED) {
 		radiance += calculate_lightmap_skylight(
 			ambient_brdf,
 			gbuffer.lightmap,
@@ -253,18 +259,35 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 	radiance = fog_participation.apply(radiance);
 
-	if (userSettings.PTGI_ENABLED) {
-		uint seed = (ap.timing.frameCounter * ap.game.renderSize.x + icoord.y)
-				* ap.game.renderSize.y
-			+ icoord.x;
-		radiance += vxrt.pt<PcgRandom, 1, 3>(
-			PcgRandom(seed),
-			material,
-			pos_scene + ap.camera.position,
-			dir_world,
-			gbuffer.flat_normal_world,
-			detail_normal_world
+	if (ncoord.x < 0.5) {
+		for (int i = 0; i < 20; ++i) {
+			uint seed
+				= (ap.timing.frameCounter * ap.game.renderSize.x + icoord.y)
+					* ap.game.renderSize.y
+				+ i * 39934939 + icoord.x;
+			radiance
+				+= restir_gi
+					   .initial_sample(
+						   seed,
+						   material,
+						   pos_scene + ap.camera.position,
+						   dir_world,
+						   gbuffer.flat_normal_world,
+						   detail_normal_world
+					   )
+					   .radiance
+				* material.albedo / PI * rcp(20.0);
+		}
+	} else {
+		restir_gi.Reserviour r;
+		r.load(
+			tex_reserviour_temporal_1,
+			tex_reserviour_temporal_2,
+			tex_reserviour_temporal_3,
+			tex_reserviour_temporal_4,
+			icoord
 		);
+		radiance += r.sample.radiance * max0(r.W) * material.albedo / PI;
 	}
 
 	tex_scene_write[icoord] = radiance;

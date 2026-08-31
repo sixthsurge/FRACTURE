@@ -69,6 +69,41 @@ public class Textures {
 	public final Texture2D rsmOutputRaw;
 	public final Texture2D rsmOutputFiltered;
 
+	// Restir GI
+
+	public Texture2D reserviourTemporal1A;
+	public Texture2D reserviourTemporal2A;
+	public Texture2D reserviourTemporal3A;
+	public Texture2D reserviourTemporal4A;
+	public Texture2D reserviourTemporal1B;
+	public Texture2D reserviourTemporal2B;
+	public Texture2D reserviourTemporal3B;
+	public Texture2D reserviourTemporal4B;
+	public Texture2D reserviourSpatial1A;
+	public Texture2D reserviourSpatial2A;
+	public Texture2D reserviourSpatial3A;
+	public Texture2D reserviourSpatial4A;
+	public Texture2D reserviourSpatial1B;
+	public Texture2D reserviourSpatial2B;
+	public Texture2D reserviourSpatial3B;
+	public Texture2D reserviourSpatial4B;
+	public TextureReference reserviourTemporal1;
+	public TextureReference reserviourTemporal2;
+	public TextureReference reserviourTemporal3;
+	public TextureReference reserviourTemporal4;
+	public TextureReference reserviourTemporal1Prev;
+	public TextureReference reserviourTemporal2Prev;
+	public TextureReference reserviourTemporal3Prev;
+	public TextureReference reserviourTemporal4Prev;
+	public TextureReference reserviourSpatial1;
+	public TextureReference reserviourSpatial2;
+	public TextureReference reserviourSpatial3;
+	public TextureReference reserviourSpatial4;
+	public TextureReference reserviourSpatial1Prev;
+	public TextureReference reserviourSpatial2Prev;
+	public TextureReference reserviourSpatial3Prev;
+	public TextureReference reserviourSpatial4Prev;
+
 	// Shadow
 
 	public final ShadowTexture shadowColor;
@@ -382,6 +417,277 @@ public class Textures {
 				)
 				.create();
 		}
+
+		// Restir GI
+
+		if (pipeline.settings().getBoolValue("RESTIR_GI_ENABLED")) {
+			final var reserviourWidth = screen.renderWidth();
+			final var reserviourHeight = screen.renderHeight();
+
+			reserviourTemporal1A
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_temporal_1a",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourTemporal2A
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_temporal_2a",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourTemporal3A
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_temporal_3a",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourTemporal4A
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_temporal_4a",
+						  TextureFormat.RGBA8_UNORM
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+
+			reserviourTemporal1B
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_temporal_1b",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourTemporal2B
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_temporal_2b",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourTemporal3B
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_temporal_3b",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourTemporal4B
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_temporal_4b",
+						  TextureFormat.RGBA8_UNORM
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+
+			reserviourTemporal1
+				= pipeline
+					  .reference(
+						  "tex_reserviour_temporal_1",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourTemporal2
+				= pipeline
+					  .reference(
+						  "tex_reserviour_temporal_2",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourTemporal3
+				= pipeline
+					  .reference(
+						  "tex_reserviour_temporal_3",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourTemporal4
+				= pipeline
+					  .reference(
+						  "tex_reserviour_temporal_4",
+						  TextureFormat.RGBA8_UNORM
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+
+			reserviourTemporal1Prev
+				= pipeline
+					  .reference(
+						  "tex_reserviour_temporal_1_prev",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourTemporal2Prev
+				= pipeline
+					  .reference(
+						  "tex_reserviour_temporal_2_prev",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourTemporal3Prev
+				= pipeline
+					  .reference(
+						  "tex_reserviour_temporal_3_prev",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourTemporal4Prev
+				= pipeline
+					  .reference(
+						  "tex_reserviour_temporal_4_prev",
+						  TextureFormat.RGBA8_UNORM
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+
+			reserviourSpatial1A
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_spatial_1a",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourSpatial2A
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_spatial_2a",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourSpatial3A
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_spatial_3a",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourSpatial4A
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_spatial_4a",
+						  TextureFormat.RGBA8_UNORM
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+
+			reserviourSpatial1B
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_spatial_1b",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourSpatial2B
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_spatial_2b",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourSpatial3B
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_spatial_3b",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+			reserviourSpatial4B
+				= pipeline
+					  .texture2D(
+						  "tex_reserviour_spatial_4b",
+						  TextureFormat.RGBA8_UNORM
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .create();
+
+			reserviourSpatial1
+				= pipeline
+					  .reference(
+						  "tex_reserviour_spatial_1",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourSpatial2
+				= pipeline
+					  .reference(
+						  "tex_reserviour_spatial_2",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourSpatial3
+				= pipeline
+					  .reference(
+						  "tex_reserviour_spatial_3",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourSpatial4
+				= pipeline
+					  .reference(
+						  "tex_reserviour_spatial_4",
+						  TextureFormat.RGBA8_UNORM
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+
+			reserviourSpatial1Prev
+				= pipeline
+					  .reference(
+						  "tex_reserviour_spatial_1_prev",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourSpatial2Prev
+				= pipeline
+					  .reference(
+						  "tex_reserviour_spatial_2_prev",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourSpatial3Prev
+				= pipeline
+					  .reference(
+						  "tex_reserviour_spatial_3_prev",
+						  TextureFormat.RGBA32_SFLOAT
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+			reserviourSpatial4Prev
+				= pipeline
+					  .reference(
+						  "tex_reserviour_spatial_4_prev",
+						  TextureFormat.RGBA8_UNORM
+					  )
+					  .size(reserviourWidth, reserviourHeight)
+					  .createEmpty();
+		}
 	}
 
 	// Called in onNewFrame.
@@ -402,5 +708,57 @@ public class Textures {
 		qresTemporalDataPrevious.set(
 			oddFrame ? qresTemporalDataB : qresTemporalDataA
 		);
+
+		if (reserviourTemporal1 != null) {
+			reserviourTemporal1.set(
+				oddFrame ? reserviourTemporal1A : reserviourTemporal1B
+			);
+			reserviourTemporal2.set(
+				oddFrame ? reserviourTemporal2A : reserviourTemporal2B
+			);
+			reserviourTemporal3.set(
+				oddFrame ? reserviourTemporal3A : reserviourTemporal3B
+			);
+			reserviourTemporal4.set(
+				oddFrame ? reserviourTemporal4A : reserviourTemporal4B
+			);
+			reserviourTemporal1Prev.set(
+				oddFrame ? reserviourTemporal1B : reserviourTemporal1A
+			);
+			reserviourTemporal2Prev.set(
+				oddFrame ? reserviourTemporal2B : reserviourTemporal2A
+			);
+			reserviourTemporal3Prev.set(
+				oddFrame ? reserviourTemporal3B : reserviourTemporal3A
+			);
+			reserviourTemporal4Prev.set(
+				oddFrame ? reserviourTemporal4B : reserviourTemporal4A
+			);
+
+			reserviourSpatial1.set(
+				oddFrame ? reserviourSpatial1A : reserviourSpatial1B
+			);
+			reserviourSpatial2.set(
+				oddFrame ? reserviourSpatial2A : reserviourSpatial2B
+			);
+			reserviourSpatial3.set(
+				oddFrame ? reserviourSpatial3A : reserviourSpatial3B
+			);
+			reserviourSpatial4.set(
+				oddFrame ? reserviourSpatial4A : reserviourSpatial4B
+			);
+			reserviourSpatial1Prev.set(
+				oddFrame ? reserviourSpatial1B : reserviourSpatial1A
+			);
+			reserviourSpatial2Prev.set(
+				oddFrame ? reserviourSpatial2B : reserviourSpatial2A
+			);
+			reserviourSpatial3Prev.set(
+				oddFrame ? reserviourSpatial3B : reserviourSpatial3A
+			);
+			reserviourSpatial4Prev.set(
+				oddFrame ? reserviourSpatial4B : reserviourSpatial4A
+			);
+		}
 	}
 }

@@ -16,7 +16,7 @@ public class PreRender {
 				.clearTo(new Vector4f(0.0f), resources.textures().debug);
 		}
 
-		if (resources.toggles().vxrtData) {
+		if (resources.toggles().vxrtData && false) {
 			builder.compute3d(
 				"vxrt/clear_face_data",
 				"program/lighting/voxel_data/clear_face_data",

@@ -207,6 +207,39 @@ Result calculate(
 
 	return result;
 }
+
+Result calculate_simple(float3 pos_scene, float3 flat_normal_world) {
+	Result result = Result.no_hit();
+	if (!userSettings.SHADOW_ENABLED) {
+		return result;
+	}
+
+	bool faces_sun = dot(flat_normal_world, buf_global.light_dir_world) > EPS;
+	if (!faces_sun) {
+		result.visibility = float3(0.0);
+		return result;
+	}
+
+	pos_scene += 0.08 * flat_normal_world;
+
+	float3 pos_shadow_view = transform(ap.celestial.view, pos_scene);
+
+	int cascade;
+	float3 pos_shadow_screen;
+	if (let result = project_shadow(pos_shadow_view)) {
+		cascade = result.cascade;
+		pos_shadow_screen = result.pos_shadow_screen;
+	} else {
+		return result;
+	}
+
+	result.visibility = ap.opaqueShadow.compare(
+		pos_shadow_screen.xy,
+		cascade,
+		pos_shadow_screen.z
+	);
+	return result;
+}
 } // namespace shadow
 
 
