@@ -39,6 +39,14 @@ struct Reserviour {
 	float W; // Sample weight (eq. 7)
 
 	[mutating]
+	void init() {
+		sample = Sample();
+		w = 0.0;
+		M = 0.0;
+		W = 0.0;
+	}
+
+	[mutating]
 	void init(Sample initial_sample, float w_sample) {
 		sample = initial_sample;
 		w = w_sample;
@@ -54,10 +62,34 @@ struct Reserviour {
 		Texture2D<float4> tex4,
 		int2 icoord,
 	) {
-		float4 s1 = tex1[icoord];
-		float4 s2 = tex2[icoord];
-		float4 s3 = tex3[icoord];
-		float4 s4 = tex4[icoord];
+		float4 s1 = denanify(tex1[icoord]);
+		float4 s2 = denanify(tex2[icoord]);
+		float4 s3 = denanify(tex3[icoord]);
+		float4 s4 = denanify(tex4[icoord]);
+
+		sample.radiance = s1.xyz;
+		sample.sample_pos_world = s2.xyz;
+		sample.visible_pos_world = s3.xyz;
+		sample.sample_normal_world = decode_octahedral(s4.xy);
+		sample.visible_normal_world = decode_octahedral(s4.zw);
+		w = s1.w;
+		W = s2.w;
+		M = s3.w;
+	}
+
+	[mutating]
+	void load_interpolated(
+		Texture2D<float4> tex1,
+		Texture2D<float4> tex2,
+		Texture2D<float4> tex3,
+		Texture2D<float4> tex4,
+		int2 icoord,
+		float2 coord,
+	) {
+		float4 s1 = denanify(tex1.sampleLinear(coord));
+		float4 s2 = denanify(tex2.sampleLinear(coord));
+		float4 s3 = denanify(tex3.sampleLinear(coord));
+		float4 s4 = denanify(tex4[icoord]);
 
 		sample.radiance = s1.xyz;
 		sample.sample_pos_world = s2.xyz;
@@ -90,13 +122,17 @@ struct Reserviour {
 	}
 
 	[mutating]
-	void
-	update<Random>(Random random, Sample sample_new, float w_new, float M_max)
+	void update<Random>(
+		inout Random random,
+		Sample sample_new,
+		float w_new,
+		float M_max
+	)
 		where Random : IRandom {
 		M += 1.0;
-		float M_clamped = min(M, M_max);
-		w = w * ((M_clamped) / M) + w_new;
-		M = M_clamped;
+
+		// M clamping.
+		w = w + w_new;
 
 		if (random.next_float() < w_new / w) {
 			sample.radiance = sample_new.radiance;
@@ -109,27 +145,34 @@ struct Reserviour {
 	}
 
 	[mutating]
-	void merge<Random>(Random random, Reserviour r, float p_hat)
+	void
+	merge<Random>(inout Random random, Reserviour r, float p_hat, float M_max)
 		where Random : IRandom {
 		float M_0 = M;
-		update(random, r.sample, p_hat * r.W * r.M, 200);
-		M = M_0 + r.M;
+		update(random, r.sample, p_hat * r.W * r.M, M_max);
+		M += r.M;
+	}
+
+	[mutating]
+	void clamp_M(float M_max) {
+		float M_clamped = min(M, M_max);
+		w *= M_clamped / M;
+		M = M_clamped;
 	}
 }
 
 // Path tracing.
 // Diffuse only for now.
-Sample initial_sample(
-	int random_seed,
+Sample initial_sample<Random>(
+	inout Random random,
 	Material material,
 	float3 ray_origin_world,
 	float3 ray_dir,
 	float3 flat_normal_world,
 	float3 detail_normal_world,
-) {
+)
+	where Random : IRandom {
 	const int INTERSECTION_STEPS = 50;
-
-	PcgRandom random = PcgRandom(random_seed);
 
 	float3 sample_point = float3(0.0, 0.0, 0.0);
 	float3 sample_normal = float3(0.0, 1.0, 0.0);
@@ -177,14 +220,16 @@ Sample initial_sample(
 
 		// hit is far away lol.
 		sample_point = ray_dir * 1000.0;
+		sample_normal = -ray_dir; // lol
+		hit_sky = true;
 	}
 
 	tint = sqrt(sqrt(tint));
 	sample_radiance *= tint;
 	incoming_dir = ray_dir;
 
-	/*
 	// Subsequent bounces.
+	/*
 	float3 throughput = tint;
 
 	for (int bounce = 1; bounce < BOUNCE_COUNT && !hit_sky; ++bounce) {
@@ -237,12 +282,37 @@ Sample initial_sample(
 	s.sample_normal_world = sample_normal;
 	s.visible_pos_world = ray_origin_world;
 	s.visible_normal_world = detail_normal_world;
-	s.random_seed = random_seed;
 	return s;
 }
 
 float target_function(Sample s) {
 	return dot(s.radiance, LUMINANCE_WEIGHTS_REC709);
+}
+
+float jacobian_determinant(
+	float3 x1_q,
+	float3 x2_q,
+	float3 x1_r,
+	float3 normal_x2_q
+) {
+	float3 x1_q_minus_x2_q = x1_q - x2_q;
+	float3 x1_r_minus_x2_q = x1_r - x2_q;
+	float lensq_x1_q_minus_x2_q = length_squared(x1_q - x2_q);
+	float lensq_x1_r_minus_x2_q = length_squared(x1_r - x2_q);
+
+	float cos_phi2_q
+		= dot(normal_x2_q, x1_q_minus_x2_q) * rsqrt(lensq_x1_q_minus_x2_q);
+	float cos_phi2_r
+		= dot(normal_x2_q, x1_r_minus_x2_q) * rsqrt(lensq_x1_r_minus_x2_q);
+
+	if (cos_phi2_q < EPS || cos_phi2_r < EPS) {
+		return 0.0;
+	}
+
+	return abs(
+		(cos_phi2_r * lensq_x1_q_minus_x2_q)
+		/ (cos_phi2_q * lensq_x1_r_minus_x2_q)
+	);
 }
 }
 

@@ -135,7 +135,7 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 
 		float3 ambient_brdf = material.albedo * rcp(PI);
 		float3 radiance
-			= calculate_celestial_light(
+			= calculate_celestial_light<false>(
 				  material,
 				  input.pos_scene,
 				  normalize(input.pos_scene),

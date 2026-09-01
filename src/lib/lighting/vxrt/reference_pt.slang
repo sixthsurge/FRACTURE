@@ -6,6 +6,7 @@ import lib.lighting.celestial;
 import lib.lighting.emission;
 import lib.lighting.vxrt.trace;
 import lib.surface.material;
+import lib.util.color;
 import lib.util.math;
 import lib.util.random;
 import lib.util.sampling;
@@ -50,10 +51,10 @@ float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 				material,
 				dot(microfacet_normal, -last_dir)
 			);
-			float fresnel_choice = dot(fresnel, float3(rcp(3.0)));
+			float fresnel_choice = dot(fresnel, LUMINANCE_WEIGHTS_REC709);
 
 			float3 ray_dir, brdf_over_pdf;
-			if (true) {
+			if (random.next_float() > fresnel_choice) {
 				// Diffuse.
 				ray_dir = sample_cos_weighted_hemisphere(
 					current_detail_normal,
@@ -63,7 +64,8 @@ float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 					ray_dir = -ray_dir;
 				}
 
-				brdf_over_pdf = current_material.albedo;
+				brdf_over_pdf
+					= current_material.albedo * (fresnel_choice / fresnel);
 			} else {
 				// FIXME account for G terms.
 				ray_dir = reflect(last_dir, microfacet_normal);
@@ -94,6 +96,7 @@ float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 					tex_atmosphere_sky_view,
 					ray_dir
 				);
+				hit_sky = true;
 			}
 
 			tint = sqrt(sqrt(tint));

@@ -11,6 +11,11 @@ static const float GOLDEN_RATIO = 0.5 + 0.5 * sqrt(5.0);
 static const float GOLDEN_ANGLE = TAU / GOLDEN_RATIO / GOLDEN_RATIO;
 
 [ForceInline]
+constexpr vector<float, N> denanify<uint N>(vector<float, N> x) {
+	return select(isnan(x), 0.0, x);
+}
+
+[ForceInline]
 constexpr T rcp<T>(T x)
 	where T : IArithmetic { return T(1) / x; }
 

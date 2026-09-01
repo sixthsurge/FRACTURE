@@ -277,13 +277,13 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		// Native resolution TAA
 		current_color = tex_scene[icoord];
 
-		// "Tonemapping" before applying TAA in order to perform the AA in SDR
-		// This improves the result because the differences between the
-		// luminances are closer to how they will be in the final output
-		current_color = reinhard(current_color);
-		history_color = reinhard(history_color);
-
 		if (!userSettings.INFINITE_ACCUMULATION) {
+			// "Tonemapping" before applying TAA in order to perform the AA in
+			// SDR This improves the result because the differences between the
+			// luminances are closer to how they will be in the final output
+			current_color = reinhard(current_color);
+			history_color = reinhard(history_color);
+
 			history_color = neighborhood_clipping(
 				icoord,
 				current_color,
@@ -342,7 +342,9 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	alpha = 1.0 - alpha;
 
 	current_color = lerp(history_color, current_color, alpha);
-	current_color = reinhard_inverse(current_color);
+	if (!userSettings.INFINITE_ACCUMULATION) {
+		current_color = reinhard_inverse(current_color);
+	}
 
 	tex_taa_output_current[icoord]
 		= float4(current_color, pixel_age * offcenter_rejection);

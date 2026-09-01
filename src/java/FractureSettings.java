@@ -16,10 +16,10 @@ public class FractureSettings implements PackSettings {
 
 		final var screenPtgi = screenLighting.child("ptgi");
 		screenPtgi
+			.option("RESTIR_GI_ENABLED", OptionType.boolType(false), false);
+		screenPtgi
 			.option("REFERENCE_PT_ENABLED", OptionType.boolType(false), false);
 
-		screenPtgi
-			.option("RESTIR_GI_ENABLED", OptionType.boolType(false), false);
 
 		final var screenVxrt = screenLighting.child("vxrt");
 		screenVxrt.option("TEST_VXRT", OptionType.boolType(false), false);
@@ -151,7 +151,7 @@ public class FractureSettings implements PackSettings {
 		);
 		screenExposure.option(
 			"EXPOSURE_TARGET_B",
-			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.90f),
+			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.50f),
 			true
 		);
 		screenExposure.option(

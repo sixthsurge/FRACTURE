@@ -38,6 +38,14 @@ public class PreTranslucent {
 				16,
 				16
 			);
+
+			builder.renderSizedCompute(
+				"restir_gi/spatial_reuse",
+				"program/lighting/restir_gi/spatial_reuse",
+				"main",
+				16,
+				16
+			);
 		}
 
 		builder
