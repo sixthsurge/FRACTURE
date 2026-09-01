@@ -224,7 +224,6 @@ Sample initial_sample<Random>(
 		hit_sky = true;
 	}
 
-	tint = sqrt(sqrt(tint));
 	sample_radiance *= tint;
 	incoming_dir = ray_dir;
 
@@ -269,7 +268,6 @@ Sample initial_sample<Random>(
 			hit_sky = true;
 		}
 
-		tint = sqrt(sqrt(tint));
 		sample_radiance += bounce_radiance * throughput * brdf_over_pdf * tint;
 		throughput *= brdf_over_pdf * tint;
 		incoming_dir = ray_dir;

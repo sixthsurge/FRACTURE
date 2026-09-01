@@ -280,7 +280,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			tex_reserviour_spatial_4,
 			icoord
 		);
-		radiance += max0(r.sample.radiance) * max0(r.W) * material.albedo;
+		radiance += max0(r.sample.radiance * r.W) * material.albedo;
 	}
 
 	tex_scene_write[icoord] = radiance;

@@ -99,7 +99,6 @@ float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 				hit_sky = true;
 			}
 
-			tint = sqrt(sqrt(tint));
 			radiance += bounce_radiance * throughput * brdf_over_pdf * tint;
 			throughput *= brdf_over_pdf * tint;
 			last_dir = ray_dir;
