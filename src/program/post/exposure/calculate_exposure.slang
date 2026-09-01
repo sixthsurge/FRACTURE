@@ -25,26 +25,27 @@ void main() {
 	int cdf = 0;
 	Optional<int> bin_a = none;
 	Optional<int> bin_b = none;
+	int between_percentiles = 0;
+	float target_luminance = 0.0;
 
-	for (int i = 0; i < 256; ++i) {
+	for (int i = 0; i < 256 && !(bin_a.hasValue && bin_b.hasValue); ++i) {
 		int count = tex_exposure_histogram[int2(i, 0)];
 
 		cdf += count;
 
 		if (cdf > histogram_target_cdf_a && !bin_a.hasValue) {
 			bin_a = i;
+			between_percentiles = 1;
 		}
 		if (cdf > histogram_target_cdf_b && !bin_b.hasValue) {
 			bin_b = i;
+			between_percentiles = 1;
 		}
-		if (bin_a.hasValue && bin_b.hasValue) {
-			break;
-		}
+
+		target_luminance += exposure.bin_to_luminance(i) * between_percentiles;
 	}
 
-	float luminance_a = exposure.bin_to_luminance(bin_a.orElse(0));
-	float luminance_b = exposure.bin_to_luminance(bin_b.orElse(0));
-	float target_luminance = lerp(luminance_a, luminance_b, 0.5);
+	target_luminance /= float(abs(bin_a.value - bin_b.value) + 1);
 
 	// Calculate exposure.
 
