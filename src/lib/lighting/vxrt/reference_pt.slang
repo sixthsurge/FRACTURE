@@ -42,13 +42,13 @@ float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 			float3 microfacet_normal = mul(
 				sample_ggx_vndf(
 					-tangent_dir,
-					material.roughness,
+					current_material.roughness,
 					random.next_float2()
 				),
 				tbn
 			);
 			float3 fresnel = calculate_fresnel(
-				material,
+				current_material,
 				dot(microfacet_normal, -last_dir)
 			);
 			float fresnel_choice = dot(fresnel, LUMINANCE_WEIGHTS_REC709);
