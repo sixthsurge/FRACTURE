@@ -41,8 +41,10 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 		output.color_packed = packUnorm4x8(v.color());
 		output.normal_packed
 			= packUnorm4x8(float4(normal_world * 0.5 + 0.5, 1.0));
-		output.id
-			= select(v.blockID().hasValue, v.blockID().value.data.customId, 0);
+		output.id = 0;
+		if (let block_id = v.blockID()) {
+			output.id = block_id.data.customId;
+		}
 	}
 
 	static FragmentOutput

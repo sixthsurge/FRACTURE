@@ -48,7 +48,7 @@ groupshared AU1 spdCounter;
 
 // Load from source image
 AF4 SpdLoadSourceImage(ASU2 tex, AU1 slice) {
-	return ap.depth[clamp(tex, int2(0), ap.game.renderSize)];
+	return ap.depth[clamp(tex, int2(0), ap.game.renderSize - 1)];
 }
 
 // SpdLoad() takes a 32-bit signed integer 2D coordinate and loads color.
