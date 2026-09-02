@@ -15,8 +15,18 @@ struct VertexOutput {
 }
 
 struct Object : Shader<VertexOutput, FragmentOutput> {
-	static void emitVertex(Vertex v, out VertexOutput output, out float4 pos) {
-		pos = v.pos();
+	static void emitVertex(
+		Vertex v,
+		ObjectTransforms transforms,
+		out VertexOutput output,
+		out float4 pos_clip
+	) {
+		float3 pos_scene = v.pos().xyz;
+		pos_clip = project(
+			transforms.projection,
+			transform(transforms.view, pos_scene)
+		);
+
 		output.uv = v.uv();
 		output.skylight = linstep(1.0 / 32.0, 31.0 / 32.0, v.lightCoord().y);
 		output.color_packed = packUnorm4x8(v.color());

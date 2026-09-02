@@ -20,9 +20,17 @@ struct VertexOutput {
 }
 
 struct Object : Shader<VertexOutput, FragmentOutput> {
-	static void
-	emitVertex(Vertex v, out VertexOutput output, out float4 pos_scene) {
-		pos_scene = v.pos();
+	static void emitVertex(
+		Vertex v,
+		ObjectTransforms transforms,
+		out VertexOutput output,
+		out float4 pos_clip
+	) {
+		float3 pos_scene = v.pos().xyz;
+		pos_clip = project(
+			transforms.projection,
+			transform(transforms.view, pos_scene)
+		);
 
 		float3 normal_world = v.normal().orElse(-normalize(pos_scene.xyz));
 

@@ -1,7 +1,7 @@
 package fracture;
 
+import dev.irisshaders.aperture.api.objects.ArrayTexture;
 import dev.irisshaders.aperture.api.objects.Screen;
-import dev.irisshaders.aperture.api.objects.ShadowTexture;
 import dev.irisshaders.aperture.api.objects.Texture2D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.objects.TextureReference;
@@ -106,8 +106,8 @@ public class Textures {
 
 	// Shadow
 
-	public final ShadowTexture shadowColor;
-	public final ShadowTexture shadowRsmData;
+	public final ArrayTexture shadowColor;
+	public final ArrayTexture shadowRsmData;
 
 	public Textures(
 		PipelineConfig pipeline,
@@ -390,14 +390,14 @@ public class Textures {
 			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
 			.create();
 
-		shadowColor = pipeline.shadowTexture(
+		shadowColor = pipeline.arrayTexture(
 			"tex_shadow_color",
 			TextureFormat.RG11B10_UFLOAT
-		);
-		shadowRsmData = pipeline.shadowTexture(
+		).shadowSize().create();
+		shadowRsmData = pipeline.arrayTexture(
 			"tex_shadow_rsm_data",
 			TextureFormat.RG32_UINT
-		);
+		).shadowSize().create();
 
 		// Exposure histogram
 

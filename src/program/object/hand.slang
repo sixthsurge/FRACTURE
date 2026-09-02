@@ -35,9 +35,18 @@ struct VertexOutput {
 }
 
 struct Object : Shader<VertexOutput, FragmentOutput> {
-	static void
-	emitVertex(Vertex v, out VertexOutput output, out float4 pos_scene) {
-		pos_scene = v.pos();
+	static void emitVertex(
+		Vertex v,
+		ObjectTransforms transforms,
+		out VertexOutput output,
+		out float4 pos_clip
+	) {
+		float3 pos_scene = v.pos().xyz;
+		pos_clip = project(
+			transforms.projection,
+			transform(transforms.view, pos_scene)
+		);
+		pos_clip.xy += buf_global.taa_jitter * pos_clip.w;
 
 		float3 normal_world = v.normal().orElse(-normalize(pos_scene.xyz));
 		float4 tangent_world = v.tangent().orElse(float4(0.0));
@@ -54,12 +63,6 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 		output.normal_packed
 			= packUnorm4x8(float4(normal_world * 0.5 + 0.5, 1.0));
 		output.tangent_packed = packUnorm4x8(tangent_world * 0.5 + 0.5);
-	}
-
-	override static float4
-	transformClipSpace(float4 pos_clip, VertexOutput data) {
-		pos_clip.xy += buf_global.taa_jitter * pos_clip.w;
-		return pos_clip;
 	}
 
 	static FragmentOutput

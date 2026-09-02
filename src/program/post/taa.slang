@@ -215,11 +215,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float2 ncoord = (float2(icoord) + 0.5) * rcp(float2(ap.game.renderSize));
 	float3 closest_pos_screen = get_closest_fragment(icoord);
 
-	float3 closest_view = screen_to_view(
-		closest_pos_screen,
-		ap.camera.unjitteredProjectionInv,
-		false
-	);
+	float3 closest_view
+		= screen_to_view(closest_pos_screen, ap.camera.projectionInv, false);
 	float3 closest_pos_scene = view_to_scene(closest_view);
 
 	float2 velocity = closest_pos_screen.xy
@@ -228,7 +225,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 				  closest_pos_scene + ap.camera.position - ap.temporal.position,
 				  ap.temporal.view
 			  ),
-			  ap.temporal.unjitteredProjection,
+			  ap.temporal.projection,
 			  false,
 		)
 			  .xy;
