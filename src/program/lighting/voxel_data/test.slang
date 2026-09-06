@@ -1,7 +1,8 @@
 import aperture;
-import lib.lighting.vxrt.trace;
 import lib.lighting.celestial;
 import lib.lighting.emission;
+import lib.lighting.shadow;
+import lib.lighting.vxrt.trace;
 import lib.util.debug;
 import lib.util.math;
 import lib.util.space_conversion;
@@ -23,14 +24,19 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	if (let hit = vxrt.trace(Ray(ap.camera.position, dir_world), 64, tint)) {
 		color = hit.material.albedo * tint;
 
+		shadow.Result shadow_result = shadow.calculate_simple(
+			hit.pos_world - ap.camera.position,
+			hit.normal,
+		);
+
 		float3 bounce_radiance
-			= calculate_celestial_light<true>(
+			= calculate_celestial_light(
 				  hit.material,
+				  shadow_result,
 				  hit.pos_world - ap.camera.position,
 				  dir_world,
 				  hit.normal,
-				  hit.normal,
-				  0.5
+				  hit.normal
 			  )
 			+ calculate_emission(hit.material.emission);
 		if (ncoord.x < 0.5) {

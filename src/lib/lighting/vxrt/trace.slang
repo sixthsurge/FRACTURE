@@ -99,7 +99,10 @@ internal Surface get_hit_surface(Hit hit) {
 	float2 uv = abs(
 		frac(float2(dot(tbn[0], hit.pos_world), dot(tbn[1], hit.pos_world)))
 	);
-	uv = face.uv_top_left + uv * (16.0 / float2(block_atlas_w, block_atlas_h));
+	uv = face.uv_top_left
+		+ uv
+			* (userSettings.RESOURCE_PACK_RESOLUTION
+			   / float2(block_atlas_w, block_atlas_h));
 
 	float4 albedo = blockAtlas.sampleNearestLevel(uv, 0) * face.color;
 	float4 specular_map = float4(0.0);

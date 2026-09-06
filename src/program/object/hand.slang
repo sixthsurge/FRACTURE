@@ -4,6 +4,7 @@ import lib.surface.mat_ids;
 import lib.lighting.celestial;
 import lib.lighting.emission;
 import lib.lighting.lightmap;
+import lib.lighting.shadow;
 import lib.surface.material;
 import lib.surface.gbuffer_packing;
 import lib.volumetrics.fog;
@@ -138,15 +139,22 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 			dither = r2(ap.timing.frameCounter, dither);
 		}
 
+		shadow.Result shadow_result = shadow.calculate(
+			input.pos_scene,
+			flat_normal_world,
+			dither,
+			material.sss_amount > EPS
+		);
+
 		float3 ambient_brdf = material.albedo * rcp(PI);
 		float3 radiance
-			= calculate_celestial_light<false>(
+			= calculate_celestial_light(
 				  material,
+				  shadow_result,
 				  input.pos_scene,
 				  normalize(input.pos_scene),
 				  flat_normal_world,
 				  detail_normal_world,
-				  dither
 			  )
 			+ calculate_lightmap_skylight(
 				  ambient_brdf,

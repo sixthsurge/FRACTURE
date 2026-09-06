@@ -38,34 +38,17 @@ internal float3 calculate_sss(
 	return max0(sss) * albedo * SCALE;
 }
 
-float3 calculate_celestial_light<bool SIMPLE = false>(
+float3 calculate_celestial_light(
 	Material material,
+	shadow.Result shadow_result,
 	float3 pos_scene,
 	float3 dir_world,
 	float3 flat_normal_world,
-	float3 detail_normal_world,
-	float2 dither
+	float3 detail_normal_world
 ) {
 	float3 light = float3(0.0);
-	shadow.Result shadow_result;
-	if (SIMPLE) {
-		shadow_result = shadow.calculate_simple(pos_scene, flat_normal_world);
-	} else {
-		shadow_result
-			= shadow.calculate(pos_scene, flat_normal_world, dither, true);
-	}
 
 	float LoV = dot(buf_global.light_dir_world, -dir_world);
-
-	if (!SIMPLE) {
-		light += calculate_sss(
-			material.albedo,
-			material.sss_amount,
-			material.sss_amount,
-			shadow_result.sss_depth,
-			LoV
-		);
-	}
 
 	if (max_of(shadow_result.visibility) > EPS) {
 		float NoL = dot(detail_normal_world, buf_global.light_dir_world);

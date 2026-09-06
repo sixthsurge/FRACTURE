@@ -2,6 +2,7 @@ import aperture;
 import lib.lighting.celestial;
 import lib.lighting.emission;
 import lib.lighting.lightmap;
+import lib.lighting.shadow;
 import lib.lighting.vxrt.write_face_data;
 import lib.lighting.vxrt.util;
 import lib.surface.mat_ids;
@@ -87,9 +88,12 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 						   + frac(ap.camera.position)
 					   ))
 				+ VOXEL_RT_VOLUME_SIZE / 2;
-			float2 grid_size = atlas_dims * rcp(16.0);
-			float2 uv_topleft = floor(v.uv() * grid_size) / grid_size;
+
 			int face_index = face_index_from_normal(v.normal().value);
+
+			float2 mid = v.midCoord().value;
+			float2 uv_minus_mid = output.uv - mid;
+			float2 uv_topleft = min(output.uv, mid - uv_minus_mid);
 
 			write_voxel_face_data(pos, face_index, uv_topleft, v.color());
 		}
@@ -183,15 +187,22 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 			dither = r2(ap.timing.frameCounter, dither);
 		}
 
+		shadow.Result shadow_result = shadow.calculate(
+			input.pos_scene,
+			flat_normal_world,
+			dither,
+			material.sss_amount > EPS
+		);
+
 		float3 ambient_brdf = material.albedo * rcp(PI);
 		float3 radiance
-			= calculate_celestial_light<false>(
+			= calculate_celestial_light(
 				  material,
+				  shadow_result,
 				  input.pos_scene,
 				  normalize(input.pos_scene),
 				  flat_normal_world,
 				  detail_normal_world,
-				  dither
 			  )
 			+ calculate_lightmap_skylight(
 				  ambient_brdf,

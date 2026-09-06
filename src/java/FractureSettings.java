@@ -6,10 +6,25 @@ import dev.irisshaders.aperture.api.settings.SettingsScreen;
 public class FractureSettings implements PackSettings {
 	@Override
 	public void createSettings(SettingsManager manager, SettingsScreen screen) {
-		screen.option(
+		final var screenRp = screen.child("rp");
+		screenRp.option(
 			"LABPBR_SUPPORT_ENABLED",
 			OptionType.boolType(false),
 			false
+		);
+
+		screenRp.option(
+			"RESOURCE_PACK_RESOLUTION",
+			OptionType.intType(new int[] {8, 16, 32, 128, 256, 512}, 16),
+			true
+		);
+
+		screenRp.option("POM_ENABLED", OptionType.boolType(false), false);
+
+		screenRp.option(
+			"POM_DEPTH",
+			OptionType.floatType(0.01f, 0.5f, 0.01f, 0.25f),
+			true
 		);
 
 		final var screenLighting = screen.child("lighting");
@@ -19,7 +34,6 @@ public class FractureSettings implements PackSettings {
 			.option("RESTIR_GI_ENABLED", OptionType.boolType(false), false);
 		screenPtgi
 			.option("REFERENCE_PT_ENABLED", OptionType.boolType(false), false);
-
 
 		final var screenVxrt = screenLighting.child("vxrt");
 		screenVxrt.option("TEST_VXRT", OptionType.boolType(false), false);

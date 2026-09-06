@@ -4,6 +4,7 @@ import aperture;
 import lib.lighting.brdf;
 import lib.lighting.celestial;
 import lib.lighting.emission;
+import lib.lighting.shadow;
 import lib.lighting.vxrt.trace;
 import lib.surface.material;
 import lib.util.color;
@@ -77,14 +78,19 @@ float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 			float3 tint = float3(1.0);
 			if (let hit
 				= trace(Ray(current_pos, ray_dir), INTERSECTION_STEPS, tint)) {
+				shadow.Result shadow_result = shadow.calculate_simple(
+					hit.pos_world - ap.camera.position,
+					hit.normal,
+				);
+
 				bounce_radiance
 					= calculate_celestial_light(
 						  hit.material,
+						  shadow_result,
 						  hit.pos_world - ap.camera.position,
 						  ray_dir,
 						  hit.normal,
 						  hit.normal,
-						  random.next_float()
 					  )
 					+ calculate_emission(hit.material.emission);
 				current_pos = hit.pos_world;

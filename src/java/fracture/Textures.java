@@ -390,14 +390,19 @@ public class Textures {
 			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
 			.create();
 
-		shadowColor = pipeline.arrayTexture(
-			"tex_shadow_color",
-			TextureFormat.RG11B10_UFLOAT
-		).shadowSize().create();
-		shadowRsmData = pipeline.arrayTexture(
-			"tex_shadow_rsm_data",
-			TextureFormat.RG32_UINT
-		).shadowSize().create();
+		shadowColor
+			= pipeline
+				  .arrayTexture(
+					  "tex_shadow_color",
+					  TextureFormat.RG11B10_UFLOAT
+				  )
+				  .shadowSize()
+				  .create();
+		shadowRsmData
+			= pipeline
+				  .arrayTexture("tex_shadow_rsm_data", TextureFormat.RG32_UINT)
+				  .shadowSize()
+				  .create();
 
 		// Exposure histogram
 

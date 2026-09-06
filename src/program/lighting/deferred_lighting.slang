@@ -4,6 +4,7 @@ import aperture;
 import lib.lighting.celestial;
 import lib.lighting.emission;
 import lib.lighting.lightmap;
+import lib.lighting.shadow;
 import lib.lighting.restir_gi;
 import lib.lighting.vxrt.reference_pt;
 import lib.surface.gbuffer_packing;
@@ -206,6 +207,10 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		bent_normal_world = gbuffer.flat_normal_world;
 	}
 
+	if (userSettings.LABPBR_SUPPORT_ENABLED) {
+		ao *= gbuffer.texture_ao.get().value;
+	}
+
 	if (userSettings.TAA_ENABLED) {
 		// Animate dither when TAA is enabled so it can help a little with
 		// the noise.
@@ -215,16 +220,25 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float3 detail_normal_world
 		= gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world);
 
+	shadow.Result shadow_result = shadow.calculate(
+		pos_scene,
+		gbuffer.flat_normal_world,
+		dither,
+		material.sss_amount > EPS
+	);
+	shadow_result.visibility
+		*= select(gbuffer.parallax_self_shadow.get().orElse(false), 0.0, 1.0);
+
 	float3 ambient_brdf
 		= material.albedo / PI * (1.0 + ambient_sss * material.sss_amount);
 	float3 radiance
-		= calculate_celestial_light<false>(
+		= calculate_celestial_light(
 			  material,
+			  shadow_result,
 			  pos_scene,
 			  dir_world,
 			  gbuffer.flat_normal_world,
-			  detail_normal_world,
-			  dither
+			  detail_normal_world
 		  )
 		+ calculate_emission(material.emission);
 

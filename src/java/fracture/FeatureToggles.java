@@ -9,7 +9,7 @@ public class FeatureToggles {
 
 	public FeatureToggles(PipelineConfig pipeline) {
 		vxrtData = pipeline.settings().getBoolValue("REFERENCE_PT_ENABLED")
-		 	|| pipeline.settings().getBoolValue("RESTIR_GI_ENABLED")
+			|| pipeline.settings().getBoolValue("RESTIR_GI_ENABLED")
 			|| pipeline.settings().getBoolValue("TEST_VXRT");
 	}
 

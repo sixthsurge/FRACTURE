@@ -1,5 +1,8 @@
 screen.root = General
 
+screen.rp = Resource Pack
+
+screen.lighting = Lighting
 screen.lighting = Lighting
 screen.ptgi = Path Tracing
 screen.ssr = Screen-Space Reflections
