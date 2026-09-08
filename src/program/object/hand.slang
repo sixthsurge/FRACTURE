@@ -15,7 +15,7 @@ import lib.util.space_conversion;
 import object_shader;
 import settings;
 
-Texture2D<float> tex_blue_noise;
+Texture2D<float> tex_noise_blue;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
 
@@ -91,8 +91,8 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 		float3 pos_screen = view_to_screen(pos_view);
 		int2 icoord = int2(pos_screen.xy * ap.game.renderSize);
 		float2 dither = float2(
-			tex_blue_noise[icoord & 511],
-			tex_blue_noise[(icoord + int2(93, 41)) & 511]
+			tex_noise_blue[icoord & 511],
+			tex_noise_blue[(icoord + int2(93, 41)) & 511]
 		);
 		// Lookup fog participation a while before using it (latency hiding).
 		fog.FogParticipation fog_participation = fog.lookup_fog_participation(

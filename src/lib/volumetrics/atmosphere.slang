@@ -60,7 +60,7 @@ struct AtmosphereParticipation {
 
 static const float AERIAL_PERSPECTIVE_DEPTH_SCALE
 	= 1e5; // meters divided by terrain scale.
-static const float AERIAL_PERSPECTIVE_TERRAIN_SCALE = 3.0;
+static const float AERIAL_PERSPECTIVE_TERRAIN_SCALE = 1.0;
 static const float SEA_LEVEL = 63.0;
 
 // Camera position in planet space.
@@ -245,6 +245,44 @@ float3 calculate_transmittance_approx(
 		-(vertical_column_depth_r * chapmap_rm.x
 		  + vertical_column_depth_m * chapmap_rm.y)
 	);
+}
+
+float3 calculate_transmittance_approx(
+	AtmosphereParameters params,
+	float3 ray_origin,
+	float3 ray_dir
+) {
+	float r = length(ray_origin);
+	float cos_theta = dot(ray_dir, ray_origin) / r;
+	return calculate_transmittance_approx(params, r, cos_theta);
+}
+
+float3 calculate_transmittance_between_points_approx(
+	AtmosphereParameters params,
+	float3 a,
+	float3 b
+) {
+	// Imagine the line between A and B. One end of this line will always go
+	// into space.
+
+	float3 p1; // point further from space.
+	float3 p2; // point closer to space.
+	if (dot(b, b) > dot(a, a)) {
+		// A -> B -> space
+		p1 = a;
+		p2 = b;
+	} else {
+		// B -> A -> space
+		p1 = b;
+		p2 = a;
+	}
+
+	float3 dir_p1_to_p2 = normalize(p2 - p1);
+	float3 transmittance_p1_to_space
+		= calculate_transmittance_approx(EARTH_PARAMS, p1, dir_p1_to_p2);
+	float3 transmittance_p2_to_space
+		= calculate_transmittance_approx(EARTH_PARAMS, p2, dir_p1_to_p2);
+	return transmittance_p1_to_space / transmittance_p2_to_space;
 }
 
 float3 calculate_planet_radiance<int LightSourceCount>(

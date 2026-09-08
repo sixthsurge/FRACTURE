@@ -30,8 +30,6 @@ float3 calculate_sun_radiance(float3 dir) {
 }
 
 float4 calculate_moon_radiance_and_opacity(float3 dir) {
-	const float MOON_PHASE = 3; // FIXME change when Ap adds moon phase.
-
 	float moon_angular_radius
 		= userSettings.MOON_ANGULAR_RADIUS * (TAU / 360.0f);
 
@@ -68,7 +66,7 @@ float4 calculate_moon_radiance_and_opacity(float3 dir) {
 	float3 moon_normal = normalize(dir * moon_dist - buf_global.moon_dir_world);
 
 	// Get light direction which orbits around moon
-	float light_angle = 0.125 * TAU * float(MOON_PHASE);
+	float light_angle = 0.125 * TAU * float(ap.celestial.phase);
 	float3 left_dir = normalize(cross(float3(0.0, 1.0, 0.0), dir));
 	float3 light_dir = cos(light_angle) * -dir + sin(light_angle) * left_dir;
 	float moon_shadow = dampen(max0(dot(moon_normal, light_dir)));

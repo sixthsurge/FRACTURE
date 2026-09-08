@@ -14,6 +14,7 @@ screen.vxrt = Voxel Data
 screen.atmospherics = Atmospherics
 screen.fog = Fog
 screen.sky = Sky
+screen.clouds = Clouds
 
 screen.water = Water
 

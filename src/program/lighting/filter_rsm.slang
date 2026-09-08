@@ -8,7 +8,7 @@ import lib.util.space_conversion;
 RWTexture2D<float3> tex_rsm_output_filtered;
 Texture2D<float3> tex_rsm_output_raw;
 Texture2D<float4> tex_qres_temporal_data_current;
-Texture2D<float> tex_blue_noise;
+Texture2D<float> tex_noise_blue;
 
 float3 input_curve(float3 s) { return sqrt(s); }
 

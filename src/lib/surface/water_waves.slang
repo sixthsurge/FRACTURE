@@ -5,7 +5,7 @@ import lib.surface.material;
 import lib.util.math;
 import settings;
 
-internal Texture2D<float> tex_worley_noise_2d;
+internal Texture2D<float> tex_noise_worley_2d;
 internal SamplerState sampler_linear_repeat;
 
 interface IWaterWaves {
@@ -178,7 +178,7 @@ struct GerstnerWaves : IWaterWaves {
 		float2 noise_coord
 			= (coord + float2(0.0, 0.25 * params.t)) * NOISE_FREQUENCY;
 		for (uint i = 0u; i < ITERATIONS; ++i) {
-			wave_noise[i] = tex_worley_noise_2d.Sample(
+			wave_noise[i] = tex_noise_worley_2d.Sample(
 				sampler_linear_repeat,
 				noise_coord
 			);

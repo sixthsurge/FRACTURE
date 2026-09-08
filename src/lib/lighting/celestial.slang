@@ -50,6 +50,14 @@ float3 calculate_celestial_light(
 
 	float LoV = dot(buf_global.light_dir_world, -dir_world);
 
+	light += calculate_sss(
+		material.albedo,
+		material.sss_amount,
+		material.sss_amount,
+		shadow_result.sss_depth,
+		LoV
+	);
+
 	if (max_of(shadow_result.visibility) > EPS) {
 		float NoL = dot(detail_normal_world, buf_global.light_dir_world);
 		float NoV = saturate(dot(detail_normal_world, -dir_world));

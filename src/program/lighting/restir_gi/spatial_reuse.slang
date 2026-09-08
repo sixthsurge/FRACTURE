@@ -26,7 +26,7 @@ Texture2D<float4> tex_reserviour_temporal_2;
 Texture2D<float4> tex_reserviour_temporal_3;
 Texture2D<float4> tex_reserviour_temporal_4;
 Texture2D<uint4> tex_gbuffer_opaque;
-Texture2D<float> tex_blue_noise;
+Texture2D<float> tex_noise_blue;
 
 static const int MAX_ITERATIONS = 9;
 
@@ -39,8 +39,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	}
 
 	float2 dither = float2(
-		tex_blue_noise[icoord & 511],
-		tex_blue_noise[(icoord + int2(93, 41)) & 511]
+		tex_noise_blue[icoord & 511],
+		tex_noise_blue[(icoord + int2(93, 41)) & 511]
 	);
 	uint4 gbuffer_packed = tex_gbuffer_opaque[icoord];
 

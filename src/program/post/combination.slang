@@ -7,7 +7,7 @@ import settings;
 Texture2D<float3> tex_input;
 Texture2D<float3> tex_bloom;
 Texture2D<float4> tex_debug;
-Texture2D<float> tex_blue_noise;
+Texture2D<float> tex_noise_blue;
 
 ConstantBuffer<ExposureBuffer> buf_exposure;
 Texture2D<uint> tex_exposure_histogram;
@@ -33,7 +33,7 @@ float4 main(float2 coord: SV_Position) {
 	float2 ncoord = (icoord + 0.5) / ap.game.screenSize;
 
 	float3 color = tex_input[icoord];
-	float dither = tex_blue_noise[icoord & 511];
+	float dither = tex_noise_blue[icoord & 511];
 
 	color = apply_bloom(icoord, ncoord, color);
 

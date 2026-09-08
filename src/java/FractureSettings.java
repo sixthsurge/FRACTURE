@@ -135,6 +135,13 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
+		final var screenClouds = screenAtmospherics.child("clouds");
+		screenClouds.option(
+			"CLOUDS_ENABLED",
+			OptionType.boolType(false),
+			false
+		);
+
 		final var screenWater = screen.child("water");
 		screenWater.option("WATER_CAUSTICS", OptionType.boolType(false), false);
 
@@ -235,5 +242,14 @@ public class FractureSettings implements PackSettings {
 		screenDev.option("DEBUG", OptionType.boolType(false), false);
 		screenDev.option("WHITE_WORLD", OptionType.boolType(false), false);
 		screenDev.option("MIRROR_WATER", OptionType.boolType(false), false);
+
+		// General sliders for me to tweak stuff.
+		for (int i = 0; i < 10; ++i) {
+			screenDev.option(
+				"DEV_SLIDER_" + i,
+				OptionType.floatType(0.0f, 2.0f, 0.01f, 1.0f),
+				true
+			);
+		}
 	}
 }

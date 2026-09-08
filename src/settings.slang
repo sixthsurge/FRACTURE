@@ -3,6 +3,7 @@ public module settings;
 
 struct GlobalBufferData {
 	float2 taa_jitter;
+	float world_age;
 	float sun_angle;
 	float3 light_dir_world;
 	float3 sun_dir_world;
@@ -18,40 +19,41 @@ struct GlobalBufferData {
 
 ConstantBuffer<GlobalBufferData, ScalarDataLayout> buf_global;
 
-extern static const bool value_ATMOSPHERE_AP_LUT_ENABLED;
-extern static const bool value_AUTO_EXPOSURE_ENABLED;
-extern static const bool value_BLOOM_ENABLED;
-extern static const int value_BLOOM_TILE_COUNT;
-extern static const bool value_DEBUG;
-extern static const bool value_DISPLAY_LUMINANCE_HISTOGRAM;
-extern static const int value_FOG_VOLUME_SIZE_X;
-extern static const int value_FOG_VOLUME_SIZE_Y;
-extern static const int value_FOG_VOLUME_SIZE_Z;
-extern static const bool value_GTAO_ENABLED;
-extern static const int value_GTAO_HORIZON_STEP_COUNT;
-extern static const int value_GTAO_SLICE_COUNT;
-extern static const bool value_INFINITE_ACCUMULATION;
-extern static const bool value_LABPBR_SUPPORT_ENABLED;
-extern static const bool value_MIRROR_WATER;
-extern static const float value_MOON_ANGULAR_RADIUS;
-extern static const bool value_POM_ENABLED;
-extern static const bool value_REFERENCE_PT_ENABLED;
-extern static const bool value_RESTIR_GI_ENABLED;
-extern static const bool value_RSM_ENABLED;
-extern static const int value_RSM_STEP_COUNT;
-extern static const int value_SHADOW_CASCADE_COUNT;
-extern static const int value_SHADOW_DISTANCE;
-extern static const bool value_SHADOW_ENABLED;
-extern static const int value_SHADOW_RESOLUTION;
-extern static const bool value_SSR_ENABLED;
-extern static const float value_SUN_ANGULAR_RADIUS;
-extern static const bool value_TAA_ENABLED;
-extern static const bool value_TEST_VXRT;
-extern static const int value_VOXEL_RT_VOLUME_SIZE_X;
-extern static const int value_VOXEL_RT_VOLUME_SIZE_Y;
-extern static const int value_VOXEL_RT_VOLUME_SIZE_Z;
-extern static const bool value_WATER_CAUSTICS;
-extern static const bool value_WHITE_WORLD;
+internal extern static const bool value_ATMOSPHERE_AP_LUT_ENABLED;
+internal extern static const bool value_AUTO_EXPOSURE_ENABLED;
+internal extern static const bool value_BLOOM_ENABLED;
+internal extern static const int value_BLOOM_TILE_COUNT;
+internal extern static const bool value_CLOUDS_ENABLED;
+internal extern static const bool value_DEBUG;
+internal extern static const bool value_DISPLAY_LUMINANCE_HISTOGRAM;
+internal extern static const int value_FOG_VOLUME_SIZE_X;
+internal extern static const int value_FOG_VOLUME_SIZE_Y;
+internal extern static const int value_FOG_VOLUME_SIZE_Z;
+internal extern static const bool value_GTAO_ENABLED;
+internal extern static const int value_GTAO_HORIZON_STEP_COUNT;
+internal extern static const int value_GTAO_SLICE_COUNT;
+internal extern static const bool value_INFINITE_ACCUMULATION;
+internal extern static const bool value_LABPBR_SUPPORT_ENABLED;
+internal extern static const bool value_MIRROR_WATER;
+internal extern static const float value_MOON_ANGULAR_RADIUS;
+internal extern static const bool value_POM_ENABLED;
+internal extern static const bool value_REFERENCE_PT_ENABLED;
+internal extern static const bool value_RESTIR_GI_ENABLED;
+internal extern static const bool value_RSM_ENABLED;
+internal extern static const int value_RSM_STEP_COUNT;
+internal extern static const int value_SHADOW_CASCADE_COUNT;
+internal extern static const int value_SHADOW_DISTANCE;
+internal extern static const bool value_SHADOW_ENABLED;
+internal extern static const int value_SHADOW_RESOLUTION;
+internal extern static const bool value_SSR_ENABLED;
+internal extern static const float value_SUN_ANGULAR_RADIUS;
+internal extern static const bool value_TAA_ENABLED;
+internal extern static const bool value_TEST_VXRT;
+internal extern static const int value_VOXEL_RT_VOLUME_SIZE_X;
+internal extern static const int value_VOXEL_RT_VOLUME_SIZE_Y;
+internal extern static const int value_VOXEL_RT_VOLUME_SIZE_Z;
+internal extern static const bool value_WATER_CAUSTICS;
+internal extern static const bool value_WHITE_WORLD;
 
 struct Settings {
 	float AGX_OFFSET_B;
@@ -65,6 +67,16 @@ struct Settings {
 	float AGX_SLOPE_G;
 	float AGX_SLOPE_R;
 	float BLOOM_INTENSITY;
+	float DEV_SLIDER_0;
+	float DEV_SLIDER_1;
+	float DEV_SLIDER_2;
+	float DEV_SLIDER_3;
+	float DEV_SLIDER_4;
+	float DEV_SLIDER_5;
+	float DEV_SLIDER_6;
+	float DEV_SLIDER_7;
+	float DEV_SLIDER_8;
+	float DEV_SLIDER_9;
 	float EXPOSURE_TARGET_A;
 	float EXPOSURE_TARGET_B;
 	float GTAO_RADIUS;
@@ -77,6 +89,7 @@ struct Settings {
 	static const bool AUTO_EXPOSURE_ENABLED = value_AUTO_EXPOSURE_ENABLED;
 	static const bool BLOOM_ENABLED = value_BLOOM_ENABLED;
 	static const int BLOOM_TILE_COUNT = value_BLOOM_TILE_COUNT;
+	static const bool CLOUDS_ENABLED = value_CLOUDS_ENABLED;
 	static const bool DEBUG = value_DEBUG;
 	static const bool DISPLAY_LUMINANCE_HISTOGRAM
 		= value_DISPLAY_LUMINANCE_HISTOGRAM;
@@ -111,5 +124,4 @@ struct Settings {
 };
 
 ConstantBuffer<Settings, ScalarDataLayout> userSettings;
-
 

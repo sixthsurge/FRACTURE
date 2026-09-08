@@ -18,7 +18,8 @@ import lib.volumetrics.atmosphere;
 import lib.volumetrics.fog;
 import lib.volumetrics.sky;
 import settings;
-import lib.util.debug;
+
+import lib.volumetrics.clouds;
 
 RWTexture2D<float3> tex_scene_write;
 Texture2D<uint4> tex_gbuffer_opaque;
@@ -29,7 +30,7 @@ Texture3D<float3> tex_fog_volume_integrated_extinction;
 Texture2D<float4> tex_qres_temporal_data_current;
 Texture2D<float4> tex_gtao_output_current;
 Texture2D<float3> tex_rsm_output_filtered;
-Texture2D<float> tex_blue_noise;
+Texture2D<float> tex_noise_blue;
 
 Texture2D tex_reserviour_spatial_1;
 Texture2D tex_reserviour_spatial_2;
@@ -141,8 +142,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float depth = ap.opaqueDepth[icoord];
 	uint4 packed_gbuffer = tex_gbuffer_opaque[icoord];
 	float2 dither = float2(
-		tex_blue_noise[icoord & 511],
-		tex_blue_noise[(icoord + int2(93, 41)) & 511]
+		tex_noise_blue[icoord & 511],
+		tex_noise_blue[(icoord + int2(93, 41)) & 511]
 	);
 
 	float3 pos_screen = float3(ncoord, depth);
@@ -162,6 +163,22 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	if (depth == 0.0) {
 		float3 radiance = calculate_sky_radiance(dir_world);
 		radiance = fog_participation.apply(radiance);
+
+		if (userSettings.CLOUDS_ENABLED) {
+			clouds.RenderResult clouds_result = clouds.render(
+				Ray(float3(
+						ap.camera.position.x,
+						clouds.EARTH_RADIUS + 40.0 + ap.camera.position.y,
+						ap.camera.position.z
+					),
+					dir_world),
+				radiance,
+				dither.x
+			);
+			radiance = radiance * clouds_result.transmittance
+				+ clouds_result.scattering;
+		}
+
 		tex_scene_write[icoord] = radiance;
 		return;
 	}

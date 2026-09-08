@@ -8,6 +8,7 @@ import org.joml.Vector3f;
 
 public record GlobalBufferData(
 	Vector2f taa_jitter,
+	float world_age,
 	float sun_angle,
 	Vector3f light_dir_world,
 	Vector3f sun_dir_world,
@@ -25,6 +26,8 @@ public record GlobalBufferData(
 			= state.uniforms().getInt("ap.timing.frameCounter");
 		final var renderSize = state.uniforms().getInt2("ap.game.renderSize");
 		final var cameraView = state.uniforms().getFloat4x4("ap.camera.view");
+
+		final var worldAge = ((float) (state.uniforms().getInt("ap.world.day") % 128) * 24000.0f + (float) state.uniforms().getInt("ap.world.time")) / 20.0f;
 
 		final var taaJitter = state.settings().getBoolValue("TAA_ENABLED")
 			? (Util.r2(frameCounter).sub(new Vector2f(0.5f)))
@@ -85,6 +88,7 @@ public record GlobalBufferData(
 
 		return new GlobalBufferData(
 			taaJitter,
+			worldAge,
 			sunAngle,
 			lightDirWorld,
 			sunDirWorld,

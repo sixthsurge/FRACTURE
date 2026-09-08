@@ -7,6 +7,8 @@ import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.objects.TextureReference;
 import dev.irisshaders.aperture.api.pipeline.FrameState;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
+import dev.irisshaders.aperture.api.pipeline.RawProvider;
+import dev.irisshaders.aperture.api.pipeline.TextureType;
 import fracture.util.Flipper;
 import fracture.util.Util;
 
@@ -114,10 +116,26 @@ public class Textures {
 		Screen screen,
 		FeatureToggles toggles
 	) {
-		pipeline.loadPNGTexture("tex_blue_noise", "texture/blue_noise.png");
+		pipeline.loadPNGTexture("tex_noise_blue", "texture/noise/blue.png");
 		pipeline.loadPNGTexture(
-			"tex_worley_noise_2d",
-			"texture/worley_noise_2d.png"
+			"tex_noise_worley_2d",
+			"texture/noise/worley_2d.png"
+		);
+		pipeline.loadPNGTexture(
+			"tex_noise_perlin_worley_2d",
+			"texture/noise/perlin_worley_2d.png"
+		);
+		pipeline.loadRawTexture(
+			"tex_noise_worley_bubbly_3d",
+			TextureType.of3D(64, 64, 64),
+			TextureFormat.R8_UNORM,
+			RawProvider.fromFile("texture/noise/worley_bubbly_3d.dat")
+		);
+		pipeline.loadRawTexture(
+			"tex_noise_worley_swirley_3d",
+			TextureType.of3D(64, 64, 64),
+			TextureFormat.R8_UNORM,
+			RawProvider.fromFile("texture/noise/worley_swirley_3d.dat")
 		);
 		pipeline.loadPNGTexture("tex_galaxy", "texture/galaxy.png");
 

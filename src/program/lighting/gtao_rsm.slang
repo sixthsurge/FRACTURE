@@ -19,7 +19,7 @@ Texture2D<float4> tex_gtao_output_prev;
 Texture2D<float3> tex_rsm_output_filtered;
 Texture2D<float4> tex_qres_temporal_data_prev;
 Texture2D<uint4> tex_gbuffer_opaque;
-Texture2D<float> tex_blue_noise;
+Texture2D<float> tex_noise_blue;
 
 [shader("compute")]
 [numthreads(16, 16)]
@@ -38,8 +38,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float depth = ap.depth[fullres_icoord];
 	uint4 gbuffer_packed = tex_gbuffer_opaque[fullres_icoord];
 	float2 dither = float2(
-		tex_blue_noise[icoord & 511],
-		tex_blue_noise[(icoord + int2(93, 41)) & 511]
+		tex_noise_blue[icoord & 511],
+		tex_noise_blue[(icoord + int2(93, 41)) & 511]
 	);
 
 	if (depth == 0.0) {
