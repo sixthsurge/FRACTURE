@@ -15,59 +15,17 @@ public class PostShadow {
 		final var fogVolumeSizeZ
 			= builder.settings().getIntValue("FOG_VOLUME_SIZE_Z");
 
-		builder
-			.compute3d(
-				"fog/create_volume a",
-				"program/volumetrics/fog/create_volume",
-				"main",
-				fogVolumeSizeX,
-				fogVolumeSizeY,
-				fogVolumeSizeZ,
-				8,
-				8,
-				4
-			)
-			.exportInt("ACTIVE_FRAME", 0)
-			.overrideObject("tex_fog_volume_light", "tex_fog_volume_light_a")
-			.overrideObject(
-				"tex_fog_volume_extinction",
-				"tex_fog_volume_extinction_a"
-			)
-			.overrideObject(
-				"tex_fog_volume_light_prev",
-				"tex_fog_volume_light_b"
-			)
-			.overrideObject(
-				"tex_fog_volume_extinction_prev",
-				"tex_fog_volume_extinction_b"
-			);
-
-		builder
-			.compute3d(
-				"fog/create_volume b",
-				"program/volumetrics/fog/create_volume",
-				"main",
-				fogVolumeSizeX,
-				fogVolumeSizeY,
-				fogVolumeSizeZ,
-				8,
-				8,
-				4
-			)
-			.exportInt("ACTIVE_FRAME", 1)
-			.overrideObject("tex_fog_volume_light", "tex_fog_volume_light_b")
-			.overrideObject(
-				"tex_fog_volume_extinction",
-				"tex_fog_volume_extinction_b"
-			)
-			.overrideObject(
-				"tex_fog_volume_light_prev",
-				"tex_fog_volume_light_a"
-			)
-			.overrideObject(
-				"tex_fog_volume_extinction_prev",
-				"tex_fog_volume_extinction_a"
-			);
+		builder.compute3d(
+			"fog/create_volume",
+			"program/volumetrics/fog/create_volume",
+			"main",
+			fogVolumeSizeX,
+			fogVolumeSizeY,
+			fogVolumeSizeZ,
+			8,
+			8,
+			4
+		);
 
 		builder.compute2d(
 			"fog/integrate_volume",

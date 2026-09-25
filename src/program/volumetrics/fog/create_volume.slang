@@ -4,12 +4,10 @@ import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
 
-RWTexture3D<float4> tex_fog_volume_light;
-RWTexture3D<float3> tex_fog_volume_extinction;
+RWTexture3D<float4> tex_fog_volume_light_current;
+RWTexture3D<float3> tex_fog_volume_extinction_current;
 Texture3D<float4> tex_fog_volume_light_prev;
 Texture3D<float3> tex_fog_volume_extinction_prev;
-
-extern static const int ACTIVE_FRAME;
 
 // Workaround for lack of 3D texture references; create two versions of the
 // program; one runs on each frame.
@@ -20,11 +18,8 @@ typedef fog.OverworldProfile DimensionFogProfile;
 [shader("compute")]
 [numthreads(8, 8, 4)]
 void main(int3 icoord: SV_DispatchThreadID) {
-	if ((ap.timing.frameCounter & 1) != ACTIVE_FRAME) {
-		return;
-	}
 	int w, h, d;
-	tex_fog_volume_light.GetDimensions(w, h, d);
+	tex_fog_volume_light_current.GetDimensions(w, h, d);
 
 	float3 ncoord = (icoord + r3(ap.timing.frameCounter)) / float3(w, h, d);
 	ncoord = get_unit_range_from_uv(ncoord, float3(w, h, d));
@@ -85,9 +80,10 @@ void main(int3 icoord: SV_DispatchThreadID) {
 		}
 	}
 
-	tex_fog_volume_light[icoord]
+	tex_fog_volume_light_current[icoord]
 		= float4(max0(froxel_participation.added_light), pixel_age);
-	tex_fog_volume_extinction[icoord] = max0(froxel_participation.extinction);
+	tex_fog_volume_extinction_current[icoord]
+		= max0(froxel_participation.extinction);
 }
 
 

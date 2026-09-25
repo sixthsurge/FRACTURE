@@ -3,8 +3,10 @@ package fracture;
 import dev.irisshaders.aperture.api.objects.ArrayTexture;
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.Texture2D;
+import dev.irisshaders.aperture.api.objects.Texture3D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
-import dev.irisshaders.aperture.api.objects.TextureReference;
+import dev.irisshaders.aperture.api.objects.TextureReference2D;
+import dev.irisshaders.aperture.api.objects.TextureReference3D;
 import dev.irisshaders.aperture.api.pipeline.FrameState;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.RawProvider;
@@ -34,8 +36,8 @@ public class Textures {
 
 	public final Texture2D taaOutputA;
 	public final Texture2D taaOutputB;
-	public final TextureReference taaOutputCurrent;
-	public final TextureReference taaOutputPrevious;
+	public final TextureReference2D taaOutputCurrent;
+	public final TextureReference2D taaOutputPrevious;
 
 	// G-Buffer
 
@@ -53,30 +55,42 @@ public class Textures {
 	public final Texture2D atmosphereSkyView;
 
 	// Clouds
+
 	public final Texture2D cloudsRaw;
 	public final Texture2D cloudsRawData;
 	public final Texture2D cloudsTemporalA;
 	public final Texture2D cloudsTemporalB;
-	public final TextureReference cloudsTemporalCurrent;
-	public final TextureReference cloudsTemporalPrevious;
+	public final TextureReference2D cloudsTemporalCurrent;
+	public final TextureReference2D cloudsTemporalPrevious;
 	public final Texture2D cloudsTemporalDataA;
 	public final Texture2D cloudsTemporalDataB;
-	public final TextureReference cloudsTemporalDataCurrent;
-	public final TextureReference cloudsTemporalDataPrevious;
+	public final TextureReference2D cloudsTemporalDataCurrent;
+	public final TextureReference2D cloudsTemporalDataPrevious;
+
+	// Fog
+
+	public final Texture3D fogVolumeLightA;
+	public final Texture3D fogVolumeLightB;
+	public final TextureReference3D fogVolumeLightCurrent;
+	public final TextureReference3D fogVolumeLightPrevious;
+	public final Texture3D fogVolumeExtinctionA;
+	public final Texture3D fogVolumeExtinctionB;
+	public final TextureReference3D fogVolumeExtinctionCurrent;
+	public final TextureReference3D fogVolumeExtinctionPrevious;
 
 	// Quarter-res general
 
 	public final Texture2D qresTemporalDataA;
 	public final Texture2D qresTemporalDataB;
-	public final TextureReference qresTemporalDataCurrent;
-	public final TextureReference qresTemporalDataPrevious;
+	public final TextureReference2D qresTemporalDataCurrent;
+	public final TextureReference2D qresTemporalDataPrevious;
 
 	// GTAO
 
 	public final Texture2D gtaoOutputA;
 	public final Texture2D gtaoOutputB;
-	public final TextureReference gtaoOutputCurrent;
-	public final TextureReference gtaoOutputPrevious;
+	public final TextureReference2D gtaoOutputCurrent;
+	public final TextureReference2D gtaoOutputPrevious;
 
 	// RSM
 
@@ -101,22 +115,22 @@ public class Textures {
 	public Texture2D reserviourSpatial2B;
 	public Texture2D reserviourSpatial3B;
 	public Texture2D reserviourSpatial4B;
-	public TextureReference reserviourTemporal1;
-	public TextureReference reserviourTemporal2;
-	public TextureReference reserviourTemporal3;
-	public TextureReference reserviourTemporal4;
-	public TextureReference reserviourTemporal1Prev;
-	public TextureReference reserviourTemporal2Prev;
-	public TextureReference reserviourTemporal3Prev;
-	public TextureReference reserviourTemporal4Prev;
-	public TextureReference reserviourSpatial1;
-	public TextureReference reserviourSpatial2;
-	public TextureReference reserviourSpatial3;
-	public TextureReference reserviourSpatial4;
-	public TextureReference reserviourSpatial1Prev;
-	public TextureReference reserviourSpatial2Prev;
-	public TextureReference reserviourSpatial3Prev;
-	public TextureReference reserviourSpatial4Prev;
+	public TextureReference2D reserviourTemporal1;
+	public TextureReference2D reserviourTemporal2;
+	public TextureReference2D reserviourTemporal3;
+	public TextureReference2D reserviourTemporal4;
+	public TextureReference2D reserviourTemporal1Prev;
+	public TextureReference2D reserviourTemporal2Prev;
+	public TextureReference2D reserviourTemporal3Prev;
+	public TextureReference2D reserviourTemporal4Prev;
+	public TextureReference2D reserviourSpatial1;
+	public TextureReference2D reserviourSpatial2;
+	public TextureReference2D reserviourSpatial3;
+	public TextureReference2D reserviourSpatial4;
+	public TextureReference2D reserviourSpatial1Prev;
+	public TextureReference2D reserviourSpatial2Prev;
+	public TextureReference2D reserviourSpatial3Prev;
+	public TextureReference2D reserviourSpatial4Prev;
 
 	// Shadow
 
@@ -195,11 +209,12 @@ public class Textures {
 						 .windowSize()
 						 .create();
 		taaOutputCurrent
-			= pipeline.reference("tex_taa_output_current", taaOutputA.format())
+			= pipeline
+				  .reference2D("tex_taa_output_current", taaOutputA.format())
 				  .windowSize()
 				  .createEmpty();
 		taaOutputPrevious
-			= pipeline.reference("tex_taa_output_prev", taaOutputA.format())
+			= pipeline.reference2D("tex_taa_output_prev", taaOutputA.format())
 				  .windowSize()
 				  .createEmpty();
 
@@ -336,7 +351,7 @@ public class Textures {
 				  .create();
 		cloudsTemporalCurrent
 			= pipeline
-				  .reference(
+				  .reference2D(
 					  "tex_clouds_temporal_current",
 					  cloudsTemporalA.format()
 				  )
@@ -344,7 +359,7 @@ public class Textures {
 				  .createEmpty();
 		cloudsTemporalPrevious
 			= pipeline
-				  .reference(
+				  .reference2D(
 					  "tex_clouds_temporal_prev",
 					  cloudsTemporalA.format()
 				  )
@@ -369,7 +384,7 @@ public class Textures {
 				  .create();
 		cloudsTemporalDataCurrent
 			= pipeline
-				  .reference(
+				  .reference2D(
 					  "tex_clouds_temporal_data_current",
 					  cloudsTemporalDataA.format()
 				  )
@@ -377,7 +392,7 @@ public class Textures {
 				  .createEmpty();
 		cloudsTemporalDataPrevious
 			= pipeline
-				  .reference(
+				  .reference2D(
 					  "tex_clouds_temporal_data_prev",
 					  cloudsTemporalDataA.format()
 				  )
@@ -407,7 +422,7 @@ public class Textures {
 				  .create();
 		qresTemporalDataCurrent
 			= pipeline
-				  .reference(
+				  .reference2D(
 					  "tex_qres_temporal_data_current",
 					  qresTemporalDataA.format()
 				  )
@@ -415,7 +430,7 @@ public class Textures {
 				  .createEmpty();
 		qresTemporalDataPrevious
 			= pipeline
-				  .reference(
+				  .reference2D(
 					  "tex_qres_temporal_data_prev",
 					  qresTemporalDataA.format()
 				  )
@@ -436,11 +451,11 @@ public class Textures {
 				  .create();
 		gtaoOutputCurrent
 			= pipeline
-				  .reference("tex_gtao_output_current", gtaoOutputA.format())
+				  .reference2D("tex_gtao_output_current", gtaoOutputA.format())
 				  .size(qresWidth, qresHeight)
 				  .createEmpty();
 		gtaoOutputPrevious
-			= pipeline.reference("tex_gtao_output_prev", gtaoOutputA.format())
+			= pipeline.reference2D("tex_gtao_output_prev", gtaoOutputA.format())
 				  .size(qresWidth, qresHeight)
 				  .createEmpty();
 
@@ -468,28 +483,73 @@ public class Textures {
 			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Y");
 		final var fogVolumeSizeZ
 			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Z");
-		pipeline
-			.texture3D("tex_fog_volume_light_a", TextureFormat.RGBA16_SFLOAT)
-			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-			.create();
-		pipeline
-			.texture3D(
-				"tex_fog_volume_extinction_a",
-				TextureFormat.RGBA16_SFLOAT
-			)
-			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-			.create();
-		pipeline
-			.texture3D("tex_fog_volume_light_b", TextureFormat.RGBA16_SFLOAT)
-			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-			.create();
-		pipeline
-			.texture3D(
-				"tex_fog_volume_extinction_b",
-				TextureFormat.RGBA16_SFLOAT
-			)
-			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-			.create();
+
+		fogVolumeLightA
+			= pipeline
+				  .texture3D(
+					  "tex_fog_volume_light_a",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
+				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+				  .create();
+		fogVolumeLightB
+			= pipeline
+				  .texture3D(
+					  "tex_fog_volume_light_b",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
+				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+				  .create();
+		fogVolumeLightCurrent
+			= pipeline
+				  .reference3D(
+					  "tex_fog_volume_light_current",
+					  fogVolumeLightA.format()
+				  )
+				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+				  .createEmpty();
+		fogVolumeLightPrevious
+			= pipeline
+				  .reference3D(
+					  "tex_fog_volume_light_prev",
+					  fogVolumeLightA.format()
+				  )
+				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+				  .createEmpty();
+
+		fogVolumeExtinctionA
+			= pipeline
+				  .texture3D(
+					  "tex_fog_volume_extinction_a",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
+				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+				  .create();
+		fogVolumeExtinctionB
+			= pipeline
+				  .texture3D(
+					  "tex_fog_volume_extinction_b",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
+				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+				  .create();
+		fogVolumeExtinctionCurrent
+			= pipeline
+				  .reference3D(
+					  "tex_fog_volume_extinction_current",
+					  fogVolumeExtinctionA.format()
+				  )
+				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+				  .createEmpty();
+		fogVolumeExtinctionPrevious
+			= pipeline
+				  .reference3D(
+					  "tex_fog_volume_extinction_prev",
+					  fogVolumeExtinctionA.format()
+				  )
+				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+				  .createEmpty();
+
 		pipeline
 			.texture3D(
 				"tex_fog_volume_integrated_light",
@@ -612,7 +672,7 @@ public class Textures {
 
 			reserviourTemporal1
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_temporal_1",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
@@ -620,7 +680,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourTemporal2
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_temporal_2",
 						  TextureFormat.RGBA32_SFLOAT
 					  )
@@ -628,7 +688,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourTemporal3
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_temporal_3",
 						  TextureFormat.RGBA32_SFLOAT
 					  )
@@ -636,7 +696,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourTemporal4
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_temporal_4",
 						  TextureFormat.RGBA8_UNORM
 					  )
@@ -645,7 +705,7 @@ public class Textures {
 
 			reserviourTemporal1Prev
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_temporal_1_prev",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
@@ -653,7 +713,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourTemporal2Prev
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_temporal_2_prev",
 						  TextureFormat.RGBA32_SFLOAT
 					  )
@@ -661,7 +721,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourTemporal3Prev
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_temporal_3_prev",
 						  TextureFormat.RGBA32_SFLOAT
 					  )
@@ -669,7 +729,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourTemporal4Prev
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_temporal_4_prev",
 						  TextureFormat.RGBA8_UNORM
 					  )
@@ -744,7 +804,7 @@ public class Textures {
 
 			reserviourSpatial1
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_spatial_1",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
@@ -752,7 +812,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourSpatial2
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_spatial_2",
 						  TextureFormat.RGBA32_SFLOAT
 					  )
@@ -760,7 +820,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourSpatial3
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_spatial_3",
 						  TextureFormat.RGBA32_SFLOAT
 					  )
@@ -768,7 +828,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourSpatial4
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_spatial_4",
 						  TextureFormat.RGBA8_UNORM
 					  )
@@ -777,7 +837,7 @@ public class Textures {
 
 			reserviourSpatial1Prev
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_spatial_1_prev",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
@@ -785,7 +845,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourSpatial2Prev
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_spatial_2_prev",
 						  TextureFormat.RGBA32_SFLOAT
 					  )
@@ -793,7 +853,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourSpatial3Prev
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_spatial_3_prev",
 						  TextureFormat.RGBA32_SFLOAT
 					  )
@@ -801,7 +861,7 @@ public class Textures {
 					  .createEmpty();
 			reserviourSpatial4Prev
 				= pipeline
-					  .reference(
+					  .reference2D(
 						  "tex_reserviour_spatial_4_prev",
 						  TextureFormat.RGBA8_UNORM
 					  )
@@ -838,6 +898,18 @@ public class Textures {
 		);
 		qresTemporalDataPrevious.set(
 			oddFrame ? qresTemporalDataB : qresTemporalDataA
+		);
+
+		fogVolumeLightCurrent.set(oddFrame ? fogVolumeLightA : fogVolumeLightB);
+		fogVolumeLightPrevious.set(
+			oddFrame ? fogVolumeLightB : fogVolumeLightA
+		);
+
+		fogVolumeExtinctionCurrent.set(
+			oddFrame ? fogVolumeExtinctionA : fogVolumeExtinctionB
+		);
+		fogVolumeExtinctionPrevious.set(
+			oddFrame ? fogVolumeExtinctionB : fogVolumeExtinctionA
 		);
 
 		if (reserviourTemporal1 != null) {
