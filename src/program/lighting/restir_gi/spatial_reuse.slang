@@ -33,6 +33,12 @@ static const int MAX_ITERATIONS = 9;
 [shader("compute")]
 [numthreads(16, 16)]
 void main(int2 icoord: SV_DispatchThreadID) {
+	int w, h;
+	tex_reserviour_temporal_1.GetDimensions(w, h);
+	if (any(icoord >= int2(w, h))) {
+		return;
+	}
+
 	float depth = ap.depth[icoord];
 	if (depth == 0.0) {
 		return;

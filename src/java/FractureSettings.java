@@ -136,9 +136,12 @@ public class FractureSettings implements PackSettings {
 		);
 
 		final var screenClouds = screenAtmospherics.child("clouds");
+		screenClouds.option("CLOUDS_ENABLED", OptionType.boolType(true), false);
+		screenClouds
+			.option("CLOUDS_FILTER_ENABLED", OptionType.boolType(true), false);
 		screenClouds.option(
-			"CLOUDS_ENABLED",
-			OptionType.boolType(false),
+			"CLOUDS_RENDER_SCALE",
+			OptionType.floatType(0.01f, 1.0f, 0.01f, 0.25f),
 			false
 		);
 

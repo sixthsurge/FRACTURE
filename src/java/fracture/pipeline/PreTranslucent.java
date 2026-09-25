@@ -8,6 +8,35 @@ public class PreTranslucent {
 	public static void setup(PipelineBuilder builder, Resources resources) {
 		builder.setStage(ProgramStage.PRE_TRANSLUCENT);
 
+		if (builder.settings().getBoolValue("CLOUDS_ENABLED")) {
+			final var cloudsRenderScale
+				= builder.settings().getFloatValue("CLOUDS_RENDER_SCALE");
+			final var cloudsRenderWidth = (int) Math.ceil(
+				builder.screen().renderWidth() * cloudsRenderScale
+			);
+			final var cloudsRenderHeight = (int) Math.ceil(
+				builder.screen().renderHeight() * cloudsRenderScale
+			);
+
+			builder.compute2d(
+				"clouds/render",
+				"program/volumetrics/clouds/render",
+				"main",
+				cloudsRenderWidth,
+				cloudsRenderHeight,
+				16,
+				16
+			);
+
+			builder.renderSizedCompute(
+				"clouds/filter",
+				"program/volumetrics/clouds/filter",
+				"main",
+				16,
+				16
+			);
+		}
+
 		builder.compute2d(
 			"gtao_rsm",
 			"program/lighting/gtao_rsm",

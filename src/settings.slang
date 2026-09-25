@@ -24,6 +24,8 @@ internal extern static const bool value_AUTO_EXPOSURE_ENABLED;
 internal extern static const bool value_BLOOM_ENABLED;
 internal extern static const int value_BLOOM_TILE_COUNT;
 internal extern static const bool value_CLOUDS_ENABLED;
+internal extern static const bool value_CLOUDS_FILTER_ENABLED;
+internal extern static const float value_CLOUDS_RENDER_SCALE;
 internal extern static const bool value_DEBUG;
 internal extern static const bool value_DISPLAY_LUMINANCE_HISTOGRAM;
 internal extern static const int value_FOG_VOLUME_SIZE_X;
@@ -90,6 +92,8 @@ struct Settings {
 	static const bool BLOOM_ENABLED = value_BLOOM_ENABLED;
 	static const int BLOOM_TILE_COUNT = value_BLOOM_TILE_COUNT;
 	static const bool CLOUDS_ENABLED = value_CLOUDS_ENABLED;
+	static const bool CLOUDS_FILTER_ENABLED = value_CLOUDS_FILTER_ENABLED;
+	static const float CLOUDS_RENDER_SCALE = value_CLOUDS_RENDER_SCALE;
 	static const bool DEBUG = value_DEBUG;
 	static const bool DISPLAY_LUMINANCE_HISTOGRAM
 		= value_DISPLAY_LUMINANCE_HISTOGRAM;

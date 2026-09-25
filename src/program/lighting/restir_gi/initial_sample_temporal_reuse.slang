@@ -26,6 +26,12 @@ Texture2D<float4> tex_reserviour_temporal_4_prev;
 [shader("compute")]
 [numthreads(16, 16)]
 void main(int2 icoord: SV_DispatchThreadID) {
+	int width, height;
+	tex_reserviour_temporal_1.GetDimensions(width, height);
+	if (any(icoord >= int2(width, height))) {
+		return;
+	}
+
 	float depth = ap.depth[icoord];
 	if (depth == 0.0) {
 		return;

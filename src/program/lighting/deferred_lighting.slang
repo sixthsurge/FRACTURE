@@ -25,6 +25,7 @@ RWTexture2D<float3> tex_scene_write;
 Texture2D<uint4> tex_gbuffer_opaque;
 Texture3D<float3> tex_atmosphere_aerial_perspective;
 Texture2D<float3> tex_atmosphere_transmittance;
+Texture2D<float4> tex_clouds_temporal_current;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
 Texture2D<float4> tex_qres_temporal_data_current;
@@ -162,23 +163,11 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 	if (depth == 0.0) {
 		float3 radiance = calculate_sky_radiance(dir_world);
-		radiance = fog_participation.apply(radiance);
-
 		if (userSettings.CLOUDS_ENABLED) {
-			clouds.RenderResult clouds_result = clouds.render(
-				Ray(float3(
-						ap.camera.position.x,
-						clouds.EARTH_RADIUS + 40.0 + ap.camera.position.y,
-						ap.camera.position.z
-					),
-					dir_world),
-				radiance,
-				dither.x
-			);
-			radiance = radiance * clouds_result.transmittance
-				+ clouds_result.scattering;
+			float4 clouds = tex_clouds_temporal_current[icoord];
+			radiance = radiance * clouds.w + clouds.xyz;
 		}
-
+		radiance = fog_participation.apply(radiance);
 		tex_scene_write[icoord] = radiance;
 		return;
 	}

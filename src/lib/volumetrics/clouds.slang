@@ -12,19 +12,20 @@ import settings;
 
 namespace clouds {
 Texture2D<float3> tex_atmosphere_transmittance;
-Texture2D<float> tex_noise_perlin_worley_2d;
-Texture3D<float> tex_noise_worley_bubbly_3d;
-Texture3D<float> tex_noise_worley_swirley_3d;
+Texture2D<half> tex_noise_perlin_worley_2d;
+Texture3D<half> tex_noise_worley_bubbly_3d;
+Texture3D<half> tex_noise_worley_swirley_3d;
 SamplerState sampler_linear_repeat;
 ConstantBuffer<SkyShBuffer> buf_sky_sh;
 
-public static const float EARTH_RADIUS = 6371000.0;
+static const float EARTH_RADIUS = 6371000.0;
 static const float VOLUME_ALTITUDE = 1000.0;
 static const float VOLUME_THICKNESS = 2400.0;
 
 static const float VOLUME_INNER_RADIUS = EARTH_RADIUS + VOLUME_ALTITUDE;
 static const float VOLUME_OUTER_RADIUS = VOLUME_INNER_RADIUS + VOLUME_THICKNESS;
 static const float DENSITY_SCALE = 0.2;
+static const float MAX_RAY_LENGTH = 50000.0;
 
 static const int STEP_COUNT = 32;
 
@@ -38,40 +39,43 @@ float powder_effect(float density, float nu) {
 float calculate_density(float3 pos) {
 	float altitude_fraction
 		= linstep(VOLUME_INNER_RADIUS, VOLUME_OUTER_RADIUS, length(pos));
+	half altitude_fraction_h = half(altitude_fraction);
+
 	const float2 wind_vel = 10.0 * float2(cos(0.3), sin(0.3));
 	float2 wind = wind_vel * buf_global.world_age;
 
 	pos.xz += 0.01 * wind_vel * pos.y;
-	float density = tex_noise_perlin_worley_2d.Sample(
+	half density = tex_noise_perlin_worley_2d.Sample(
 		sampler_linear_repeat,
 		0.00001 * (pos.xz + wind)
 	);
-	float coverage = tex_noise_perlin_worley_2d.Sample(
+	half coverage = tex_noise_perlin_worley_2d.Sample(
 		sampler_linear_repeat,
 		0.0000009 * (pos.xz + wind)
 	);
 
-	density
-		= pow4(linstep(pow2(cubic_smooth(1.0 - 0.9 * coverage)), 1.0, density));
+	density = pow4(
+		linstep(pow2(cubic_smooth(1.0h - 0.9h * coverage)), 1.0h, density)
+	);
 
-	density *= 1.0 - altitude_fraction;
+	density *= 1.0h - altitude_fraction_h;
 
 	density -= pow4(tex_noise_worley_bubbly_3d.Sample(
 				   sampler_linear_repeat,
 				   (pos + 2.0 * float3(wind, 0.0).xzy) * 0.00019
 			   ))
-		* (dampen(saturate(1.0 - density)))
-		* lerp(0.25, 8.0, pow4(altitude_fraction));
+		* (dampen(saturate(1.0h - density)))
+		* lerp(0.25h, 8.0h, pow4(altitude_fraction_h));
 
 	density -= pow4(tex_noise_worley_bubbly_3d.Sample(
 				   sampler_linear_repeat,
 				   (pos + 4.0 * float3(wind, 0.0).xzy) * 0.0012
 			   ))
-		* 0.2 * clamp(0.0, 0.2, pow2(altitude_fraction))
-		* dampen(max0(1.0 - density));
+		* 0.2h * clamp(0.0h, 0.2h, pow2(altitude_fraction_h))
+		* dampen(max0(1.0h - density));
 
 	density = max0(density);
-	density = lift(density, lerp(8.0, 40.0, pow2(altitude_fraction)));
+	density = lift(density, lerp(8.0h, 40.0h, pow2(altitude_fraction_h)));
 
 	return density * altitude_fraction;
 }
@@ -90,7 +94,7 @@ float calculate_optical_depth(Ray ray, int step_count) {
 		return 1.0;
 	}
 
-	float ray_length = min(dists.y - dists.x, 10000.0);
+	float ray_length = min(dists.y - dists.x, 5000.0);
 	float step_length = ray_length / float(step_count);
 	float t = dists.x + step_length * dither;
 	for (int i = 0; i < step_count; ++i) {
@@ -105,9 +109,10 @@ float calculate_optical_depth(Ray ray, int step_count) {
 public struct RenderResult {
 	public float3 scattering;
 	public float transmittance;
+	public float apparent_distance;
 
 	public static RenderResult no_hit() {
-		return RenderResult(float3(0.0), 1.0);
+		return RenderResult(float3(0.0), 1.0, MAX_RAY_LENGTH);
 	}
 }
 
@@ -126,7 +131,8 @@ public RenderResult render(Ray ray, float3 sky_radiance, float dither) {
 		return RenderResult.no_hit();
 	}
 
-	float step_length = (dists.y - dists.x) / float(STEP_COUNT);
+	float step_length
+		= min(dists.y - dists.x, MAX_RAY_LENGTH) / float(STEP_COUNT);
 	float t = dists.x + step_length * dither;
 
 	float transmittance = 1.0;
@@ -202,6 +208,7 @@ public RenderResult render(Ray ray, float3 sky_radiance, float dither) {
 	}
 
 	float3 scattering = float3(0.0);
+	float apparent_distance = MAX_RAY_LENGTH;
 	if (w_sum > EPS) {
 		float3 avg_pos = pos_sum / w_sum;
 		float light_fade
@@ -228,8 +235,13 @@ public RenderResult render(Ray ray, float3 sky_radiance, float dither) {
 			scattering,
 			atmosphere_transmittance
 		);
+		apparent_distance = distance(ray.o, avg_pos);
 	}
-	return RenderResult(scattering, transmittance);
+	return RenderResult(scattering, transmittance, apparent_distance);
+}
+
+public float3 camera_pos() {
+	return ap.camera.position + float3(0.0, EARTH_RADIUS, 0.0);
 }
 }
 

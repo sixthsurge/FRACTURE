@@ -52,6 +52,18 @@ public class Textures {
 	public final Texture2D atmosphereMultiscatter;
 	public final Texture2D atmosphereSkyView;
 
+	// Clouds
+	public final Texture2D cloudsRaw;
+	public final Texture2D cloudsRawData;
+	public final Texture2D cloudsTemporalA;
+	public final Texture2D cloudsTemporalB;
+	public final TextureReference cloudsTemporalCurrent;
+	public final TextureReference cloudsTemporalPrevious;
+	public final Texture2D cloudsTemporalDataA;
+	public final Texture2D cloudsTemporalDataB;
+	public final TextureReference cloudsTemporalDataCurrent;
+	public final TextureReference cloudsTemporalDataPrevious;
+
 	// Quarter-res general
 
 	public final Texture2D qresTemporalDataA;
@@ -286,6 +298,91 @@ public class Textures {
 				ATMOSPHERE_AP_LUT_DEPTH
 			)
 			.create();
+
+		// Clouds
+
+		final var cloudsRenderScale
+			= pipeline.settings().getFloatValue("CLOUDS_RENDER_SCALE");
+		final var cloudsRenderWidth
+			= (int) Math.ceil(screen.renderWidth() * cloudsRenderScale);
+		final var cloudsRenderHeight
+			= (int) Math.ceil(screen.renderHeight() * cloudsRenderScale);
+
+		cloudsRaw
+			= pipeline.texture2D("tex_clouds_raw", TextureFormat.RGBA16_SFLOAT)
+				  .size(cloudsRenderWidth, cloudsRenderHeight)
+				  .create();
+		cloudsRawData
+			= pipeline
+				  .texture2D("tex_clouds_raw_data", TextureFormat.R16_SFLOAT)
+				  .size(cloudsRenderWidth, cloudsRenderHeight)
+				  .create();
+
+		cloudsTemporalA
+			= pipeline
+				  .texture2D(
+					  "tex_clouds_temporal_a",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
+				  .renderSize()
+				  .create();
+		cloudsTemporalB
+			= pipeline
+				  .texture2D(
+					  "tex_clouds_temporal_b",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
+				  .renderSize()
+				  .create();
+		cloudsTemporalCurrent
+			= pipeline
+				  .reference(
+					  "tex_clouds_temporal_current",
+					  cloudsTemporalA.format()
+				  )
+				  .renderSize()
+				  .createEmpty();
+		cloudsTemporalPrevious
+			= pipeline
+				  .reference(
+					  "tex_clouds_temporal_prev",
+					  cloudsTemporalA.format()
+				  )
+				  .renderSize()
+				  .createEmpty();
+
+		cloudsTemporalDataA
+			= pipeline
+				  .texture2D(
+					  "tex_clouds_temporal_data_a",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
+				  .renderSize()
+				  .create();
+		cloudsTemporalDataB
+			= pipeline
+				  .texture2D(
+					  "tex_clouds_temporal_data_b",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
+				  .renderSize()
+				  .create();
+		cloudsTemporalDataCurrent
+			= pipeline
+				  .reference(
+					  "tex_clouds_temporal_data_current",
+					  cloudsTemporalDataA.format()
+				  )
+				  .renderSize()
+				  .createEmpty();
+		cloudsTemporalDataPrevious
+			= pipeline
+				  .reference(
+					  "tex_clouds_temporal_data_prev",
+					  cloudsTemporalDataA.format()
+				  )
+				  .renderSize()
+				  .createEmpty();
 
 		// Quarter-res general
 
@@ -724,6 +821,17 @@ public class Textures {
 
 		gtaoOutputCurrent.set(oddFrame ? gtaoOutputA : gtaoOutputB);
 		gtaoOutputPrevious.set(oddFrame ? gtaoOutputB : gtaoOutputA);
+
+		cloudsTemporalCurrent.set(oddFrame ? cloudsTemporalA : cloudsTemporalB);
+		cloudsTemporalPrevious.set(
+			oddFrame ? cloudsTemporalB : cloudsTemporalA
+		);
+		cloudsTemporalDataCurrent.set(
+			oddFrame ? cloudsTemporalDataA : cloudsTemporalDataB
+		);
+		cloudsTemporalDataPrevious.set(
+			oddFrame ? cloudsTemporalDataB : cloudsTemporalDataA
+		);
 
 		qresTemporalDataCurrent.set(
 			oddFrame ? qresTemporalDataA : qresTemporalDataB

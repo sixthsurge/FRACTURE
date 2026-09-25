@@ -161,6 +161,10 @@ constexpr float linstep(float min, float max, float x, ) {
 	return saturate((x - min) / (max - min));
 }
 
+constexpr half linstep(half min, half max, half x, ) {
+	return saturate((x - min) / (max - min));
+}
+
 [ForceInline]
 constexpr vector<float, N> linstep<uint N>(
 	vector<float, N> min,

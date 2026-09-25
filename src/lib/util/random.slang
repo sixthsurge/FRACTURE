@@ -79,7 +79,7 @@ struct PcgRandom : IRandom {
 		uint word = ((state >> ((state >> uint(28)) + uint(4))) ^ state)
 			* uint(277803737);
 		this.state = (word >> uint(22)) ^ word;
-		return state;
+		return this.state;
 	}
 }
 
