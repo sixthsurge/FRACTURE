@@ -27,7 +27,26 @@ static const float VOLUME_OUTER_RADIUS = VOLUME_INNER_RADIUS + VOLUME_THICKNESS;
 static const float DENSITY_SCALE = 0.2;
 static const float MAX_RAY_LENGTH = 50000.0;
 
-static const int STEP_COUNT = 32;
+public struct CloudsRenderParams {
+	public int primary_step_count;
+	public int lighting_step_count;
+	public int ambient_step_count;
+	public bool dither_secondary_ray;
+}
+
+public static const CloudsRenderParams RENDER_PARAMS_MAIN = {
+	32,
+	6,
+	2,
+	true,
+};
+
+public static const CloudsRenderParams RENDER_PARAMS_SKY_VIEW = {
+	16,
+	4,
+	2,
+	false,
+};
 
 float powder_effect(float density, float nu) {
 	float powder = PI * density / (density + 0.15);
@@ -80,8 +99,7 @@ float calculate_density(float3 pos) {
 	return density * altitude_fraction;
 }
 
-float calculate_optical_depth(Ray ray, int step_count) {
-	float dither = hash1(ray.o);
+float calculate_optical_depth(Ray ray, int step_count, float dither) {
 	float optical_depth = 0.0;
 
 	float2 dists = intersect_spherical_shell(
@@ -116,7 +134,8 @@ public struct RenderResult {
 	}
 }
 
-public RenderResult render(Ray ray, float3 sky_radiance, float dither) {
+public RenderResult
+render(CloudsRenderParams params, Ray ray, float3 sky_radiance, float dither) {
 	float2 dists = intersect_spherical_shell(
 		ray.o,
 		ray.d,
@@ -131,8 +150,8 @@ public RenderResult render(Ray ray, float3 sky_radiance, float dither) {
 		return RenderResult.no_hit();
 	}
 
-	float step_length
-		= min(dists.y - dists.x, MAX_RAY_LENGTH) / float(STEP_COUNT);
+	float step_length = min(dists.y - dists.x, MAX_RAY_LENGTH)
+		/ float(params.primary_step_count);
 	float t = dists.x + step_length * dither;
 
 	float transmittance = 1.0;
@@ -148,7 +167,7 @@ public RenderResult render(Ray ray, float3 sky_radiance, float dither) {
 	float3 direct_light = float3(0.0);
 	float3 ambient_light = float3(0.0);
 
-	for (int i = 0; i < STEP_COUNT; ++i) {
+	for (int i = 0; i < params.primary_step_count; ++i) {
 		float3 pos = ray.at(t);
 		float density = calculate_density(pos);
 
@@ -163,12 +182,21 @@ public RenderResult render(Ray ray, float3 sky_radiance, float dither) {
 		float step_transmitted_fraction
 			= (1.0 - step_transmittance) / max(extinction, EPS);
 
-		float light_optical_depth
-			= calculate_optical_depth(Ray(pos, light_dir), 6);
+		float dither = select(params.dither_secondary_ray, hash1(pos), 0.5);
+		float light_optical_depth = calculate_optical_depth(
+			Ray(pos, light_dir),
+			params.primary_step_count,
+			dither,
+		);
 		float sky_optical_depth = calculate_optical_depth(
 			Ray(pos,
-				sample_cos_weighted_hemisphere(normalize(pos), hash2(pos))),
-			2
+				select(
+					params.dither_secondary_ray,
+					sample_cos_weighted_hemisphere(normalize(pos), hash2(pos)),
+					float3(0.0, 1.0, 0.0)
+				)),
+			params.lighting_step_count,
+			dither,
 		);
 		// Guess optical depth to the ground using altitude fraction and density
 		// from this sample

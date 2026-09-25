@@ -10,7 +10,7 @@ groupshared float3 thread_samples[256][9];
 
 RWStructuredBuffer<SkyShBuffer> buf_sky_sh;
 
-Texture2D<float3> tex_atmosphere_sky_view;
+Texture2D<float4> tex_cloudy_sky_view;
 
 [shader("compute")]
 [numthreads(256)]
@@ -25,7 +25,7 @@ void main(int i: SV_GroupIndex) {
 	float3 direction = sample_uniform_hemisphere(float3(0.0, 1.0, 0.0), r2(i));
 
 	float3 radiance
-		= atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, direction);
+		= atmosphere.lookup_sky_radiance(tex_cloudy_sky_view, direction).rgb;
 
 	// Project into SH.
 	float coeff[9] = sh_coeff_order_2(direction);

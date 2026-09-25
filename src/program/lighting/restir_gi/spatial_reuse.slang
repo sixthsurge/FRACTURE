@@ -150,9 +150,6 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 		float p_hat_over_J = (restir_gi.target_function(reserviour_n.sample));
 
-		if (any(isnan(reserviour_n.w))) {
-			debug.show(icoord, float3(1.0));
-		}
 		// TODO visibility test
 
 		spatial_reserviour.merge(random, reserviour_n, p_hat_over_J, 2000.0);

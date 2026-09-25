@@ -14,7 +14,7 @@ import lib.util.random;
 import lib.util.sampling;
 import lib.volumetrics.atmosphere;
 
-internal Texture2D<float3> tex_atmosphere_sky_view;
+internal Texture2D<float4> tex_cloudy_sky_view;
 
 namespace restir_gi {
 static const int BOUNCE_COUNT = 1;
@@ -222,7 +222,7 @@ Sample initial_sample<Random>(
 		sample_normal = current_flat_normal;
 	} else {
 		sample_radiance
-			= atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, ray_dir);
+			= atmosphere.lookup_sky_radiance(tex_cloudy_sky_view, ray_dir).rgb;
 
 		// hit is far away lol.
 		sample_point = ray_dir * 1000.0;
@@ -268,7 +268,7 @@ Sample initial_sample<Random>(
 			current_material = hit.material;
 		} else {
 			bounce_radiance = atmosphere.lookup_sky_radiance(
-				tex_atmosphere_sky_view,
+				tex_cloudy_sky_view,
 				ray_dir
 			);
 			hit_sky = true;

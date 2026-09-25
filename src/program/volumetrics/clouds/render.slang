@@ -35,6 +35,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		= atmosphere.lookup_sky_radiance(tex_atmosphere_sky_view, dir_world);
 
 	clouds.RenderResult result = clouds.render(
+		clouds.RENDER_PARAMS_MAIN,
 		Ray(clouds.camera_pos(), dir_world),
 		sky_radiance,
 		random.next_float()

@@ -13,7 +13,7 @@ import lib.util.random;
 import lib.util.sampling;
 import lib.volumetrics.atmosphere;
 
-internal Texture2D<float3> tex_atmosphere_sky_view;
+internal Texture2D<float4> tex_cloudy_sky_view;
 
 namespace vxrt {
 float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
@@ -98,10 +98,10 @@ float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 				current_detail_normal = hit.normal;
 				current_material = hit.material;
 			} else {
-				bounce_radiance = atmosphere.lookup_sky_radiance(
-					tex_atmosphere_sky_view,
-					ray_dir
-				);
+				bounce_radiance
+					= atmosphere
+						  .lookup_sky_radiance(tex_cloudy_sky_view, ray_dir)
+						  .rgb;
 				hit_sky = true;
 			}
 

@@ -639,7 +639,7 @@ float3 unproject_sky_view(float2 coord) {
 	);
 }
 
-float3 lookup_sky_radiance(Texture2D<float3> tex_sky_view, float3 ray_dir) {
+T lookup_sky_radiance<T>(Texture2D<T> tex_sky_view, float3 ray_dir) where T: ITexelElement {
 	int w, h;
 	tex_sky_view.GetDimensions(w, h);
 

@@ -22,7 +22,7 @@ RWTexture2D<float3> tex_scene_write;
 Texture2D<float3> tex_scene;
 Texture2D<uint4> tex_gbuffer_opaque;
 Texture2D<uint2> tex_gbuffer_translucent;
-Texture2D<float3> tex_atmosphere_sky_view;
+Texture2D<float4> tex_cloudy_sky_view;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
 
@@ -62,8 +62,17 @@ float3 calculate_reflection(
 	} else {
 		float3 ray_dir_world = mul(float3x3(ap.camera.viewInv), ray_dir_view);
 
-		atmosphere.AtmosphereParticipation atmosphere_participation
-			= calculate_atmosphere_participation(ray_dir_world);
+		float4 atmosphere_and_clouds = atmosphere.lookup_sky_radiance(
+			tex_cloudy_sky_view,
+			ray_dir_world
+		);
+		float3 transmittance
+			= atmosphere.calculate_transmittance_approx(
+				  atmosphere.EARTH_PARAMS,
+				  atmosphere.camera_pos(),
+				  ray_dir_world
+			  )
+			* atmosphere_and_clouds.a;
 
 		float3 space_radiance = float3(0.0);
 		if (reflect_space) {
@@ -78,8 +87,9 @@ float3 calculate_reflection(
 			);
 		}
 
-		return atmosphere_participation.apply(space_radiance) * fresnel
-			* pow2(skylight);
+		return (space_radiance * atmosphere_and_clouds.a
+				+ atmosphere_and_clouds.rgb)
+			* fresnel * pow2(skylight);
 	}
 }
 
