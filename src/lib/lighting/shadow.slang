@@ -4,6 +4,7 @@ import aperture;
 import lib.util.math;
 import lib.util.sampling;
 import lib.util.random;
+import lib.toggles;
 import settings;
 
 internal Texture2DArray<float3> tex_shadow_color;
@@ -156,7 +157,7 @@ Result calculate(
 	bool has_sss
 ) {
 	Result result = Result.no_hit();
-	if (!userSettings.SHADOW_ENABLED) {
+	if (!TOGGLE_SHADOW) {
 		return result;
 	}
 
@@ -210,7 +211,7 @@ Result calculate(
 
 Result calculate_simple(float3 pos_scene, float3 flat_normal_world) {
 	Result result = Result.no_hit();
-	if (!userSettings.SHADOW_ENABLED) {
+	if (!TOGGLE_SHADOW) {
 		return result;
 	}
 

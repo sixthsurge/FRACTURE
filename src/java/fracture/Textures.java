@@ -30,6 +30,7 @@ public class Textures {
 
 	public final Flipper<Texture2D> scene;
 	public final Flipper<Texture2D> bloom;
+	public final Texture2D skyMap;
 	public Texture2D debug;
 
 	// TAA
@@ -66,7 +67,6 @@ public class Textures {
 	public final Texture2D cloudsTemporalDataB;
 	public final TextureReference2D cloudsTemporalDataCurrent;
 	public final TextureReference2D cloudsTemporalDataPrevious;
-	public final Texture2D cloudySkyView;
 
 	// Fog
 
@@ -400,17 +400,12 @@ public class Textures {
 				  .renderSize()
 				  .createEmpty();
 
-		cloudySkyView
-			= pipeline
-				  .texture2D(
-					  "tex_cloudy_sky_view",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(
-					  ATMOSPHERE_SKY_VIEW_LUT_WIDTH,
-					  ATMOSPHERE_SKY_VIEW_LUT_HEIGHT
-				  )
-				  .create();
+		skyMap = pipeline.texture2D("tex_sky_map", TextureFormat.RGBA16_SFLOAT)
+					 .size(
+						 pipeline.settings().getIntValue("SKY_MAP_WIDTH"),
+						 pipeline.settings().getIntValue("SKY_MAP_HEIGHT")
+					 )
+					 .create();
 
 		// Quarter-res general
 

@@ -1,5 +1,6 @@
 public module celestial;
 
+import lib.dimension;
 import lib.lighting.brdf;
 import lib.surface.material;
 import lib.lighting.shadow;
@@ -46,6 +47,10 @@ float3 calculate_celestial_light(
 	float3 flat_normal_world,
 	float3 detail_normal_world
 ) {
+	if (!DIM_HAS_CELESTIAL_LIGHT) {
+		return float3(0.0);
+	}
+
 	float3 light = float3(0.0);
 
 	float LoV = dot(buf_global.light_dir_world, -dir_world);

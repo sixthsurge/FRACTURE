@@ -82,7 +82,7 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 		}
 
 		// world's worst voxelization
-		if (toggle.VXRT_DATA
+		if (TOGGLE_VXRT_DATA
 			&& (USAGE_CURRENT == USAGE_TERRAIN_SOLID
 				|| USAGE_CURRENT == USAGE_TERRAIN_CUTOUT)
 			&& v.blockID().value.id != -1) {

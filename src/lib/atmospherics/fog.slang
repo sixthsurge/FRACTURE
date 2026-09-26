@@ -2,7 +2,9 @@ public module fog;
 
 import aperture;
 import lib.buffer.sky_sh;
+import lib.dimension;
 import lib.lighting.shadow;
+import lib.util.color;
 import lib.util.math;
 import lib.util.phase_functions;
 import lib.util.space_conversion;
@@ -38,7 +40,39 @@ interface IFogProfile {
 	distance_to_volume_end(float3 ray_origin_world, float3 ray_dir_world);
 }
 
-struct OverworldProfile : IFogProfile {
+struct DimensionFog : IFogProfile = OverworldFog;
+
+struct GenericFog : IFogProfile {
+	static const int NUM_SCATTERING_PARTICLE_KINDS = 1;
+
+	static FogMedia<NUM_SCATTERING_PARTICLE_KINDS>
+	calculate_local_media(float3 pos_world, float segment_length) {
+		float3 color = srgb_eotf_inv(ap.world.fogColor.rgb);
+		float density = segment_length / ap.world.environmentFog.y;
+
+		return FogMedia<NUM_SCATTERING_PARTICLE_KINDS>(
+			{
+				float3(color * density),
+			},
+			float3(density),
+			0.0
+		);
+	}
+
+	static float phase_function[NUM_SCATTERING_PARTICLE_KINDS](
+		float cos_theta,
+		float anisotropy_scale
+	) {
+		return { ISOTROPIC_PHASE };
+	}
+
+	static float
+	distance_to_volume_end(float3 ray_origin_world, float3 ray_dir_world) {
+		return ap.world.renderDistance;
+	}
+}
+
+struct OverworldFog : IFogProfile {
 	static const int NUM_SCATTERING_PARTICLE_KINDS = 2;
 	static const float3 RLH_SCATTERING_COEFF
 		= float3(0.3, 0.5, 1.0) * float3(0.0002);

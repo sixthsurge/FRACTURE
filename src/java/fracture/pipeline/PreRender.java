@@ -30,7 +30,9 @@ public class PreRender {
 			);
 		}
 
-		setupAtmosphere(builder, resources);
+		if (resources.dimension().hasAtmosphere) {
+			setupAtmosphere(builder, resources);
+		}
 
 		builder.compute("gen_sky_sh", "program/lighting/gen_sky_sh", "main")
 			.dispatch1D(1);
@@ -40,7 +42,7 @@ public class PreRender {
 	setupAtmosphere(PipelineBuilder builder, Resources resources) {
 		builder.compute2d(
 			"atmosphere/gen_transmittance_lut",
-			"program/volumetrics/atmosphere/gen_transmittance_lut",
+			"program/atmospherics/atmosphere/gen_transmittance_lut",
 			"main",
 			Textures.ATMOSPHERE_TRANSMITTANCE_LUT_WIDTH,
 			Textures.ATMOSPHERE_TRANSMITTANCE_LUT_HEIGHT,
@@ -50,7 +52,7 @@ public class PreRender {
 
 		builder.compute2d(
 			"atmosphere/gen_multiscatter_lut",
-			"program/volumetrics/atmosphere/gen_multiscatter_lut",
+			"program/atmospherics/atmosphere/gen_multiscatter_lut",
 			"main",
 			Textures.ATMOSPHERE_MULTISCATTER_LUT_WIDTH,
 			Textures.ATMOSPHERE_MULTISCATTER_LUT_HEIGHT,
@@ -60,7 +62,7 @@ public class PreRender {
 
 		builder.compute2d(
 			"atmosphere/gen_sky_view_lut",
-			"program/volumetrics/atmosphere/gen_sky_view_lut",
+			"program/atmospherics/atmosphere/gen_sky_view_lut",
 			"main",
 			Textures.ATMOSPHERE_SKY_VIEW_LUT_WIDTH,
 			Textures.ATMOSPHERE_SKY_VIEW_LUT_HEIGHT,
@@ -71,7 +73,7 @@ public class PreRender {
 		if (builder.settings().getBoolValue("ATMOSPHERE_AP_LUT_ENABLED")) {
 			builder.compute3d(
 				"atmosphere/gen_aerial_perspective_lut",
-				"program/volumetrics/atmosphere/gen_aerial_perspective_lut",
+				"program/atmospherics/atmosphere/gen_aerial_perspective_lut",
 				"main",
 				Textures.ATMOSPHERE_AP_LUT_WIDTH,
 				Textures.ATMOSPHERE_AP_LUT_HEIGHT,
@@ -81,5 +83,15 @@ public class PreRender {
 				4
 			);
 		}
+
+		builder.compute2d(
+			"render_sky_map",
+			"program/atmospherics/render_sky_map",
+			"main",
+			builder.settings().getIntValue("SKY_MAP_WIDTH"),
+			builder.settings().getIntValue("SKY_MAP_HEIGHT"),
+			16,
+			16
+		);
 	}
 }

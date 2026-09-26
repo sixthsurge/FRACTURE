@@ -9,17 +9,18 @@ import lib.lighting.restir_gi;
 import lib.lighting.vxrt.reference_pt;
 import lib.surface.gbuffer_packing;
 import lib.surface.material;
+import lib.toggles;
 import lib.util.color;
 import lib.util.encoding;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
-import lib.volumetrics.atmosphere;
-import lib.volumetrics.fog;
-import lib.volumetrics.sky;
+import lib.atmospherics.atmosphere;
+import lib.atmospherics.fog;
+import lib.atmospherics.sky;
 import settings;
 
-import lib.volumetrics.clouds;
+import lib.util.debug;
 
 RWTexture2D<float3> tex_scene_write;
 Texture2D<uint4> tex_gbuffer_opaque;
@@ -74,7 +75,7 @@ struct QuarterResLighting {
 			qres.gtao_output_10 = tex_gtao_output_current[p10];
 			qres.gtao_output_11 = tex_gtao_output_current[p11];
 		}
-		if (userSettings.RSM_ENABLED) {
+		if (TOGGLE_RSM) {
 			qres.rsm_output_00 = tex_rsm_output_filtered[qres_pos];
 			qres.rsm_output_01 = tex_rsm_output_filtered[p01];
 			qres.rsm_output_10 = tex_rsm_output_filtered[p10];
@@ -162,12 +163,16 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float3 dir_world = normalize(pos_scene);
 
 	if (depth == 0.0) {
-		float3 radiance = calculate_sky_radiance(dir_world);
-		if (userSettings.CLOUDS_ENABLED) {
+		float3 radiance
+			= sky.DimensionSky.render<sky.RenderPurpose.MainImage>(dir_world);
+
+		if (TOGGLE_CLOUDS) {
 			float4 clouds = tex_clouds_temporal_current[icoord];
 			radiance = radiance * clouds.w + clouds.xyz;
 		}
+
 		radiance = fog_participation.apply(radiance);
+
 		tex_scene_write[icoord] = radiance;
 		return;
 	}
@@ -261,7 +266,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			ao
 		);
 
-		if (userSettings.RSM_ENABLED) {
+		if (TOGGLE_RSM) {
 			radiance += ambient_brdf * upscaled.rsm_output * PI
 				* buf_global.celestial_light_irradiance;
 		}

@@ -1,5 +1,5 @@
 import aperture;
-import lib.volumetrics.fog;
+import lib.atmospherics.fog;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
@@ -12,8 +12,6 @@ Texture3D<float3> tex_fog_volume_extinction_prev;
 // Workaround for lack of 3D texture references; create two versions of the
 // program; one runs on each frame.
 // Each reads and writes different textures.
-
-typedef fog.OverworldProfile DimensionFogProfile;
 
 [shader("compute")]
 [numthreads(8, 8, 4)]
@@ -39,7 +37,7 @@ void main(int3 icoord: SV_DispatchThreadID) {
 	float3 dir_world = normalize(pos_scene);
 
 	fog.FogParticipation froxel_participation
-		= fog.calculate_local_participation<DimensionFogProfile>(
+		= fog.calculate_local_participation<fog.DimensionFog>(
 			pos_world,
 			dir_world,
 			ray_length

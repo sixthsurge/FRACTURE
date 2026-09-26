@@ -64,7 +64,7 @@ public class ObjectShaders {
 
 	public static void
 	setupShadow(PipelineBuilder builder, Resources resources) {
-		if (builder.settings().getBoolValue("SHADOW_ENABLED")) {
+		if (resources.toggles().shadow) {
 			if (builder.settings().getBoolValue("RSM_ENABLED")) {
 				builder
 					.object(

@@ -1,5 +1,5 @@
 import aperture;
-import lib.volumetrics.atmosphere;
+import lib.atmospherics.atmosphere;
 import lib.surface.mat_ids;
 import lib.lighting.celestial;
 import lib.lighting.emission;
@@ -7,7 +7,7 @@ import lib.lighting.lightmap;
 import lib.lighting.shadow;
 import lib.surface.material;
 import lib.surface.gbuffer_packing;
-import lib.volumetrics.fog;
+import lib.atmospherics.fog;
 import lib.util.color;
 import lib.util.math;
 import lib.util.random;

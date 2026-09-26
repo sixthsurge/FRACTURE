@@ -2,7 +2,7 @@ import aperture;
 import lib.surface.mat_ids;
 import lib.surface.water_waves;
 import lib.util.math;
-import lib.volumetrics.water_medium;
+import lib.atmospherics.water_medium;
 import object_shader;
 import settings;
 

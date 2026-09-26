@@ -4,6 +4,7 @@ import aperture;
 import lib.surface.gbuffer_packing;
 import lib.lighting.gtao;
 import lib.lighting.rsm;
+import lib.toggles;
 import lib.util.encoding;
 import lib.util.filtering;
 import lib.util.math;
@@ -151,7 +152,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			gtao_result.bent_normal.xy
 		);
 	}
-	if (userSettings.RSM_ENABLED) {
+	if (TOGGLE_RSM) {
 		tex_rsm_output_raw[icoord] = rsm;
 	}
 	tex_qres_temporal_data_current[icoord] = float4(

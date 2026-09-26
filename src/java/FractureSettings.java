@@ -246,6 +246,17 @@ public class FractureSettings implements PackSettings {
 		screenDev.option("WHITE_WORLD", OptionType.boolType(false), false);
 		screenDev.option("MIRROR_WATER", OptionType.boolType(false), false);
 
+		screenDev.option(
+			"SKY_MAP_WIDTH",
+			OptionType.intType(32, 512, 16, 256),
+			false
+		);
+		screenDev.option(
+			"SKY_MAP_HEIGHT",
+			OptionType.intType(32, 512, 16, 128),
+			false
+		);
+
 		// General sliders for me to tweak stuff.
 		for (int i = 0; i < 10; ++i) {
 			screenDev.option(

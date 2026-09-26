@@ -7,7 +7,7 @@ import lib.util.random;
 import lib.util.phase_functions;
 import lib.util.ray_sphere_intersection;
 import lib.util.sampling;
-import lib.volumetrics.atmosphere;
+import lib.atmospherics.atmosphere;
 import settings;
 
 namespace clouds {

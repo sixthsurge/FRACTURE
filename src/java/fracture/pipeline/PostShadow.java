@@ -17,7 +17,7 @@ public class PostShadow {
 
 		builder.compute3d(
 			"fog/create_volume",
-			"program/volumetrics/fog/create_volume",
+			"program/atmospherics/fog/create_volume",
 			"main",
 			fogVolumeSizeX,
 			fogVolumeSizeY,
@@ -29,7 +29,7 @@ public class PostShadow {
 
 		builder.compute2d(
 			"fog/integrate_volume",
-			"program/volumetrics/fog/integrate_volume",
+			"program/atmospherics/fog/integrate_volume",
 			"main",
 			fogVolumeSizeX,
 			fogVolumeSizeY,

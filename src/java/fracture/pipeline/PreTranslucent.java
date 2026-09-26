@@ -8,7 +8,7 @@ public class PreTranslucent {
 	public static void setup(PipelineBuilder builder, Resources resources) {
 		builder.setStage(ProgramStage.PRE_TRANSLUCENT);
 
-		if (builder.settings().getBoolValue("CLOUDS_ENABLED")) {
+		if (resources.toggles().clouds) {
 			final var cloudsRenderScale
 				= builder.settings().getFloatValue("CLOUDS_RENDER_SCALE");
 			final var cloudsRenderWidth = (int) Math.ceil(
@@ -20,7 +20,7 @@ public class PreTranslucent {
 
 			builder.compute2d(
 				"clouds/render",
-				"program/volumetrics/clouds/render",
+				"program/atmospherics/clouds/render",
 				"main",
 				cloudsRenderWidth,
 				cloudsRenderHeight,
@@ -30,7 +30,7 @@ public class PreTranslucent {
 
 			builder.renderSizedCompute(
 				"clouds/filter",
-				"program/volumetrics/clouds/filter",
+				"program/atmospherics/clouds/filter",
 				"main",
 				16,
 				16
@@ -47,7 +47,7 @@ public class PreTranslucent {
 			16
 		);
 
-		if (builder.settings().getBoolValue("RSM_ENABLED")) {
+		if (resources.toggles().rsm) {
 			builder.compute2d(
 				"filter_rsm",
 				"program/lighting/filter_rsm",

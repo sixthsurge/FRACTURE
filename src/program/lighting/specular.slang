@@ -8,13 +8,13 @@ import lib.surface.gbuffer_packing;
 import lib.surface.material;
 import lib.surface.mat_ids;
 import lib.surface.water_waves;
-import lib.volumetrics.water_medium;
+import lib.atmospherics.water_medium;
 import lib.util.color;
 import lib.util.math;
 import lib.util.space_conversion;
-import lib.volumetrics.atmosphere;
-import lib.volumetrics.fog;
-import lib.volumetrics.sky;
+import lib.atmospherics.atmosphere;
+import lib.atmospherics.fog;
+import lib.atmospherics.sky;
 import settings;
 
 RWTexture2D<float3> tex_scene_write;
@@ -22,7 +22,7 @@ RWTexture2D<float3> tex_scene_write;
 Texture2D<float3> tex_scene;
 Texture2D<uint4> tex_gbuffer_opaque;
 Texture2D<uint2> tex_gbuffer_translucent;
-Texture2D<float4> tex_cloudy_sky_view;
+Texture2D<float4> tex_sky_map;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
 
@@ -62,34 +62,10 @@ float3 calculate_reflection(
 	} else {
 		float3 ray_dir_world = mul(float3x3(ap.camera.viewInv), ray_dir_view);
 
-		float4 atmosphere_and_clouds = atmosphere.lookup_sky_radiance(
-			tex_cloudy_sky_view,
-			ray_dir_world
-		);
-		float3 transmittance
-			= atmosphere.calculate_transmittance_approx(
-				  atmosphere.EARTH_PARAMS,
-				  atmosphere.camera_pos(),
-				  ray_dir_world
-			  )
-			* atmosphere_and_clouds.a;
+		float4 atmosphere_and_clouds
+			= atmosphere.lookup_sky_radiance(tex_sky_map, ray_dir_world);
 
-		float3 space_radiance = float3(0.0);
-		if (reflect_space) {
-			space_radiance = calculate_space_radiance(
-				ray_dir_world,
-				0.0,
-				select(
-					buf_global.sun_angle > 0.5,
-					celestial_light_visibility,
-					0.0
-				)
-			);
-		}
-
-		return (space_radiance * atmosphere_and_clouds.a
-				+ atmosphere_and_clouds.rgb)
-			* fresnel * pow2(skylight);
+		return (atmosphere_and_clouds.rgb) * fresnel * pow2(skylight);
 	}
 }
 
@@ -264,7 +240,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 		// Sun specular reflection.
 		float NoL = dot(normal_world, buf_global.light_dir_world);
-		if (buf_global.sun_angle < 0.5 && NoL > EPS) {
+		if (NoL > EPS) {
 			float NoV = saturate(dot(normal_world, -dir_world));
 			float halfway_norm = rsqrt(2.0 * LoV + 2.0);
 			float NoH = (NoL + NoV) * halfway_norm;

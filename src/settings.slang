@@ -48,6 +48,8 @@ internal extern static const int value_SHADOW_CASCADE_COUNT;
 internal extern static const int value_SHADOW_DISTANCE;
 internal extern static const bool value_SHADOW_ENABLED;
 internal extern static const int value_SHADOW_RESOLUTION;
+internal extern static const int value_SKY_MAP_HEIGHT;
+internal extern static const int value_SKY_MAP_WIDTH;
 internal extern static const bool value_SSR_ENABLED;
 internal extern static const float value_SUN_ANGULAR_RADIUS;
 internal extern static const bool value_TAA_ENABLED;
@@ -115,6 +117,8 @@ struct Settings {
     static const int SHADOW_DISTANCE = value_SHADOW_DISTANCE;
     static const bool SHADOW_ENABLED = value_SHADOW_ENABLED;
     static const int SHADOW_RESOLUTION = value_SHADOW_RESOLUTION;
+    static const int SKY_MAP_HEIGHT = value_SKY_MAP_HEIGHT;
+    static const int SKY_MAP_WIDTH = value_SKY_MAP_WIDTH;
     static const bool SSR_ENABLED = value_SSR_ENABLED;
     static const float SUN_ANGULAR_RADIUS = value_SUN_ANGULAR_RADIUS;
     static const bool TAA_ENABLED = value_TAA_ENABLED;

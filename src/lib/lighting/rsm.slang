@@ -2,6 +2,7 @@ public module rsm;
 
 import aperture;
 import lib.lighting.shadow;
+import lib.toggles;
 import lib.util.color;
 import lib.util.encoding;
 import lib.util.math;
@@ -18,7 +19,7 @@ float3 calculate(
 	float2 dither,
 	float skylight
 ) {
-	if (!userSettings.RSM_ENABLED) {
+	if (!TOGGLE_RSM) {
 		return float3(0.0);
 	}
 

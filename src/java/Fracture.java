@@ -7,6 +7,7 @@ import dev.irisshaders.aperture.api.pipeline.FrameState;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.renderer.RendererConfig;
 import fracture.Buffers;
+import fracture.Dimension;
 import fracture.FeatureToggles;
 import fracture.Resources;
 import fracture.Textures;
@@ -23,23 +24,27 @@ import fracture.util.PipelineBuilder;
 public class Fracture implements ShaderPack {
 	private Resources resources;
 	private BlockMapping blockMapping;
+	private Dimension dimension;
 
 	@Override
 	public void configurePipeline(Screen screen, PipelineConfig pipeline) {
 		blockMapping = new BlockMapping();
 		setupBlockMapping(blockMapping);
 
+		dimension = new Dimension(pipeline.worldInfo().dimension());
+
 		setupSamplers(pipeline);
 
-		final var toggles = new FeatureToggles(pipeline);
+		final var toggles = new FeatureToggles(pipeline, dimension);
 		final var textures = new Textures(pipeline, screen, toggles);
 		final var buffers = new Buffers(pipeline);
 
 		final var builder = new PipelineBuilder(pipeline, screen);
 		toggles.addGlobalExports(builder);
 		blockMapping.addGlobalExports(builder);
+		dimension.addGlobalExports(builder);
 
-		resources = new Resources(textures, buffers, toggles);
+		resources = new Resources(textures, buffers, toggles, dimension);
 
 		ScreenSetup.setup(builder, resources);
 		PreRender.setup(builder, resources);

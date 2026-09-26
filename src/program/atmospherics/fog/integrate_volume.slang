@@ -1,5 +1,5 @@
 import aperture;
-import lib.volumetrics.fog;
+import lib.atmospherics.fog;
 import settings;
 
 RWTexture3D<float3> tex_fog_volume_integrated_light;

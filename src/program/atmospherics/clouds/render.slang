@@ -2,8 +2,8 @@ import aperture;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
-import lib.volumetrics.atmosphere;
-import lib.volumetrics.clouds;
+import lib.atmospherics.atmosphere;
+import lib.atmospherics.clouds;
 import lib.util.debug;
 
 RWTexture2D tex_clouds_raw;

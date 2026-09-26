@@ -13,8 +13,8 @@ import lib.util.color;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
-import lib.volumetrics.atmosphere;
-import lib.volumetrics.fog;
+import lib.atmospherics.atmosphere;
+import lib.atmospherics.fog;
 import object_shader;
 import settings;
 
@@ -77,7 +77,7 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 			= packUnorm4x8(float4(normal_world * 0.5 + 0.5, 1.0));
 		output.tangent_packed = packUnorm4x8(tangent_world * 0.5 + 0.5);
 
-		if (toggle.VXRT_DATA && USAGE_CURRENT == USAGE_TERRAIN_TRANSLUCENT
+		if (TOGGLE_VXRT_DATA && USAGE_CURRENT == USAGE_TERRAIN_TRANSLUCENT
 			&& v.blockID().value.id != -1) {
 			int block_atlas_w, block_atlas_h;
 			blockAtlas.GetDimensions(block_atlas_w, block_atlas_h);
