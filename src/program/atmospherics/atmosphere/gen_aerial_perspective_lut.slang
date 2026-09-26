@@ -29,7 +29,8 @@ void main(int3 icoord: SV_DispatchThreadID) {
 	float3 pos_screen = float3(ncoord.xy, depth);
 	float3 pos_view = screen_to_view(pos_screen);
 	float3 pos_scene = view_to_scene(pos_view);
-	float3 dir_world = normalize(pos_scene);
+	float3 dir_world
+		= normalize(pos_scene - translation_part(ap.camera.viewInv));
 
 	tex_atmosphere_aerial_perspective[icoord]
 		= atmosphere

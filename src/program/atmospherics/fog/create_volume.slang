@@ -34,7 +34,8 @@ void main(int3 icoord: SV_DispatchThreadID) {
 	float3 pos_view = fog.unproject_fog_volume(ncoord);
 	float3 pos_scene = view_to_scene(pos_view);
 	float3 pos_world = pos_scene + ap.camera.position;
-	float3 dir_world = normalize(pos_scene);
+	float3 dir_world
+		= normalize(pos_scene - translation_part(ap.camera.viewInv));
 
 	fog.FogParticipation froxel_participation
 		= fog.calculate_local_participation<fog.DimensionFog>(

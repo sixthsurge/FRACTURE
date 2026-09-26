@@ -10,12 +10,30 @@ float distribution_ggx(float NoH_sq, float alpha_sq) {
 	return alpha_sq / (PI * pow2(1.0 - NoH_sq + NoH_sq * alpha_sq));
 }
 
+// Geometric masking term.
+float g1_smith_ggx(float cos_theta, float alpha_sq) {
+	return (2.0 * cos_theta)
+		/ (cos_theta
+		   + sqrt((-cos_theta * alpha_sq + cos_theta) * cos_theta + alpha_sq));
+}
+
+// Geometric masking-shadowing term.
+float g2_smith_ggx(float NoL, float NoV, float alpha_sq) {
+	float ggx_l = NoV * sqrt((-NoL * alpha_sq + NoL) * NoL + alpha_sq);
+	float ggx_v = NoL * sqrt((-NoV * alpha_sq + NoV) * NoV + alpha_sq);
+	return 2.0 * NoL * NoV / (ggx_l + ggx_v);
+}
+
+// Same as G1 but without (2.0 * cos_theta) multiplication. This saves having to
+// divide by (4.0 * NoL * NoV) later!
 float v1_smith_ggx(float cos_theta, float alpha_sq) {
 	return 1.0
 		/ (cos_theta
 		   + sqrt((-cos_theta * alpha_sq + cos_theta) * cos_theta + alpha_sq));
 }
 
+// Same as G2 but without (4.0 * NoL * NoV) multiplication. This saves having to
+// divide by (4.0 * NoL * NoV) later!
 float v2_smith_ggx(float NoL, float NoV, float alpha_sq) {
 	float ggx_l = NoV * sqrt((-NoL * alpha_sq + NoL) * NoL + alpha_sq);
 	float ggx_v = NoL * sqrt((-NoV * alpha_sq + NoV) * NoV + alpha_sq);

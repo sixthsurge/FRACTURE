@@ -1,20 +1,20 @@
 // Specular reflections, water rendering.
 
 import aperture;
+import lib.atmospherics.atmosphere;
+import lib.atmospherics.fog;
+import lib.atmospherics.sky;
+import lib.atmospherics.water_medium;
 import lib.buffer.sky_sh;
 import lib.lighting.brdf;
-import lib.lighting.ssrt;
+import lib.lighting.specular;
 import lib.surface.gbuffer_packing;
 import lib.surface.material;
 import lib.surface.mat_ids;
 import lib.surface.water_waves;
-import lib.atmospherics.water_medium;
 import lib.util.color;
 import lib.util.math;
 import lib.util.space_conversion;
-import lib.atmospherics.atmosphere;
-import lib.atmospherics.fog;
-import lib.atmospherics.sky;
 import settings;
 
 RWTexture2D<float3> tex_scene_write;
@@ -27,47 +27,6 @@ Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
 
 ConstantBuffer<SkyShBuffer> buf_sky_sh;
-
-float3 calculate_reflection(
-	Material material,
-	float3 pos_screen,
-	float3 pos_view,
-	float3 dir_view,
-	float3 normal_view,
-	float skylight,
-	float celestial_light_visibility,
-	bool reflect_space
-) {
-	// As there is no rough SSR yet, just fade smooth SSR with roughness.
-	float fresnel_multiplier = pow2(linstep(0.5, 0.05, material.roughness));
-	float3 fresnel = calculate_fresnel(material, -dot(dir_view, normal_view))
-		* fresnel_multiplier;
-	if (all(fresnel < 1e-2)) {
-		return float3(0.0);
-	}
-
-	float3 ray_dir_view = reflect(dir_view, normal_view);
-
-	Ray ray = Ray(
-		pos_screen,
-		ssrt.screen_space_ray_direction(pos_screen, pos_view, ray_dir_view)
-	);
-
-	if (let hit_pos_screen = ssrt.trace_hiz(
-			ray,
-			ssrt.screen_space_ray_length(ray),
-			ssrt.thickness_heuristic(pos_view, ray.d)
-		)) {
-		return tex_scene.sampleLinear(hit_pos_screen.xy) * fresnel;
-	} else {
-		float3 ray_dir_world = mul(float3x3(ap.camera.viewInv), ray_dir_view);
-
-		float4 atmosphere_and_clouds
-			= atmosphere.lookup_sky_radiance(tex_sky_map, ray_dir_world);
-
-		return (atmosphere_and_clouds.rgb) * fresnel * pow2(skylight);
-	}
-}
 
 struct FragmentOutput {
 	float3 radiance;
@@ -149,7 +108,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		float3x3 tbn = make_tbn_matrix(normal_world);
 
 		float3 pos_tangent = mul(tbn, front_pos_scene + ap.camera.position);
-		float3 dir_world = normalize(front_pos_scene);
+		float3 dir_world
+			= normalize(front_pos_scene - translation_part(ap.camera.viewInv));
 		float3 dir_tangent = mul(tbn, dir_world);
 
 		WaterWaves.Params wave_params
@@ -273,19 +233,18 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		radiance = fog.apply(radiance);
 	}
 
-	if (userSettings.SSR_ENABLED) {
-		radiance
-			+= calculate_reflection(
-				   material,
-				   front_pos_screen,
-				   front_pos_view,
-				   dir_view,
-				   mul(float3x3(ap.camera.view), normal_world),
-				   skylight,
-				   water_shadow_visibility,
-				   mat_id == MAT_WATER,
-			   )
-			* exp(-fog.extinction);
+	if (userSettings.REFLECTIONS_ENABLED) {
+		radiance += specular.calculate_reflection(
+			specular.HiZScreenSpaceTracer(),
+			material,
+			icoord,
+			front_pos_screen,
+			front_pos_view,
+			front_pos_scene + ap.camera.position,
+			normalize(front_pos_scene - translation_part(ap.camera.viewInv)),
+			normal_world,
+			skylight
+		);
 	}
 
 	tex_scene_write[icoord] = radiance;

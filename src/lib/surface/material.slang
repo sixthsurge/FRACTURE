@@ -8,12 +8,12 @@ import settings;
 static const float AIR_IOR = 1.000293; // for 0°C and 1 atm
 static const float WATER_IOR = 1.333; // for 20°C
 
-constexpr float f0_to_ior(float f0) {
+float f0_to_ior(float f0) {
 	float sqrt_f0 = sqrt(f0) * 0.99999;
 	return (1.0 + sqrt_f0) / (1.0 - sqrt_f0);
 }
 
-constexpr float ior_to_f0(float ior) { return pow2((ior - 1.0) / (ior + 1.0)); }
+float ior_to_f0(float ior) { return pow2((ior - 1.0) / (ior + 1.0)); }
 
 struct Material {
 	float3 albedo;

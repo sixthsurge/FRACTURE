@@ -8,6 +8,7 @@ public class FeatureToggles {
 	public final boolean shadow;
 	public final boolean rsm;
 	public final boolean clouds;
+	public final boolean roughSpecular;
 	public final boolean vxrtData;
 
 	public FeatureToggles(PipelineConfig pipeline, Dimension dimension) {
@@ -20,6 +21,10 @@ public class FeatureToggles {
 		clouds = pipeline.settings().getBoolValue("CLOUDS_ENABLED")
 			&& dimension.hasClouds;
 
+		roughSpecular
+			= pipeline.settings().getBoolValue("LABPBR_SUPPORT_ENABLED")
+			&& pipeline.settings().getBoolValue("REFLECTIONS_ENABLED");
+
 		vxrtData = pipeline.settings().getBoolValue("REFERENCE_PT_ENABLED")
 			|| pipeline.settings().getBoolValue("RESTIR_GI_ENABLED")
 			|| pipeline.settings().getBoolValue("TEST_VXRT");
@@ -29,6 +34,7 @@ public class FeatureToggles {
 		factory.exportBoolGlobally("TOGGLE_SHADOW", shadow);
 		factory.exportBoolGlobally("TOGGLE_RSM", rsm);
 		factory.exportBoolGlobally("TOGGLE_CLOUDS", clouds);
+		factory.exportBoolGlobally("TOGGLE_ROUGH_SPECULAR", roughSpecular);
 		factory.exportBoolGlobally("TOGGLE_VXRT_DATA", vxrtData);
 	}
 }

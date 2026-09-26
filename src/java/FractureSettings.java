@@ -71,8 +71,9 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
-		final var screenSsr = screenLighting.child("ssr");
-		screenSsr.option("SSR_ENABLED", OptionType.boolType(true), false);
+		final var screenReflections = screenLighting.child("reflections");
+		screenReflections
+			.option("REFLECTIONS_ENABLED", OptionType.boolType(true), false);
 
 		final var screenGtao = screenLighting.child("gtao");
 		screenGtao.option("GTAO_ENABLED", OptionType.boolType(true), false);

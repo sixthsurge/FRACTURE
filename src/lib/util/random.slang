@@ -1,5 +1,16 @@
 public module random;
 
+import aperture;
+
+// Return a seed unique to this pixel and frame.
+uint pixel_seed(int2 icoord) {
+	uint2 ucoord = uint2(icoord);
+
+	return ap.timing.frameCounter
+		* (ap.game.renderSize.x * ap.game.renderSize.y)
+		+ ucoord.y * ap.game.renderSize.x + ucoord.x;
+}
+
 interface IRandom {
 	[mutating]
 	uint next();

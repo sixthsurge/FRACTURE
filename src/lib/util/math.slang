@@ -11,69 +11,69 @@ static const float GOLDEN_RATIO = 0.5 + 0.5 * sqrt(5.0);
 static const float GOLDEN_ANGLE = TAU / GOLDEN_RATIO / GOLDEN_RATIO;
 
 [ForceInline]
-constexpr vector<float, N> denanify<uint N>(vector<float, N> x) {
+vector<float, N> denanify<uint N>(vector<float, N> x) {
 	return select(isnan(x), 0.0, x);
 }
 
 [ForceInline]
-constexpr T rcp<T>(T x)
+T rcp<T>(T x)
 	where T : IArithmetic { return T(1) / x; }
 
 [ForceInline]
-constexpr T max0<T>(T x)
+T max0<T>(T x)
 	where T : IArithmetic { return max(T(0), x); }
 
 [ForceInline]
-constexpr T min1<T>(T x)
+T min1<T>(T x)
 	where T : IArithmetic { return min(T(1), x); }
 
 [ForceInline]
-constexpr T min_of<T>(vector<T, 2> v)
+T min_of<T>(vector<T, 2> v)
 	where T : IArithmetic { return min(v.x, v.y); }
 [ForceInline]
-constexpr T min_of<T>(vector<T, 3> v)
+T min_of<T>(vector<T, 3> v)
 	where T : IArithmetic { return min(v.x, min(v.y, v.z)); }
 [ForceInline]
-constexpr T min_of<T>(vector<T, 4> v)
+T min_of<T>(vector<T, 4> v)
 	where T : IArithmetic { return min(v.x, min(v.y, min(v.z, v.w))); }
 
 [ForceInline]
-constexpr T max_of<T>(vector<T, 2> v)
+T max_of<T>(vector<T, 2> v)
 	where T : IArithmetic { return max(v.x, v.y); }
 [ForceInline]
-constexpr T max_of<T>(vector<T, 3> v)
+T max_of<T>(vector<T, 3> v)
 	where T : IArithmetic { return max(v.x, max(v.y, v.z)); }
 [ForceInline]
-constexpr T max_of<T>(vector<T, 4> v)
+T max_of<T>(vector<T, 4> v)
 	where T : IArithmetic { return max(v.x, max(v.y, max(v.z, v.w))); }
 
 [ForceInline]
-constexpr T pow2<T>(T x)
+T pow2<T>(T x)
 	where T : IArithmetic { return x * x; }
 [ForceInline]
-constexpr T pow3<T>(T x)
+T pow3<T>(T x)
 	where T : IArithmetic { return x * x * x; }
 [ForceInline]
-constexpr T pow4<T>(T x)
+T pow4<T>(T x)
 	where T : IArithmetic {
 	x = x * x;
 	return x * x;
 }
 [ForceInline]
-constexpr T pow5<T>(T x)
+T pow5<T>(T x)
 	where T : IArithmetic {
 	T x2 = x * x;
 	return x2 * x2 * x;
 }
 [ForceInline]
-constexpr T pow8<T>(T x)
+T pow8<T>(T x)
 	where T : IArithmetic {
 	x = x * x;
 	x = x * x;
 	return x * x;
 }
 [ForceInline]
-constexpr T pow16<T>(T x)
+T pow16<T>(T x)
 	where T : IArithmetic {
 	x = x * x;
 	x = x * x;
@@ -82,39 +82,33 @@ constexpr T pow16<T>(T x)
 }
 
 [ForceInline]
-constexpr float pow_3_over_2(float x) { return x * sqrt(x); }
+float pow_3_over_2(float x) { return x * sqrt(x); }
 
 [ForceInline]
-constexpr float length_squared<int N>(vector<float, N> v) { return dot(v, v); }
+float length_squared<int N>(vector<float, N> v) { return dot(v, v); }
 
 [ForceInline]
-constexpr float rlength<int N>(vector<float, N> v) {
-	return rsqrt(length_squared(v));
-}
+float rlength<int N>(vector<float, N> v) { return rsqrt(length_squared(v)); }
 
 [ForceInline]
-constexpr float2 diagonal(float2x2 m) { return float2(m[0].x, m[1].y); }
+float2 diagonal(float2x2 m) { return float2(m[0].x, m[1].y); }
 
 [ForceInline]
-constexpr float3 diagonal(float3x3 m) { return float3(m[0].x, m[1].y, m[2].z); }
+float3 diagonal(float3x3 m) { return float3(m[0].x, m[1].y, m[2].z); }
 
 [ForceInline]
-constexpr float4 diagonal(float4x4 m) {
-	return float4(m[0].x, m[1].y, m[2].z, m[3].w);
-}
+float4 diagonal(float4x4 m) { return float4(m[0].x, m[1].y, m[2].z, m[3].w); }
 
 [ForceInline]
-constexpr float3 translation_part(float4x4 m) {
-	return float3(m[0].w, m[1].w, m[2].w);
-}
+float3 translation_part(float4x4 m) { return float3(m[0].w, m[1].w, m[2].w); }
 
 [ForceInline]
-constexpr float3 transform(float4x4 m, float3 pos) {
+float3 transform(float4x4 m, float3 pos) {
 	return mul(float3x3(m), pos) + translation_part(m);
 }
 
 [ForceInline]
-constexpr float4 project(float4x4 m, float3 pos) {
+float4 project(float4x4 m, float3 pos) {
 	/*
 	return float4(m[0].x, m[1].y, m[2].z, m[3].z) * pos.xyzz
 		+ float4(m[0].w, m[1].w, m[2].w, m[3].w);
@@ -123,18 +117,18 @@ constexpr float4 project(float4x4 m, float3 pos) {
 }
 
 [ForceInline]
-constexpr float3 project_and_divide(float4x4 m, float3 pos) {
+float3 project_and_divide(float4x4 m, float3 pos) {
 	float4 homogenous = project(m, pos);
 	return homogenous.xyz / homogenous.w;
 }
 
 [ForceInline]
-constexpr float3 project_ortho(float4x4 m, float3 pos) {
+float3 project_ortho(float4x4 m, float3 pos) {
 	return diagonal(m).xyz * pos + float3(m[0].w, m[1].w, m[2].w);
 }
 
 [ForceInline]
-constexpr float3 project_ortho_inv(float4x4 m, float3 pos) {
+float3 project_ortho_inv(float4x4 m, float3 pos) {
 	return ((pos - float3(m[0].w, m[1].w, m[2].w)) / diagonal(m).xyz);
 }
 
@@ -145,7 +139,7 @@ constexpr float3 project_ortho_inv(float4x4 m, float3 pos) {
 // Max absolute error: 6.1 * 10^-4
 // Polynomial degree: 2
 [ForceInline]
-constexpr float fast_acos(float x) {
+float fast_acos(float x) {
 	const float C0 = 1.57018;
 	const float C1 = -0.201877;
 	const float C2 = 0.0464619;
@@ -157,16 +151,16 @@ constexpr float fast_acos(float x) {
 }
 
 [ForceInline]
-constexpr float linstep(float min, float max, float x, ) {
+float linstep(float min, float max, float x, ) {
 	return saturate((x - min) / (max - min));
 }
 
-constexpr half linstep(half min, half max, half x, ) {
+half linstep(half min, half max, half x, ) {
 	return saturate((x - min) / (max - min));
 }
 
 [ForceInline]
-constexpr vector<float, N> linstep<uint N>(
+vector<float, N> linstep<uint N>(
 	vector<float, N> min,
 	vector<float, N> max,
 	vector<float, N> x,
@@ -176,7 +170,7 @@ constexpr vector<float, N> linstep<uint N>(
 
 // Can be used similarly to sqrt() to shape a signal on [0, 1]
 [ForceInline]
-constexpr T dampen<T>(T x)
+T dampen<T>(T x)
 	where T : IArithmetic {
 	x = min(max(x, T(0)), T(1));
 	return x * (T(2) - x);
@@ -190,29 +184,29 @@ constexpr T dampen<T>(T x)
 // amount < 0 -> increase signal contrast (power > 1)
 // amount > 0 -> reduce signal contrast (power < 1)
 [ForceInline]
-constexpr T lift<T>(T x, T amount)
+T lift<T>(T x, T amount)
 	where T : IArithmetic { return (x + x * amount) / (T(1) + x * amount); }
 
 // Smoothing function used by smoothstep.
 // Zero derivative at zero and one.
 [ForceInline]
-constexpr T cubic_smooth<T>(T x)
+T cubic_smooth<T>(T x)
 	where T : IArithmetic { return pow2(x) * (T(3) - T(2) * x); }
 
 // Similar to the above, but even smoother with a zero second derivative at zero
 // and one.
 [ForceInline]
-constexpr T quintic_smooth<T>(T x)
+T quintic_smooth<T>(T x)
 	where T : IArithmetic { return pow3(x) * (x * (x * T(6) - T(15)) + T(10)); }
 
 [ForceInline]
-constexpr T get_uv_from_unit_range<T>(T values, T res)
+T get_uv_from_unit_range<T>(T values, T res)
 	where T : IArithmetic {
 	return values * (T(1) - T(1) / res) + ((T(1) / T(2)) / res);
 }
 
 [ForceInline]
-constexpr T get_unit_range_from_uv<T>(T uv, T res)
+T get_unit_range_from_uv<T>(T uv, T res)
 	where T : IArithmetic {
 	return (uv - (T(1) / T(2)) / res) / (T(1) - T(1) / res);
 }
@@ -222,11 +216,11 @@ struct Ray {
 	float3 d;
 
 	[ForceInline]
-	constexpr float3 at(float t) { return o + d * t; }
+	float3 at(float t) { return o + d * t; }
 }
 
 [ForceInline]
-constexpr float cone_angle_to_solid_angle(float theta) {
+float cone_angle_to_solid_angle(float theta) {
 	return TAU * (1.0 - cos(theta));
 }
 
