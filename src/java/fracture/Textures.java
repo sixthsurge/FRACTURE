@@ -79,6 +79,17 @@ public class Textures {
 	public final TextureReference3D fogVolumeExtinctionCurrent;
 	public final TextureReference3D fogVolumeExtinctionPrevious;
 
+	// Specular
+
+	public Texture2D specularTemporal1A;
+	public Texture2D specularTemporal1B;
+	public TextureReference2D specularTemporal1Current;
+	public TextureReference2D specularTemporal1Prev;
+	public Texture2D specularTemporal2A;
+	public Texture2D specularTemporal2B;
+	public TextureReference2D specularTemporal2Current;
+	public TextureReference2D specularTemporal2Prev;
+
 	// Quarter-res general
 
 	public final Texture2D qresTemporalDataA;
@@ -406,6 +417,76 @@ public class Textures {
 						 pipeline.settings().getIntValue("SKY_MAP_HEIGHT")
 					 )
 					 .create();
+
+		// Specular
+
+		if (toggles.roughSpecular) {
+			specularTemporal1A
+				= pipeline
+					  .texture2D(
+						  "tex_specular_temporal_1a",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .create();
+			specularTemporal1B
+				= pipeline
+					  .texture2D(
+						  "tex_specular_temporal_1b",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .create();
+			specularTemporal1Current
+				= pipeline
+					  .reference2D(
+						  "tex_specular_temporal_1",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .createEmpty();
+			specularTemporal1Prev
+				= pipeline
+					  .reference2D(
+						  "tex_specular_temporal_1_prev",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .createEmpty();
+
+			specularTemporal2A
+				= pipeline
+					  .texture2D(
+						  "tex_specular_temporal_2a",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .create();
+			specularTemporal2B
+				= pipeline
+					  .texture2D(
+						  "tex_specular_temporal_2b",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .create();
+			specularTemporal2Current
+				= pipeline
+					  .reference2D(
+						  "tex_specular_temporal_2",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .createEmpty();
+			specularTemporal2Prev
+				= pipeline
+					  .reference2D(
+						  "tex_specular_temporal_2_prev",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .createEmpty();
+		}
 
 		// Quarter-res general
 
@@ -919,6 +1000,22 @@ public class Textures {
 		fogVolumeExtinctionPrevious.set(
 			oddFrame ? fogVolumeExtinctionB : fogVolumeExtinctionA
 		);
+
+		if (specularTemporal1Current != null) {
+			specularTemporal1Current.set(
+				oddFrame ? specularTemporal1A : specularTemporal1B
+			);
+			specularTemporal1Prev.set(
+				oddFrame ? specularTemporal1B : specularTemporal1A
+			);
+
+			specularTemporal2Current.set(
+				oddFrame ? specularTemporal2A : specularTemporal2B
+			);
+			specularTemporal2Prev.set(
+				oddFrame ? specularTemporal2B : specularTemporal2A
+			);
+		}
 
 		if (reserviourTemporal1 != null) {
 			reserviourTemporal1.set(

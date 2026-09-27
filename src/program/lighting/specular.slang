@@ -12,12 +12,16 @@ import lib.surface.gbuffer_packing;
 import lib.surface.material;
 import lib.surface.mat_ids;
 import lib.surface.water_waves;
+import lib.toggles;
 import lib.util.color;
 import lib.util.math;
 import lib.util.space_conversion;
 import settings;
 
+import lib.util.debug;
+
 RWTexture2D<float3> tex_scene_write;
+RWTexture2D<float4> tex_specular_temporal_1;
 
 Texture2D<float3> tex_scene;
 Texture2D<uint4> tex_gbuffer_opaque;
@@ -53,6 +57,9 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	if (front_depth == 0.0) {
 		// FIXME work out if we need to write here.
 		tex_scene_write[icoord] = radiance;
+		if (TOGGLE_ROUGH_SPECULAR) {
+			tex_specular_temporal_1[icoord] = float4(0.0);
+		}
 		return;
 	}
 
@@ -234,17 +241,28 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	}
 
 	if (userSettings.REFLECTIONS_ENABLED) {
-		radiance += specular.calculate_reflection(
+		float3 dir_world
+			= normalize(front_pos_scene - translation_part(ap.camera.viewInv));
+		float3 reflection = specular.calculate_reflection(
 			specular.HiZScreenSpaceTracer(),
 			material,
 			icoord,
 			front_pos_screen,
 			front_pos_view,
 			front_pos_scene + ap.camera.position,
-			normalize(front_pos_scene - translation_part(ap.camera.viewInv)),
+			dir_world,
 			normal_world,
 			skylight
 		);
+		radiance += reflection;
+
+		if (TOGGLE_ROUGH_SPECULAR) {
+			// Demodulate fresnel from the reflection.
+			float3 f
+				= calculate_fresnel(material, dot(-dir_world, normal_world));
+			tex_specular_temporal_1[icoord]
+				= float4(reflection / max(f, EPS), material.roughness);
+		}
 	}
 
 	tex_scene_write[icoord] = radiance;

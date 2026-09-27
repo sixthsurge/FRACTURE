@@ -6,10 +6,14 @@ import lib.lighting.brdf;
 import lib.lighting.ssrt;
 import lib.surface.material;
 import lib.toggles;
+import lib.util.filtering;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
 
+import lib.util.debug;
+
+Texture2D<float4> tex_specular_temporal_1_prev;
 Texture2D<float> tex_noise_blue;
 Texture2D<float3> tex_scene;
 Texture2D<float4> tex_sky_map;
@@ -70,6 +74,38 @@ public interface ISpecularTracer {
 	Optional<SpecularHit> trace(float3 ray_dir_world);
 }
 
+float3 reproject_reflection(
+	float3 pos_world,
+	float3 dir_world,
+	float NoV,
+	float roughness,
+	float average_hit_distance
+) {
+	// Virtual motion.
+	pos_world += dir_world * average_hit_distance
+		* get_specular_dominant_factor(NoV, roughness);
+
+	float3 pos = pos_world - ap.temporal.position;
+	pos = scene_to_view(pos, ap.temporal.view);
+	pos = view_to_screen(pos, ap.temporal.projection);
+	return pos;
+}
+
+// Source: Ray Tracing Gem II Listing 49-2.
+float compute_parallax(float3 x, float3 x_prev, float3 camera_delta) {
+	float3 v = normalize(x);
+	float3 v_prev = normalize(x_prev - camera_delta);
+	float cos_a = saturate(dot(v, v_prev));
+	return sqrt(1.0 - pow2(cos_a)) / max(cos_a, 1e-6);
+}
+
+// Source: Ray Tracing Gens II Listing 49-5.
+float get_specular_dominant_factor(float NoV, float roughness) {
+	float a = 0.298475 * log(39.4115 - 39.0029 * roughness);
+	float f = pow(saturate(1.0 - NoV), 10.8649) * (1.0 - a) + a;
+	return saturate(f);
+}
+
 public float3 calculate_reflection<Tracer>(
 	Tracer tracer,
 	Material material,
@@ -83,17 +119,45 @@ public float3 calculate_reflection<Tracer>(
 )
 	where Tracer : ISpecularTracer {
 	float sky_visibility = pow2(skylight);
+	float NoV = -dot(dir_world, normal_world);
 
 	tracer.init(pos_screen, pos_view, pos_world);
 
-	if (TOGGLE_ROUGH_SPECULAR && WaveActiveAnyTrue(material.roughness > 0.01)) {
-		return calculate_rough_reflection(
+	if (TOGGLE_ROUGH_SPECULAR && material.roughness > 0.01) {
+		float average_hit_distance;
+		float3 reflection = calculate_rough_reflection(
 			tracer,
 			material,
 			icoord,
 			dir_world,
 			normal_world,
-			sky_visibility
+			sky_visibility,
+			average_hit_distance
+		);
+
+		// Accumulation.
+		float3 pos_prev_screen = reproject_reflection(
+			pos_world,
+			dir_world,
+			NoV,
+			material.roughness,
+			average_hit_distance
+		);
+
+		if (any(pos_prev_screen.xy != saturate(pos_prev_screen.xy))) {
+			return reflection;
+		}
+
+		float4 history
+			= max0(tex_specular_temporal_1_prev
+					   .sample_catmull_rom_fast(pos_prev_screen.xy, 0, 0.5));
+
+		return lerp(
+			reflection,
+			history.rgb
+				* calculate_fresnel(material, dot(-dir_world, normal_world)),
+			0.99 * dampen(linstep(0.01, 0.2, material.roughness) * 0.3 + 0.7)
+				* exp2(-32.0 * abs(history.w - material.roughness))
 		);
 	}
 
@@ -112,18 +176,26 @@ float3 calculate_rough_reflection<Tracer>(
 	int2 icoord,
 	float3 dir_world,
 	float3 normal_world,
-	float sky_visibility
+	float sky_visibility,
+	out float average_hit_distance
 )
 	where Tracer : ISpecularTracer {
-	const int RAY_COUNT = 4;
+	const int RAY_COUNT = 2;
 
 	float3x3 tbn = make_tbn_matrix(normal_world);
 	float3 tangent_dir = mul(tbn, dir_world);
+
+	float NoV = -dot(normal_world, dir_world);
+	float alpha_squared = pow2(material.roughness);
+	float g1 = g1_smith_ggx(NoV, alpha_squared);
 
 	float3 reflection = float3(0.0);
 
 	ReflectionSampler sampler;
 	sampler.init(icoord, RAY_COUNT);
+
+	average_hit_distance = 0.0;
+	float w_sum = EPS;
 
 	for (int ray = 0; ray < RAY_COUNT; ++ray) {
 		float3 microfacet_normal = mul(
@@ -137,19 +209,20 @@ float3 calculate_rough_reflection<Tracer>(
 
 		float3 ray_dir_world = reflect(dir_world, microfacet_normal);
 
-		float MoL = dot(microfacet_normal, ray_dir_world);
-		float MoV = -dot(microfacet_normal, dir_world);
+		float NoL = dot(normal_world, ray_dir_world);
+		if (NoL < EPS) {
+			continue;
+		}
 
+		float MoV = -dot(microfacet_normal, dir_world);
 		float3 fresnel = calculate_fresnel(material, MoV);
 		if (all(fresnel < 1e-2)) {
 			continue;
 		}
 
-		float alpha_squared = pow2(material.roughness);
-		float g1 = g1_smith_ggx(MoV, alpha_squared);
-		float g2 = g2_smith_ggx(MoL, MoV, alpha_squared);
+		float g2 = g2_smith_ggx(NoL, NoV, alpha_squared);
 
-		Optional<float> hit_distance;
+		float hit_distance;
 		reflection += get_radiance_along_ray(
 						  tracer,
 						  ray_dir_world,
@@ -157,7 +230,12 @@ float3 calculate_rough_reflection<Tracer>(
 						  hit_distance
 					  )
 			* fresnel * (g2 / g1);
+
+		average_hit_distance += hit_distance;
+		w_sum += step(EPS, average_hit_distance);
 	}
+
+	average_hit_distance /= w_sum;
 
 	return reflection * rcp(float(RAY_COUNT));
 }
@@ -177,7 +255,7 @@ float3 calculate_mirror_reflection<Tracer>(
 
 	float3 ray_dir_world = reflect(dir_world, normal_world);
 
-	Optional<float> hit_distance;
+	float hit_distance;
 	return get_radiance_along_ray(
 			   tracer,
 			   ray_dir_world,
@@ -191,16 +269,16 @@ float3 get_radiance_along_ray<Tracer>(
 	Tracer tracer,
 	float3 ray_dir_world,
 	float sky_visibility,
-	out Optional<float> hit_distance
+	out float hit_distance
 )
 	where Tracer : ISpecularTracer {
 	if (let hit = tracer.trace(ray_dir_world)) {
 		hit_distance = hit.distance;
 		return hit.radiance;
 	} else {
-		hit_distance = none;
+		hit_distance = 0.0;
 		return atmosphere.lookup_sky_radiance(tex_sky_map, ray_dir_world).rgb
-			* sky_visibility;
+			* sky_visibility * float(ray_dir_world.y > 0.0);
 	}
 }
 

@@ -10,7 +10,7 @@ import settings;
 ConstantBuffer<SkyShBuffer> buf_sky_sh;
 
 float3 calculate_lightmap_blocklight(float3 brdf, float2 lightmap, float ao) {
-	return pow3(lightmap.x) * float3(0.05, 0.02, 0.02) * ao * brdf;
+	return pow3(lightmap.x) * float3(0.1, 0.06, 0.05) * ao * brdf;
 }
 
 float3 calculate_lightmap_skylight(
