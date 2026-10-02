@@ -21,7 +21,6 @@ import settings;
 import lib.util.debug;
 
 RWTexture2D<float3> tex_scene_write;
-RWTexture2D<float4> tex_specular_temporal_1;
 
 Texture2D<float3> tex_scene;
 Texture2D<uint4> tex_gbuffer_opaque;
@@ -58,7 +57,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		// FIXME work out if we need to write here.
 		tex_scene_write[icoord] = radiance;
 		if (TOGGLE_ROUGH_SPECULAR) {
-			tex_specular_temporal_1[icoord] = float4(0.0);
+			specular.TemporalData.empty().store(icoord);
 		}
 		return;
 	}
@@ -255,14 +254,6 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			skylight
 		);
 		radiance += reflection;
-
-		if (TOGGLE_ROUGH_SPECULAR) {
-			// Demodulate fresnel from the reflection.
-			float3 f
-				= calculate_fresnel(material, dot(-dir_world, normal_world));
-			tex_specular_temporal_1[icoord]
-				= float4(reflection / max(f, EPS), material.roughness);
-		}
 	}
 
 	tex_scene_write[icoord] = radiance;

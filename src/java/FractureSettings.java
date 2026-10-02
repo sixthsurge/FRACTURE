@@ -74,6 +74,11 @@ public class FractureSettings implements PackSettings {
 		final var screenReflections = screenLighting.child("reflections");
 		screenReflections
 			.option("REFLECTIONS_ENABLED", OptionType.boolType(true), false);
+		screenReflections.option(
+			"REFLECTIONS_TRACING_MODE",
+			OptionType.intType(new int[] {0, 1}, 0),
+			false
+		);
 
 		final var screenGtao = screenLighting.child("gtao");
 		screenGtao.option("GTAO_ENABLED", OptionType.boolType(true), false);

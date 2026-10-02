@@ -10,6 +10,7 @@ import fracture.Buffers;
 import fracture.Dimension;
 import fracture.FeatureToggles;
 import fracture.Resources;
+import fracture.SettingsSentinels;
 import fracture.Textures;
 import fracture.pipeline.ObjectShaders;
 import fracture.pipeline.PostRender;
@@ -60,6 +61,15 @@ public class Fracture implements ShaderPack {
 
 	@Override
 	public void configureRenderer(RendererConfig rendererConfig) {
+		boolean enableHwrt = false;
+		enableHwrt = enableHwrt
+			|| rendererConfig.getSettings().getIntValue(
+				   "REFLECTIONS_TRACING_MODE"
+			   ) == SettingsSentinels.REFLECTIONS_TRACING_MODE_HWRT;
+		if (enableHwrt) {
+			rendererConfig.enableRT();
+		}
+
 		rendererConfig.setShadowCascades(
 			rendererConfig.getSettings().getIntValue("SHADOW_CASCADE_COUNT")
 		);

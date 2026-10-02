@@ -20,6 +20,7 @@ import lib.atmospherics.fog;
 import lib.atmospherics.sky;
 import settings;
 
+import rt_pipeline;
 import lib.util.debug;
 
 RWTexture2D<float3> tex_scene_write;

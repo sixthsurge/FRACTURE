@@ -6,19 +6,57 @@ import lib.lighting.brdf;
 import lib.lighting.ssrt;
 import lib.surface.material;
 import lib.toggles;
+import lib.util.encoding;
 import lib.util.filtering;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
+import rt_pipeline;
 
 import lib.util.debug;
 
+RWTexture2D<float4> tex_specular_temporal_1;
+RWTexture2D<float4> tex_specular_temporal_2;
 Texture2D<float4> tex_specular_temporal_1_prev;
+Texture2D<float4> tex_specular_temporal_2_prev;
 Texture2D<float> tex_noise_blue;
 Texture2D<float3> tex_scene;
 Texture2D<float4> tex_sky_map;
 
 namespace specular {
+public struct TemporalData {
+	public float3 reflection_over_fresnel;
+	public float pixel_age;
+	public float2 normal_enc;
+	public float depth;
+	public float roughness;
+
+	public static TemporalData empty() {
+		return TemporalData(float3(0.0), 0.0, float2(0.5), 0.0, 0.0);
+	}
+
+	public static Optional<TemporalData> load(float2 uv) {
+		if (any(saturate(uv) != uv)) {
+			return none;
+		}
+
+		float4 h0
+			= tex_specular_temporal_1_prev.sample_catmull_rom_fast(uv, 0, 0.0);
+		float4 h1 = tex_specular_temporal_2_prev.sampleNearestLevel(uv, 0);
+		if (any(isnan(h0)) || any(isnan(h1))) {
+			return none;
+		}
+
+		return TemporalData(h0.rgb, h0.w, h1.xy, h1.z, h1.w);
+	}
+
+	public void store(int2 icoord) {
+		tex_specular_temporal_1[icoord]
+			= float4(reflection_over_fresnel, pixel_age);
+		tex_specular_temporal_2[icoord] = float4(normal_enc, depth, roughness);
+	}
+}
+
 interface ISamplingMethod {
 	[mutating]
 	void init(int2 icoord, int ray_count);
@@ -87,7 +125,7 @@ float3 reproject_reflection(
 
 	float3 pos = pos_world - ap.temporal.position;
 	pos = scene_to_view(pos, ap.temporal.view);
-	pos = view_to_screen(pos, ap.temporal.projection);
+	pos = view_to_screen(pos, ap.temporal.projection, false);
 	return pos;
 }
 
@@ -104,6 +142,77 @@ float get_specular_dominant_factor(float NoV, float roughness) {
 	float a = 0.298475 * log(39.4115 - 39.0029 * roughness);
 	float f = pow(saturate(1.0 - NoV), 10.8649) * (1.0 - a) + a;
 	return saturate(f);
+}
+
+TemporalData accumulate_rough_reflection(
+	inout float3 reflection,
+	Material material,
+	float3 pos_screen,
+	float3 pos_view,
+	float3 pos_world,
+	float3 dir_world,
+	float3 normal_world,
+	float average_hit_distance,
+	float NoV,
+	int2 icoord,
+) {
+	let pos_prev_screen = reproject_reflection(
+		pos_world,
+		dir_world,
+		NoV,
+		material.roughness,
+		average_hit_distance
+	);
+	let f = calculate_fresnel(material, dot(-dir_world, normal_world));
+	let rcp_f = select(f == 0.0, 0.0, rcp(f));
+
+	if (let temporal = TemporalData.load(pos_prev_screen.xy)) {
+		const float DEPTH_REJECTION_STRENGTH = 64.0;
+
+		let max_accumulated_frames
+			= 40.0 * (linstep(0.0, 0.5, (material.roughness)));
+
+		// Depth rejection
+		float view_norm = rlength(pos_view);
+		float z0 = screen_to_view_depth(pos_screen.z);
+		float z1 = screen_to_view_depth(temporal.depth);
+		float depth_weight
+			= exp2(-abs(z0 - z1) * DEPTH_REJECTION_STRENGTH * NoV * view_norm);
+
+		// Normal rejection
+		float normal_weight = pow(
+			max0(dot(decode_octahedral(temporal.normal_enc), normal_world)),
+			128
+		);
+
+		let pixel_age = min(
+			temporal.pixel_age * depth_weight * normal_weight,
+			max_accumulated_frames
+		);
+
+		let history_weight = pixel_age / (pixel_age + 1.0);
+		reflection = max0(lerp(
+			reflection,
+			temporal.reflection_over_fresnel * f,
+			history_weight
+		));
+
+		return TemporalData(
+			reflection * rcp_f,
+			pixel_age + 1.0,
+			encode_octahedral(normal_world),
+			pos_screen.z,
+			material.roughness,
+		);
+	} else {
+		return TemporalData(
+			reflection * rcp_f,
+			0.0,
+			encode_octahedral(normal_world),
+			pos_screen.z,
+			material.roughness,
+		);
+	}
 }
 
 public float3 calculate_reflection<Tracer>(
@@ -123,9 +232,12 @@ public float3 calculate_reflection<Tracer>(
 
 	tracer.init(pos_screen, pos_view, pos_world);
 
-	if (TOGGLE_ROUGH_SPECULAR && material.roughness > 0.01) {
+	float3 reflection;
+	TemporalData temporal_data;
+
+	if (TOGGLE_ROUGH_SPECULAR && WaveActiveAnyTrue(material.roughness > 0.01)) {
 		float average_hit_distance;
-		float3 reflection = calculate_rough_reflection(
+		reflection = calculate_rough_reflection(
 			tracer,
 			material,
 			icoord,
@@ -136,38 +248,39 @@ public float3 calculate_reflection<Tracer>(
 		);
 
 		// Accumulation.
-		float3 pos_prev_screen = reproject_reflection(
+		temporal_data = accumulate_rough_reflection(
+			reflection,
+			material,
+			pos_screen,
+			pos_view,
 			pos_world,
 			dir_world,
+			normal_world,
+			average_hit_distance,
 			NoV,
-			material.roughness,
-			average_hit_distance
+			icoord
 		);
-
-		if (any(pos_prev_screen.xy != saturate(pos_prev_screen.xy))) {
-			return reflection;
-		}
-
-		float4 history
-			= max0(tex_specular_temporal_1_prev
-					   .sample_catmull_rom_fast(pos_prev_screen.xy, 0, 0.5));
-
-		return lerp(
-			reflection,
-			history.rgb
-				* calculate_fresnel(material, dot(-dir_world, normal_world)),
-			0.99 * dampen(linstep(0.01, 0.2, material.roughness) * 0.3 + 0.7)
-				* exp2(-32.0 * abs(history.w - material.roughness))
+	} else {
+		reflection = calculate_mirror_reflection(
+			tracer,
+			material,
+			dir_world,
+			normal_world,
+			sky_visibility
+		);
+		temporal_data = TemporalData.empty();
+		temporal_data = TemporalData(
+			float3(0.0),
+			0.0,
+			encode_octahedral(normal_world),
+			pos_screen.z,
+			material.roughness,
 		);
 	}
 
-	return calculate_mirror_reflection(
-		tracer,
-		material,
-		dir_world,
-		normal_world,
-		sky_visibility
-	);
+	temporal_data.store(icoord);
+
+	return reflection;
 }
 
 float3 calculate_rough_reflection<Tracer>(
@@ -321,6 +434,21 @@ public struct HiZScreenSpaceTracer : ISpecularTracer {
 			return none;
 		}
 	}
+}
+
+public struct HardwareRtTracer {
+	public float3 ray_origin_world;
+
+	[mutating]
+	public void init(
+		float3 ray_origin_screen,
+		float3 ray_origin_view,
+		float3 ray_origin_world
+	) {
+		this.ray_origin_world = ray_origin_world;
+	}
+
+	public Optional<SpecularHit> trace(float3 ray_dir_world) { return none; }
 }
 }
 
