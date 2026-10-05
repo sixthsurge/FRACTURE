@@ -234,6 +234,15 @@ public float3 calculate_reflection<Tracer>(
 	float skylight
 )
 	where Tracer : ISpecularTracer {
+	float reflection_scale = 1.0;
+	if (!TOGGLE_ROUGH_SPECULAR) {
+		// When rough specular is disabled, fade smooth SSR using roughness.
+		reflection_scale = pow2(linstep(0.5, 0.05, material.roughness));
+		if (reflection_scale < 1e-2) {
+			return float3(0.0);
+		}
+	}
+
 	float sky_visibility = pow2(skylight);
 	float NoV = -dot(dir_world, normal_world);
 
@@ -285,9 +294,11 @@ public float3 calculate_reflection<Tracer>(
 		);
 	}
 
-	temporal_data.store(icoord);
+	if (TOGGLE_ROUGH_SPECULAR) {
+		temporal_data.store(icoord);
+	}
 
-	return reflection;
+	return reflection * reflection_scale;
 }
 
 float3 calculate_rough_reflection<Tracer>(
