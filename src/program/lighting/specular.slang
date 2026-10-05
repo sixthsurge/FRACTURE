@@ -242,18 +242,31 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	if (userSettings.REFLECTIONS_ENABLED) {
 		float3 dir_world
 			= normalize(front_pos_scene - translation_part(ap.camera.viewInv));
-		float3 reflection = specular.calculate_reflection(
-			specular.HiZScreenSpaceTracer(),
-			material,
-			icoord,
-			front_pos_screen,
-			front_pos_view,
-			front_pos_scene + ap.camera.position,
-			dir_world,
-			normal_world,
-			skylight
-		);
-		radiance += reflection;
+		if (userSettings.REFLECTIONS_TRACING_MODE == 0) {
+			radiance += specular.calculate_reflection(
+				specular.HiZScreenSpaceTracer(),
+				material,
+				icoord,
+				front_pos_screen,
+				front_pos_view,
+				front_pos_scene + ap.camera.position,
+				dir_world,
+				normal_world,
+				skylight
+			);
+		} else {
+			radiance += specular.calculate_reflection(
+				specular.HardwareRtTracer(),
+				material,
+				icoord,
+				front_pos_screen,
+				front_pos_view,
+				front_pos_scene + ap.camera.position,
+				dir_world,
+				normal_world,
+				skylight
+			);
+		}
 	}
 
 	tex_scene_write[icoord] = radiance;

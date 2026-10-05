@@ -2,18 +2,25 @@ module specular;
 
 import aperture;
 import lib.atmospherics.atmosphere;
+import lib.lighting.celestial;
 import lib.lighting.brdf;
+import lib.lighting.emission;
 import lib.lighting.ssrt;
+import lib.lighting.shadow;
 import lib.surface.material;
 import lib.toggles;
+import lib.util.color;
 import lib.util.encoding;
 import lib.util.filtering;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
 import rt_pipeline;
+import settings;
 
 import lib.util.debug;
+
+Texture2D blockAtlasS;
 
 RWTexture2D<float4> tex_specular_temporal_1;
 RWTexture2D<float4> tex_specular_temporal_2;
@@ -436,8 +443,8 @@ public struct HiZScreenSpaceTracer : ISpecularTracer {
 	}
 }
 
-public struct HardwareRtTracer {
-	public float3 ray_origin_world;
+public struct HardwareRtTracer : ISpecularTracer {
+	public float3 ray_origin_scene;
 
 	[mutating]
 	public void init(
@@ -445,10 +452,64 @@ public struct HardwareRtTracer {
 		float3 ray_origin_view,
 		float3 ray_origin_world
 	) {
-		this.ray_origin_world = ray_origin_world;
+		this.ray_origin_scene = ray_origin_world - ap.camera.position;
 	}
 
-	public Optional<SpecularHit> trace(float3 ray_dir_world) { return none; }
+	public Optional<SpecularHit> trace(float3 ray_dir_world) {
+		var query = HWRT.startQuery(
+			ray_origin_scene,
+			ray_dir_world,
+			0.001,
+			ap.world.renderDistance,
+			HWRT.HitType.TERRAIN | HWRT.HitType.ENTITY,
+			HWRT.RTFlags.NONE
+		);
+		HWRT.RTHitData hit;
+		float4 hit_color;
+		while (query.proceed()) {
+			let candidate = query.getCandidate();
+			let hit = HWRT.decodeHit(candidate);
+			let albedo
+				= hit.albedo().sampleTexture(hit.getUV()) * hit.getColor();
+
+			if (albedo.a > 0.1) {
+				query.acceptCandidate();
+			}
+		}
+
+		if (query.hasHit()) {
+			let hit_type = query.getCandidate().getHitType();
+			let hit = HWRT.decodeHit(query.getHit());
+			let pos_scene = hit.getPos();
+			let normal_world = hit.getNormal();
+			let uv = hit.getUV();
+			let albedo = hit.albedo().sampleTexture(uv) * hit.getColor();
+			var material = Material.get(srgb_eotf_inv(albedo.rgb), 0);
+
+			if (userSettings.LABPBR_SUPPORT_ENABLED
+				&& hit_type == HWRT.HitType.TERRAIN) {
+				let specular_map = blockAtlasS.sampleNearest(uv);
+				material.apply_specular_map(specular_map);
+			}
+
+			shadow.Result shadow_result
+				= shadow.calculate_simple(pos_scene, normal_world);
+
+			let radiance
+				= calculate_celestial_light(
+					  material,
+					  shadow_result,
+					  pos_scene,
+					  ray_dir_world,
+					  normal_world,
+					  normal_world,
+				  )
+				+ calculate_emission(material.emission);
+
+			return SpecularHit(radiance, distance(pos_scene, ray_origin_scene));
+		}
+		return none;
+	}
 }
 }
 

@@ -161,7 +161,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	);
 
 	float3 pos_scene = view_to_scene(pos_view);
-	float3 dir_world = normalize(pos_scene);
+	float3 dir_world
+		= normalize(pos_scene - translation_part(ap.camera.viewInv));
 
 	if (depth == 0.0) {
 		float3 radiance
