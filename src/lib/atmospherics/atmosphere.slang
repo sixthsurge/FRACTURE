@@ -61,7 +61,7 @@ struct AtmosphereParticipation {
 static const float AERIAL_PERSPECTIVE_DEPTH_SCALE
 	= 1e5; // meters divided by terrain scale.
 static const float AERIAL_PERSPECTIVE_TERRAIN_SCALE = 1.0;
-static const float SEA_LEVEL = 63.0;
+public static const float SEA_LEVEL = 63.0;
 
 // Camera position in planet space.
 float3 camera_pos() {
@@ -639,7 +639,8 @@ float3 unproject_sky_view(float2 coord) {
 	);
 }
 
-T lookup_sky_radiance<T>(Texture2D<T> tex_sky_view, float3 ray_dir) where T: ITexelElement {
+T lookup_sky_radiance<T>(Texture2D<T> tex_sky_view, float3 ray_dir)
+	where T : ITexelElement {
 	int w, h;
 	tex_sky_view.GetDimensions(w, h);
 

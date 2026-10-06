@@ -80,7 +80,7 @@ public class PreTranslucent {
 		builder
 			.renderSizedCompute(
 				"shade_solid",
-				"program/lighting/deferred_lighting",
+				"program/lighting/shade_solid",
 				"main",
 				16,
 				16

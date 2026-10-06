@@ -1,15 +1,16 @@
-public module celestial;
+module celestial;
 
 import lib.dimension;
 import lib.lighting.brdf;
 import lib.surface.material;
+import lib.lighting.cloud_shadow;
 import lib.lighting.shadow;
 import lib.util.color;
 import lib.util.phase_functions;
 import lib.util.math;
 import settings;
 
-internal float3 calculate_sss(
+float3 calculate_sss(
 	float3 albedo,
 	float sss_amount,
 	float sheen_amount,
@@ -39,13 +40,14 @@ internal float3 calculate_sss(
 	return max0(sss) * albedo * SCALE;
 }
 
-float3 calculate_celestial_light(
+public float3 calculate_celestial_light(
 	Material material,
 	shadow.Result shadow_result,
 	float3 pos_scene,
 	float3 dir_world,
 	float3 flat_normal_world,
-	float3 detail_normal_world
+	float3 detail_normal_world,
+	float cloud_shadow = 1.0,
 ) {
 	if (!DIM_HAS_CELESTIAL_LIGHT) {
 		return float3(0.0);
@@ -93,7 +95,7 @@ float3 calculate_celestial_light(
 
 		light += (diffuse + specular) * max0(NoL) * shadow_result.visibility;
 	}
-	return light * buf_global.celestial_light_irradiance;
+	return light * buf_global.celestial_light_irradiance * cloud_shadow;
 }
 
 

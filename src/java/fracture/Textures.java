@@ -68,6 +68,8 @@ public class Textures {
 	public final TextureReference2D cloudsTemporalDataCurrent;
 	public final TextureReference2D cloudsTemporalDataPrevious;
 
+	public Texture2D cloudShadowMap;
+
 	// Fog
 
 	public final Texture3D fogVolumeLightA;
@@ -417,6 +419,16 @@ public class Textures {
 						 pipeline.settings().getIntValue("SKY_MAP_HEIGHT")
 					 )
 					 .create();
+
+		if (toggles.cloudShadow) {
+			final var cloudShadowRes
+				= pipeline.settings().getIntValue("CLOUD_SHADOW_RES");
+			cloudShadowMap
+				= pipeline
+					  .texture2D("tex_cloud_shadow", TextureFormat.R16_UNORM)
+					  .size(cloudShadowRes, cloudShadowRes)
+					  .create();
+		}
 
 		// Specular
 

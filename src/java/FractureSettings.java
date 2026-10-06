@@ -151,6 +151,19 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
+		screenClouds
+			.option("CLOUD_SHADOW_ENABLED", OptionType.boolType(true), false);
+		screenShadow.option(
+			"CLOUD_SHADOW_RES",
+			OptionType.intType(256, 2048, 256, 512),
+			false
+		);
+		screenClouds.option(
+			"CLOUD_SHADOW_INTENSITY",
+			OptionType.floatType(0.0f, 1.0f, 0.01f, 0.80f),
+			true
+		);
+
 		final var screenWater = screen.child("water");
 		screenWater.option("WATER_CAUSTICS", OptionType.boolType(false), false);
 

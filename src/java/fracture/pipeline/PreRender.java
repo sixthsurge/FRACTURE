@@ -34,6 +34,30 @@ public class PreRender {
 			setupAtmosphere(builder, resources);
 		}
 
+		if (resources.toggles().cloudShadow) {
+			final var cloudShadowRes
+				= builder.settings().getIntValue("CLOUD_SHADOW_RES");
+			builder.compute2d(
+				"render_cloud_shadow_map",
+				"program/atmospherics/clouds/render_cloud_shadow_map",
+				"main",
+				cloudShadowRes,
+				cloudShadowRes,
+				16,
+				16
+			);
+		}
+
+		builder.compute2d(
+			"render_sky_map",
+			"program/atmospherics/render_sky_map",
+			"main",
+			builder.settings().getIntValue("SKY_MAP_WIDTH"),
+			builder.settings().getIntValue("SKY_MAP_HEIGHT"),
+			16,
+			16
+		);
+
 		builder.compute("gen_sky_sh", "program/lighting/gen_sky_sh", "main")
 			.dispatch1D(1);
 	}
@@ -83,15 +107,5 @@ public class PreRender {
 				4
 			);
 		}
-
-		builder.compute2d(
-			"render_sky_map",
-			"program/atmospherics/render_sky_map",
-			"main",
-			builder.settings().getIntValue("SKY_MAP_WIDTH"),
-			builder.settings().getIntValue("SKY_MAP_HEIGHT"),
-			16,
-			16
-		);
 	}
 }

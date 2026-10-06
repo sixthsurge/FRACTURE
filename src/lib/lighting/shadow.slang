@@ -154,7 +154,8 @@ Result calculate(
 	float3 pos_scene,
 	float3 flat_normal_world,
 	float2 dither,
-	bool has_sss
+	bool has_sss,
+	float cloud_shadow = 1.0
 ) {
 	Result result = Result.no_hit();
 	if (!TOGGLE_SHADOW) {
@@ -202,6 +203,8 @@ Result calculate(
 	penumbra_size = min(penumbra_size, BLOCKER_SEARCH_RADIUS);
 	penumbra_size
 		*= ap.celestial.projection[cascade][0][0]; // Meters -> shadow unit.
+	// Increase penumbra radius in cloud shadows for a nice overcast look.
+	penumbra_size *= 5.0 - 4.0 * cloud_shadow;
 
 	result.visibility
 		= pcf(pos_shadow_screen, cascade, penumbra_size, dither.y);

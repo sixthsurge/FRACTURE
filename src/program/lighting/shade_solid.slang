@@ -1,7 +1,11 @@
 // Deferred shading for opaque layer, draw sky.
 
 import aperture;
+import lib.atmospherics.atmosphere;
+import lib.atmospherics.fog;
+import lib.atmospherics.sky;
 import lib.lighting.celestial;
+import lib.lighting.cloud_shadow;
 import lib.lighting.emission;
 import lib.lighting.lightmap;
 import lib.lighting.shadow;
@@ -15,9 +19,6 @@ import lib.util.encoding;
 import lib.util.math;
 import lib.util.random;
 import lib.util.space_conversion;
-import lib.atmospherics.atmosphere;
-import lib.atmospherics.fog;
-import lib.atmospherics.sky;
 import settings;
 
 import rt_pipeline;
@@ -33,6 +34,7 @@ Texture3D<float3> tex_fog_volume_integrated_extinction;
 Texture2D<float4> tex_qres_temporal_data_current;
 Texture2D<float4> tex_gtao_output_current;
 Texture2D<float3> tex_rsm_output_filtered;
+Texture2D<float> tex_cloud_shadow;
 Texture2D<float> tex_noise_blue;
 
 Texture2D tex_reserviour_spatial_1;
@@ -233,17 +235,21 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float3 detail_normal_world
 		= gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world);
 
+	let cloud_shadow = cloud_shadow::sample(tex_cloud_shadow, pos_scene);
+
 	shadow.Result shadow_result = shadow.calculate(
 		pos_scene,
 		gbuffer.flat_normal_world,
 		dither,
-		material.sss_amount > EPS
+		material.sss_amount > EPS,
+		cloud_shadow
 	);
 	shadow_result.visibility
 		*= select(gbuffer.parallax_self_shadow.get().orElse(false), 0.0, 1.0);
 
 	float3 ambient_brdf
 		= material.albedo / PI * (1.0 + ambient_sss * material.sss_amount);
+
 	float3 radiance
 		= calculate_celestial_light(
 			  material,
@@ -251,7 +257,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			  pos_scene,
 			  dir_world,
 			  gbuffer.flat_normal_world,
-			  detail_normal_world
+			  detail_normal_world,
+			  cloud_shadow
 		  )
 		+ calculate_emission(material.emission);
 
@@ -270,7 +277,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 		if (TOGGLE_RSM) {
 			radiance += ambient_brdf * upscaled.rsm_output * PI
-				* buf_global.celestial_light_irradiance;
+				* buf_global.celestial_light_irradiance * cloud_shadow;
 		}
 	}
 

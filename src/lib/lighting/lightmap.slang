@@ -19,8 +19,11 @@ float3 calculate_lightmap_skylight(
 	float3 bent_normal,
 	float ao
 ) {
-	return brdf * sh_evaluate_irradiance(buf_sky_sh.coeff, bent_normal, ao)
-		* pow2(lightmap.y);
+	float light_sq = pow2(lightmap.y);
+	return brdf
+		* (sh_evaluate_irradiance(buf_sky_sh.coeff, bent_normal, ao)
+			   * pow2(light_sq)
+		   + 0.1 * buf_sky_sh.irradiance_up * light_sq); // Bounced skylight.
 }
 
 

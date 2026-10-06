@@ -27,6 +27,8 @@ internal extern static const int value_BLOOM_TILE_COUNT;
 internal extern static const bool value_CLOUDS_ENABLED;
 internal extern static const bool value_CLOUDS_FILTER_ENABLED;
 internal extern static const float value_CLOUDS_RENDER_SCALE;
+internal extern static const bool value_CLOUD_SHADOW_ENABLED;
+internal extern static const int value_CLOUD_SHADOW_RES;
 internal extern static const bool value_DEBUG;
 internal extern static const bool value_DISPLAY_LUMINANCE_HISTOGRAM;
 internal extern static const int value_FOG_VOLUME_SIZE_X;
@@ -73,6 +75,7 @@ struct Settings {
     float AGX_SLOPE_G;
     float AGX_SLOPE_R;
     float BLOOM_INTENSITY;
+    float CLOUD_SHADOW_INTENSITY;
     float DEV_SLIDER_0;
     float DEV_SLIDER_1;
     float DEV_SLIDER_2;
@@ -97,6 +100,8 @@ struct Settings {
     static const bool CLOUDS_ENABLED = value_CLOUDS_ENABLED;
     static const bool CLOUDS_FILTER_ENABLED = value_CLOUDS_FILTER_ENABLED;
     static const float CLOUDS_RENDER_SCALE = value_CLOUDS_RENDER_SCALE;
+    static const bool CLOUD_SHADOW_ENABLED = value_CLOUD_SHADOW_ENABLED;
+    static const int CLOUD_SHADOW_RES = value_CLOUD_SHADOW_RES;
     static const bool DEBUG = value_DEBUG;
     static const bool DISPLAY_LUMINANCE_HISTOGRAM = value_DISPLAY_LUMINANCE_HISTOGRAM;
     static const int FOG_VOLUME_SIZE_X = value_FOG_VOLUME_SIZE_X;

@@ -89,7 +89,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	if (all(saturate(pos_prev_screen.xy) == pos_prev_screen.xy)
 		&& ap.timing.frameCounter > 1 && all(isfinite(temporal_data_prev))) {
 		const float MAX_ACCUMULATED_FRAMES = 40.0;
-		const float DEPTH_REJECTION_STRENGTH = 16.0;
+		const float DEPTH_REJECTION_STRENGTH = 40.0;
 
 		pixel_age = temporal_data_prev.x;
 		depth_prev = temporal_data_prev.y;
@@ -115,7 +115,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 		// Normal rejection
 		float normal_weight
-			= pow16(max0(dot(normal_prev, gbuffer.flat_normal_world)));
+			= pow(max0(dot(normal_prev, gbuffer.flat_normal_world)), 128.0);
 
 		pixel_age *= depth_weight * normal_weight * float(depth_prev != 0.0);
 

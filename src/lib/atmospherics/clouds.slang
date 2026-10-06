@@ -1,13 +1,13 @@
 module clouds;
 
 import aperture;
+import lib.atmospherics.atmosphere;
 import lib.buffer.sky_sh;
 import lib.util.math;
 import lib.util.random;
 import lib.util.phase_functions;
 import lib.util.ray_sphere_intersection;
 import lib.util.sampling;
-import lib.atmospherics.atmosphere;
 import settings;
 
 namespace clouds {
@@ -18,14 +18,16 @@ Texture3D<half> tex_noise_worley_swirley_3d;
 SamplerState sampler_linear_repeat;
 ConstantBuffer<SkyShBuffer> buf_sky_sh;
 
-static const float EARTH_RADIUS = 6371000.0;
-static const float VOLUME_ALTITUDE = 1000.0;
-static const float VOLUME_THICKNESS = 2400.0;
+public static const float EARTH_RADIUS = 6371000.0;
+public static const float VOLUME_ALTITUDE = 200.0;
+public static const float VOLUME_THICKNESS = 480.0;
 
-static const float VOLUME_INNER_RADIUS = EARTH_RADIUS + VOLUME_ALTITUDE;
-static const float VOLUME_OUTER_RADIUS = VOLUME_INNER_RADIUS + VOLUME_THICKNESS;
-static const float DENSITY_SCALE = 0.2;
-static const float MAX_RAY_LENGTH = 50000.0;
+public static const float VOLUME_INNER_RADIUS = EARTH_RADIUS + VOLUME_ALTITUDE;
+public static const float VOLUME_OUTER_RADIUS
+	= VOLUME_INNER_RADIUS + VOLUME_THICKNESS;
+
+static const float DENSITY_SCALE = 1.0;
+static const float MAX_RAY_LENGTH = 10000.0;
 
 public struct CloudsRenderParams {
 	public int primary_step_count;
@@ -55,7 +57,7 @@ float powder_effect(float density, float nu) {
 	return powder;
 }
 
-float calculate_density(float3 pos) {
+public float calculate_density(float3 pos) {
 	float altitude_fraction
 		= linstep(VOLUME_INNER_RADIUS, VOLUME_OUTER_RADIUS, length(pos));
 	half altitude_fraction_h = half(altitude_fraction);
@@ -63,6 +65,8 @@ float calculate_density(float3 pos) {
 	const float2 wind_vel = 10.0 * float2(cos(0.3), sin(0.3));
 	float2 wind = wind_vel * buf_global.world_age;
 
+	pos.xz += ap.camera.position.xz;
+	pos *= 5.0;
 	pos.xz += 0.01 * wind_vel * pos.y;
 	half density = tex_noise_perlin_worley_2d.Sample(
 		sampler_linear_repeat,
@@ -99,7 +103,7 @@ float calculate_density(float3 pos) {
 	return density * altitude_fraction;
 }
 
-float calculate_optical_depth(Ray ray, int step_count, float dither) {
+public float calculate_optical_depth(Ray ray, int step_count, float dither) {
 	float optical_depth = 0.0;
 
 	float2 dists = intersect_spherical_shell(
@@ -261,7 +265,7 @@ render(CloudsRenderParams params, Ray ray, float3 sky_radiance, float dither) {
 		scattering = lerp(
 			sky_radiance * (1.0 - transmittance),
 			scattering,
-			atmosphere_transmittance
+			pow2(atmosphere_transmittance)
 		);
 		apparent_distance = distance(ray.o, avg_pos);
 	}
@@ -269,7 +273,11 @@ render(CloudsRenderParams params, Ray ray, float3 sky_radiance, float dither) {
 }
 
 public float3 camera_pos() {
-	return ap.camera.position + float3(0.0, EARTH_RADIUS, 0.0);
+	return float3(
+		0.0,
+		EARTH_RADIUS - atmosphere.SEA_LEVEL + ap.camera.position.y,
+		0.0
+	);
 }
 }
 

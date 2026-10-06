@@ -1,6 +1,7 @@
 public module fog;
 
 import aperture;
+import lib.atmospherics.atmosphere;
 import lib.buffer.sky_sh;
 import lib.dimension;
 import lib.lighting.shadow;
@@ -87,11 +88,10 @@ struct OverworldFog : IFogProfile {
 
 	static FogMedia<NUM_SCATTERING_PARTICLE_KINDS>
 	calculate_local_media(float3 pos_world, float segment_length) {
-		const float SEA_LEVEL = 63.0;
 		const float RLH_SCALE_HEIGHT = 40.0;
 		const float MIE_SCALE_HEIGHT = 10.0;
 
-		float2 density = exp(-max0(pos_world.y - SEA_LEVEL)
+		float2 density = exp(-max0(pos_world.y - atmosphere.SEA_LEVEL)
 							 * rcp(float2(RLH_SCALE_HEIGHT, MIE_SCALE_HEIGHT)))
 			* segment_length;
 		density.y
