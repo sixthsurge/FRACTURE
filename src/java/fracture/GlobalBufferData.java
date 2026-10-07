@@ -1,9 +1,7 @@
 package fracture;
 import dev.irisshaders.aperture.api.pipeline.FrameState;
-import fracture.util.AtmosphereTransmittance;
 import fracture.util.Util;
 import org.joml.Vector2f;
-import org.joml.Vector3d;
 import org.joml.Vector3f;
 
 public record GlobalBufferData(
@@ -22,7 +20,7 @@ public record GlobalBufferData(
 	Vector3f ambient_irradiance,
 	float celestial_light_angular_radius
 ) {
-	public static GlobalBufferData get(FrameState state) {
+	public static GlobalBufferData get(FrameState state, Dimension dimension) {
 		final var frameCounter
 			= state.uniforms().getInt("ap.timing.frameCounter");
 		final var renderSize = state.uniforms().getInt2("ap.game.renderSize");
@@ -49,49 +47,19 @@ public record GlobalBufferData(
 				  .getFloat3("ap.celestial.sunPosition")
 				  .negate()
 				  .normalize();
-		// Color of sunlight in space, obtained from AM0 solar irradiance
-		// spectrum from
-		// https://www.nrel.gov/grid/solar-resource/spectra-astm-e490.html using
-		// the CIE (2006) 2-deg LMS cone fundamentals
-		final var sunRadiosity = new Vector3f(1.051f, 0.985f, 0.940f);
-
-		final var moonRadiosity
-			= new Vector3f(sunRadiosity)
-				  .mul(new Vector3f(0.001f, 0.004f, 0.003f));
 
 		final var isDay = lightDirWorld.dot(moonDirWorld) < 0.0;
-
 		final var sunAngle = state.uniforms().getFloat("ap.celestial.angle")
 			+ (isDay ? 0.0f : 0.5f);
 
-		final var celestialLightRadiosity
-			= isDay ? sunRadiosity : moonRadiosity;
+		final var sunRadiosity = dimension.getSunRadiosity(state);
+		final var moonRadiosity = dimension.getMoonRadiosity(state);
 
-		var celestialLightIrradiance
-			= new Vector3f(celestialLightRadiosity)
-				  .mul(Util.vector3dToVector3f(
-					  AtmosphereTransmittance.calculateTransmittance(
-						  AtmosphereTransmittance.EARTH_PARAMS,
-						  new Vector3d(
-							  0.0,
-							  AtmosphereTransmittance.EARTH_PARAMS
-									  .planetRadius()
-								  + 1.0,
-							  0.0
-						  ),
-						  new Vector3d(state.uniforms()
-										   .getFloat3("ap.celestial.position")
-										   .normalize())
-					  )
-				  ));
-		
-		final var ambientIrradiance = new Vector3f(0.0005f);
-
-		float celestialLightAngularRadius = isDay
-			? state.settings().getFloatValue("SUN_ANGULAR_RADIUS")
-				* ((float) Math.TAU / 360.0f)
-			: state.settings().getFloatValue("MOON_ANGULAR_RADIUS")
-				* ((float) Math.TAU / 360.0f);
+		final var celestialLightIrradiance
+			= dimension.getCelestialLightIrradiance(state);
+		final var ambientIrradiance = dimension.getAmbientIrradiance(state);
+		final var celestialLightAngularRadius
+			= dimension.getCelestialLightAngularRadius(state);
 
 		return new GlobalBufferData(
 			taaJitter,

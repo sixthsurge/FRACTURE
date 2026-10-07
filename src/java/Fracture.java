@@ -32,7 +32,7 @@ public class Fracture implements ShaderPack {
 		blockMapping = new BlockMapping();
 		setupBlockMapping(blockMapping);
 
-		dimension = new Dimension(pipeline.worldInfo().dimension());
+		dimension = Dimension.getDimension(pipeline.worldInfo().dimension());
 
 		setupSamplers(pipeline);
 
@@ -43,7 +43,7 @@ public class Fracture implements ShaderPack {
 		final var builder = new PipelineBuilder(pipeline, screen);
 		toggles.addGlobalExports(builder);
 		blockMapping.addGlobalExports(builder);
-		dimension.addGlobalExports(builder);
+		Dimension.addGlobalExports(dimension, builder);
 
 		resources = new Resources(textures, buffers, toggles, dimension);
 
@@ -91,7 +91,7 @@ public class Fracture implements ShaderPack {
 
 	@Override
 	public void onNewFrame(FrameState state) {
-		resources.buffers().update(state);
+		resources.buffers().update(state, dimension);
 		resources.textures().updateReferences(state);
 	}
 

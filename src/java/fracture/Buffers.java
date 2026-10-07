@@ -18,7 +18,7 @@ public class Buffers {
 		pipeline.buffer("spdGlobalAtomic", 4);
 	}
 
-	public void update(FrameState frame) {
-		globalBuffer.write(GlobalBufferData.get(frame));
+	public void update(FrameState frame, Dimension dimension) {
+		globalBuffer.write(GlobalBufferData.get(frame, dimension));
 	}
 }

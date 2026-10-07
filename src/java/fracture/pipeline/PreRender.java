@@ -30,7 +30,7 @@ public class PreRender {
 			);
 		}
 
-		if (resources.dimension().hasAtmosphere) {
+		if (resources.dimension().hasAtmosphere()) {
 			setupAtmosphere(builder, resources);
 		}
 

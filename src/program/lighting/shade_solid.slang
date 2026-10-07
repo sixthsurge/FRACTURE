@@ -235,7 +235,10 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float3 detail_normal_world
 		= gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world);
 
-	let cloud_shadow = cloud_shadow::sample(tex_cloud_shadow, pos_scene);
+	float cloud_shadow = 1.0;
+	if (TOGGLE_CLOUD_SHADOW) {
+		cloud_shadow = ::cloud_shadow::sample(tex_cloud_shadow, pos_scene);
+	}
 
 	shadow.Result shadow_result = shadow.calculate(
 		pos_scene,

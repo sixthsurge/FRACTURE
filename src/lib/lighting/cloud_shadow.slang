@@ -35,10 +35,6 @@ public float3 unproject(float2 cloud_shadow_pos) {
 }
 
 public float sample(Texture2D<float> cloud_shadow_map, float3 pos_scene) {
-	if (!TOGGLE_CLOUD_SHADOW) {
-		return 1.0;
-	}
-
 	float2 cloud_shadow_pos = project(pos_scene);
 	if (any(saturate(cloud_shadow_pos) != cloud_shadow_pos)) {
 		return 1.0;

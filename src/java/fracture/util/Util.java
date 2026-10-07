@@ -3,8 +3,11 @@ package fracture.util;
 import org.joml.Vector2f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class Util {
+	private Util() {}
+
 	public static Vector3f vector3dToVector3f(Vector3d v) {
 		return new Vector3f((float) v.x, (float) v.y, (float) v.z);
 	}
@@ -27,4 +30,18 @@ public class Util {
 
 	// Round x to the lowest n.
 	public static int roundDown(int x, int n) { return (x / n) * n; }
+
+	public static Vector3f swizzleXyz(Vector4f v) {
+		return new Vector3f(v.x, v.y, v.z);
+	}
+
+	public static Vector3f srgbEotfInv(Vector3f srgb) {
+		float x = srgb.x
+			* (srgb.x * (srgb.x * 0.305306011f + 0.682171111f) + 0.012522878f);
+		float y = srgb.y
+			* (srgb.y * (srgb.y * 0.305306011f + 0.682171111f) + 0.012522878f);
+		float z = srgb.z
+			* (srgb.z * (srgb.z * 0.305306011f + 0.682171111f) + 0.012522878f);
+		return new Vector3f(x, y, z);
+	}
 }

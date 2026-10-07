@@ -14,13 +14,13 @@ public class FeatureToggles {
 
 	public FeatureToggles(PipelineConfig pipeline, Dimension dimension) {
 		shadow = pipeline.settings().getBoolValue("SHADOW_ENABLED")
-			&& dimension.hasCelestialLight;
+			&& dimension.hasCelestialLight();
 
 		rsm = pipeline.settings().getBoolValue("RSM_ENABLED")
-			&& dimension.hasCelestialLight;
+			&& dimension.hasCelestialLight();
 
 		clouds = pipeline.settings().getBoolValue("CLOUDS_ENABLED")
-			&& dimension.hasClouds;
+			&& dimension.hasClouds();
 
 		roughSpecular
 			= pipeline.settings().getBoolValue("LABPBR_SUPPORT_ENABLED")
