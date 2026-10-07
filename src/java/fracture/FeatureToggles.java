@@ -27,7 +27,9 @@ public class FeatureToggles {
 			&& pipeline.settings().getBoolValue("REFLECTIONS_ENABLED");
 
 		vxrtData = pipeline.settings().getBoolValue("REFERENCE_PT_ENABLED")
-			|| pipeline.settings().getBoolValue("RESTIR_GI_ENABLED")
+			|| (pipeline.settings().getBoolValue("RESTIR_GI_ENABLED")
+				&& pipeline.settings().getIntValue("RESTIR_GI_TRACER")
+					== SettingsSentinels.RESTIR_GI_TRACER_VOXEL)
 			|| pipeline.settings().getBoolValue("TEST_VXRT");
 
 		cloudShadow = clouds && shadow

@@ -471,12 +471,10 @@ public struct HardwareRtTracer : ISpecularTracer {
 			ray_origin_scene,
 			ray_dir_world,
 			0.001,
-			ap.world.renderDistance,
+			max(ap.world.renderDistance, 1.0),
 			HWRT.HitType.TERRAIN | HWRT.HitType.ENTITY,
 			HWRT.RTFlags.NONE
 		);
-		HWRT.RTHitData hit;
-		float4 hit_color;
 		while (query.proceed()) {
 			let candidate = query.getCandidate();
 			let hit = HWRT.decodeHit(candidate);

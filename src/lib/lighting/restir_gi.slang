@@ -1,9 +1,10 @@
-public module data;
+module data;
 
 import aperture;
 import lib.lighting.brdf;
 import lib.lighting.celestial;
 import lib.lighting.emission;
+import lib.lighting.rt_interface;
 import lib.lighting.shadow;
 import lib.lighting.vxrt.trace;
 import lib.surface.material;
@@ -13,34 +14,35 @@ import lib.util.math;
 import lib.util.random;
 import lib.util.sampling;
 import lib.atmospherics.atmosphere;
+import settings;
 
-internal Texture2D<float4> tex_sky_map;
+Texture2D<float4> tex_sky_map;
 
 namespace restir_gi {
 static const int BOUNCE_COUNT = 1;
 
-struct Sample {
-	float3 radiance = float3(0.0);
-	float3 visible_pos_world = float3(0.0);
-	float3 visible_normal_world = float3(0.0);
-	float3 sample_pos_world = float3(0.0);
-	float3 sample_normal_world = float3(0.0);
-	uint random_seed = 0;
+public struct Sample {
+	public float3 radiance = float3(0.0);
+	public float3 visible_pos_world = float3(0.0);
+	public float3 visible_normal_world = float3(0.0);
+	public float3 sample_pos_world = float3(0.0);
+	public float3 sample_normal_world = float3(0.0);
+	public uint random_seed = 0;
 
-	float cos_theta() {
+	public float cos_theta() {
 		float3 v = sample_pos_world - visible_pos_world;
 		return dot(visible_normal_world, v) * rlength(v);
 	}
 }
 
-struct Reserviour {
-	Sample sample;
-	float w; // Weight sum
-	float M; // Number of samples
-	float W; // Sample weight (eq. 7)
+public struct Reserviour {
+	public Sample sample;
+	public float w; // Weight sum
+	public float M; // Number of samples
+	public float W; // Sample weight (eq. 7)
 
 	[mutating]
-	void init() {
+	public void init() {
 		sample = Sample();
 		w = 0.0;
 		M = 0.0;
@@ -48,7 +50,7 @@ struct Reserviour {
 	}
 
 	[mutating]
-	void init(Sample initial_sample, float w_sample) {
+	public void init(Sample initial_sample, float w_sample) {
 		sample = initial_sample;
 		w = w_sample;
 		M = 1.0;
@@ -56,7 +58,7 @@ struct Reserviour {
 	}
 
 	[mutating]
-	void load(
+	public void load(
 		Texture2D<float4> tex1,
 		Texture2D<float4> tex2,
 		Texture2D<float4> tex3,
@@ -79,7 +81,7 @@ struct Reserviour {
 	}
 
 	[mutating]
-	void load_interpolated(
+	public void load_interpolated(
 		Texture2D<float4> tex1,
 		Texture2D<float4> tex2,
 		Texture2D<float4> tex3,
@@ -102,7 +104,7 @@ struct Reserviour {
 		M = s3.w;
 	}
 
-	void store(
+	public void store(
 		RWTexture2D<float4> tex1,
 		RWTexture2D<float4> tex2,
 		RWTexture2D<float4> tex3,
@@ -123,7 +125,7 @@ struct Reserviour {
 	}
 
 	[mutating]
-	void update<Random>(
+	public void update<Random>(
 		inout Random random,
 		Sample sample_new,
 		float w_new,
@@ -146,7 +148,7 @@ struct Reserviour {
 	}
 
 	[mutating]
-	void
+	public void
 	merge<Random>(inout Random random, Reserviour r, float p_hat, float M_max)
 		where Random : IRandom {
 		float M_0 = M;
@@ -155,7 +157,7 @@ struct Reserviour {
 	}
 
 	[mutating]
-	void clamp_M(float M_max) {
+	public void clamp_M(float M_max) {
 		float M_clamped = min(M, M_max);
 		w *= M_clamped / M;
 		M = M_clamped;
@@ -164,21 +166,21 @@ struct Reserviour {
 
 // Path tracing.
 // Diffuse only for now.
-Sample initial_sample<Random>(
+Sample initial_sample_impl<Tracer, Random>(
+	Tracer tracer,
 	inout Random random,
 	Material material,
-	float3 ray_origin_world,
+	float3 ray_origin_scene,
 	float3 ray_dir,
 	float3 flat_normal_world,
 	float3 detail_normal_world,
 )
+	where Tracer : IRayTracer
 	where Random : IRandom {
-	const int INTERSECTION_STEPS = 50;
-
 	float3 sample_point = float3(0.0, 0.0, 0.0);
 	float3 sample_normal = float3(0.0, 1.0, 0.0);
 
-	float3 current_pos = ray_origin_world;
+	float3 current_pos = ray_origin_scene;
 	Material current_material = material;
 	float3 current_flat_normal = flat_normal_world;
 	float3 current_detail_normal = detail_normal_world;
@@ -195,25 +197,22 @@ Sample initial_sample<Random>(
 
 	bool hit_sky = false;
 	float3 sample_radiance;
-	float3 tint;
-	if (let hit
-		= vxrt.trace(Ray(current_pos, ray_dir), INTERSECTION_STEPS, tint)) {
-		shadow.Result shadow_result = shadow.calculate_simple(
-			hit.pos_world - ap.camera.position,
-			hit.normal,
-		);
+	float3 tint = float3(1.0);
+	if (let hit = tracer.trace(Ray(current_pos, ray_dir))) {
+		shadow.Result shadow_result
+			= shadow.calculate_simple(hit.pos_scene, hit.normal, );
 
 		sample_radiance
 			= calculate_celestial_light(
 				  hit.material,
 				  shadow_result,
-				  hit.pos_world - ap.camera.position,
+				  hit.pos_scene,
 				  ray_dir,
 				  hit.normal,
 				  hit.normal,
 			  )
 			+ calculate_emission(hit.material.emission);
-		current_pos = hit.pos_world;
+		current_pos = hit.pos_scene;
 		current_flat_normal = hit.normal;
 		current_detail_normal = hit.normal;
 		current_material = hit.material;
@@ -282,18 +281,53 @@ Sample initial_sample<Random>(
 
 	Sample s;
 	s.radiance = max0(sample_radiance);
-	s.sample_pos_world = sample_point;
+	s.sample_pos_world = sample_point + ap.camera.position;
 	s.sample_normal_world = sample_normal;
-	s.visible_pos_world = ray_origin_world;
+	s.visible_pos_world = ray_origin_scene + ap.camera.position;
 	s.visible_normal_world = detail_normal_world;
 	return s;
 }
 
-float target_function(Sample s) {
+public Sample initial_sample<Random>(
+	inout Random random,
+	Material material,
+	float3 ray_origin_scene,
+	float3 ray_dir,
+	float3 flat_normal_world,
+	float3 detail_normal_world,
+)
+	where Random : IRandom {
+	if (userSettings.RESTIR_GI_TRACER == 0) {
+		// Hardware RT.
+		return initial_sample_impl(
+			HardwareRayTracer(),
+			random,
+			material,
+			ray_origin_scene,
+			ray_dir,
+			flat_normal_world,
+			detail_normal_world
+		);
+	} else if (userSettings.RESTIR_GI_TRACER == 1) {
+		// Voxel RT.
+		static const int INTERSECTION_STEPS = 50;
+		return initial_sample_impl(
+			vxrt.VoxelRayTracer(INTERSECTION_STEPS),
+			random,
+			material,
+			ray_origin_scene,
+			ray_dir,
+			flat_normal_world,
+			detail_normal_world
+		);
+	}
+}
+
+public float target_function(Sample s) {
 	return dot(s.radiance, LUMINANCE_WEIGHTS_REC709);
 }
 
-float jacobian_determinant(
+public float jacobian_determinant(
 	float3 x1_q,
 	float3 x2_q,
 	float3 x1_r,

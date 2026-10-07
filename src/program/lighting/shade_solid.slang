@@ -300,7 +300,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		radiance += vxrt.reference_pt<PcgRandom, 1, 3>(
 			PcgRandom(seed),
 			material,
-			pos_scene + ap.camera.position,
+			pos_scene,
 			dir_world,
 			gbuffer.flat_normal_world,
 			detail_normal_world

@@ -2,6 +2,7 @@ import dev.irisshaders.aperture.api.PackSettings;
 import dev.irisshaders.aperture.api.settings.OptionType;
 import dev.irisshaders.aperture.api.settings.SettingsManager;
 import dev.irisshaders.aperture.api.settings.SettingsScreen;
+import fracture.SettingsSentinels;
 
 public class FractureSettings implements PackSettings {
 	@Override
@@ -32,6 +33,18 @@ public class FractureSettings implements PackSettings {
 		final var screenPtgi = screenLighting.child("ptgi");
 		screenPtgi
 			.option("RESTIR_GI_ENABLED", OptionType.boolType(false), false);
+		screenPtgi.option(
+			"RESTIR_GI_TRACER",
+			OptionType.intType(
+				new int[] {
+					SettingsSentinels.RESTIR_GI_TRACER_HWRT,
+					SettingsSentinels.RESTIR_GI_TRACER_VOXEL
+				},
+				SettingsSentinels.RESTIR_GI_TRACER_HWRT
+			),
+			false
+		);
+
 		screenPtgi
 			.option("REFERENCE_PT_ENABLED", OptionType.boolType(false), false);
 
@@ -75,7 +88,7 @@ public class FractureSettings implements PackSettings {
 		screenReflections
 			.option("REFLECTIONS_ENABLED", OptionType.boolType(true), false);
 		screenReflections.option(
-			"REFLECTIONS_TRACING_MODE",
+			"REFLECTIONS_TRACER",
 			OptionType.intType(new int[] {0, 1}, 0),
 			false
 		);

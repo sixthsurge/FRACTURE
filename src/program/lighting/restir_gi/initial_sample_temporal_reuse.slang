@@ -60,10 +60,11 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 	float3 detail_normal_world
 		= gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world);
+
 	restir_gi.Sample sample = restir_gi.initial_sample(
 		random,
 		material,
-		pos_world,
+		pos_scene,
 		dir_world,
 		gbuffer.flat_normal_world,
 		detail_normal_world,

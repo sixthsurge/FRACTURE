@@ -242,7 +242,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	if (userSettings.REFLECTIONS_ENABLED) {
 		float3 dir_world
 			= normalize(front_pos_scene - translation_part(ap.camera.viewInv));
-		if (userSettings.REFLECTIONS_TRACING_MODE == 0) {
+		if (userSettings.REFLECTIONS_TRACER == 0) {
 			radiance += specular.calculate_reflection(
 				specular.HiZScreenSpaceTracer(),
 				material,

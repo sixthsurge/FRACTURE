@@ -1,6 +1,7 @@
 public module trace;
 
 import aperture;
+import lib.lighting.rt_interface;
 import lib.lighting.vxrt.util;
 import lib.surface.material;
 import lib.util.color;
@@ -19,49 +20,44 @@ internal struct Hit {
 	internal float3 pos_world;
 }
 
-struct Surface {
-	Material material;
-	float3 pos_world;
-	float3 normal;
-	float opacity;
-}
+struct VoxelRayTracer : IRayTracer {
+	int max_steps;
 
-Optional<Surface> trace(Ray ray, int max_steps, out float3 tint) {
-	// Straightforward implementation of
-	// http://www.cse.yorku.ca/~amana/research/grid.pdf.
-	int3 current_voxel = int3(floor(ray.o));
-	int3 sign_d = int3(sign(ray.d));
-	float3 rcp_d = rcp(ray.d);
-	float3 t_max = (step(0.0, ray.d) - frac(ray.o)) * rcp_d;
-	float3 t_delta = rcp(abs(ray.d));
-	tint = float3(1.0);
+	__init(int max_steps) { this.max_steps = max_steps; }
 
-	for (int i = 0; i < max_steps; ++i) {
-		// Original paper has a lot of logic that amounts to stepping by
-		// step.{component} in the component where t_max is minimal.
-		bool3 minimal_component = t_max == min_of(t_max);
-		current_voxel += int3(minimal_component) * sign_d;
+	Optional<RayHit> trace(Ray ray) {
+		// Straightforward implementation of
+		// http://www.cse.yorku.ca/~amana/research/grid.pdf.
+		int3 current_voxel = int3(floor(ray.o));
+		int3 sign_d = int3(sign(ray.d));
+		float3 rcp_d = rcp(ray.d);
+		float3 t_max = (step(0.0, ray.d) - frac(ray.o)) * rcp_d;
+		float3 t_delta = rcp(abs(ray.d));
 
-		if (ap.voxel[current_voxel] != -1) {
-			int3 last_voxel = current_voxel - int3(minimal_component) * sign_d;
+		for (int i = 0; i < max_steps; ++i) {
+			// Original paper has a lot of logic that amounts to stepping by
+			// step.{component} in the component where t_max is minimal.
+			bool3 minimal_component = t_max == min_of(t_max);
+			current_voxel += int3(minimal_component) * sign_d;
 
-			Surface s = get_hit_surface(
-				Hit(current_voxel,
-					last_voxel - current_voxel,
-					float3(ray.o + min_of(t_max) * ray.d))
-			);
+			if (ap.voxel[current_voxel] != -1) {
+				int3 last_voxel
+					= current_voxel - int3(minimal_component) * sign_d;
 
-			if (s.opacity > 0.99) {
+				RayHit s = get_hit(
+					Hit(current_voxel,
+						last_voxel - current_voxel,
+						float3(ray.o + min_of(t_max) * ray.d))
+				);
+
 				return s;
-			} else {
-				tint *= s.material.albedo;
 			}
+
+			t_max += float3(minimal_component) * t_delta;
 		}
 
-		t_max += float3(minimal_component) * t_delta;
+		return none;
 	}
-
-	return none;
 }
 
 internal struct VoxelFaceData {
@@ -87,7 +83,7 @@ internal VoxelFaceData get_voxel_face_data(int3 voxel_pos, float3 normal) {
 	return VoxelFaceData(uv_top_left, color);
 }
 
-internal Surface get_hit_surface(Hit hit) {
+internal RayHit get_hit(Hit hit) {
 	// why do local variables have to be internal??
 	internal VoxelFaceData face = get_voxel_face_data(hit.voxel, hit.normal);
 
@@ -115,7 +111,7 @@ internal Surface get_hit_surface(Hit hit) {
 		material.apply_specular_map(specular_map);
 	}
 
-	return Surface(material, hit.pos_world, hit.normal, albedo.a);
+	return RayHit(material, hit.pos_world, hit.normal, albedo.a);
 }
 
 } // namespace vxrt

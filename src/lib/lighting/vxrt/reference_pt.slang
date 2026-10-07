@@ -1,9 +1,11 @@
 public module pt;
 
 import aperture;
+import lib.atmospherics.atmosphere;
 import lib.lighting.brdf;
 import lib.lighting.celestial;
 import lib.lighting.emission;
+import lib.lighting.rt_interface;
 import lib.lighting.shadow;
 import lib.lighting.vxrt.trace;
 import lib.surface.material;
@@ -11,7 +13,6 @@ import lib.util.color;
 import lib.util.math;
 import lib.util.random;
 import lib.util.sampling;
-import lib.atmospherics.atmosphere;
 
 internal Texture2D<float4> tex_sky_map;
 
@@ -19,7 +20,7 @@ namespace vxrt {
 float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 	Random random,
 	Material material,
-	float3 ray_origin_world,
+	float3 ray_origin_scene,
 	float3 ray_dir,
 	float3 flat_normal_world,
 	float3 detail_normal_world,
@@ -30,7 +31,7 @@ float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 	float3 radiance = float3(0.0);
 
 	for (int ray = 0; ray < RAY_COUNT; ++ray) {
-		float3 current_pos = ray_origin_world;
+		float3 current_pos = ray_origin_scene;
 		Material current_material = material;
 		float3 current_flat_normal = flat_normal_world;
 		float3 current_detail_normal = detail_normal_world;
@@ -77,23 +78,21 @@ float3 reference_pt<Random, int RAY_COUNT, int BOUNCE_COUNT>(
 			float3 bounce_radiance;
 			float3 tint = float3(1.0);
 			if (let hit
-				= trace(Ray(current_pos, ray_dir), INTERSECTION_STEPS, tint)) {
-				shadow.Result shadow_result = shadow.calculate_simple(
-					hit.pos_world - ap.camera.position,
-					hit.normal,
-				);
+				= HardwareRayTracer().trace(Ray(current_pos, ray_dir))) {
+				shadow.Result shadow_result
+					= shadow.calculate_simple(hit.pos_scene, hit.normal, );
 
 				bounce_radiance
 					= calculate_celestial_light(
 						  hit.material,
 						  shadow_result,
-						  hit.pos_world - ap.camera.position,
+						  hit.pos_scene,
 						  ray_dir,
 						  hit.normal,
 						  hit.normal,
 					  )
 					+ calculate_emission(hit.material.emission);
-				current_pos = hit.pos_world;
+				current_pos = hit.pos_scene;
 				current_flat_normal = hit.normal;
 				current_detail_normal = hit.normal;
 				current_material = hit.material;
