@@ -157,7 +157,9 @@ FogParticipation calculate_local_participation<FogProfile>(
 
 	float3 irradiance_celestial
 		= buf_global.celestial_light_irradiance * celestial_light_visibility;
-	float3 irradiance_ambient = buf_sky_sh.irradiance_up;
+	float3 irradiance_ambient
+		= buf_sky_sh.irradiance_up * ap.camera.brightness.y
+		+ buf_global.ambient_irradiance;
 
 	[unroll]
 	for (int ms_iter = 0; ms_iter < 4; ++ms_iter) {

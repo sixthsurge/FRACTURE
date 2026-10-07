@@ -19,6 +19,7 @@ public record GlobalBufferData(
 	Vector3f sun_radiosity,
 	Vector3f moon_radiosity,
 	Vector3f celestial_light_irradiance,
+	Vector3f ambient_irradiance,
 	float celestial_light_angular_radius
 ) {
 	public static GlobalBufferData get(FrameState state) {
@@ -83,6 +84,8 @@ public record GlobalBufferData(
 										   .normalize())
 					  )
 				  ));
+		
+		final var ambientIrradiance = new Vector3f(0.0005f);
 
 		float celestialLightAngularRadius = isDay
 			? state.settings().getFloatValue("SUN_ANGULAR_RADIUS")
@@ -103,6 +106,7 @@ public record GlobalBufferData(
 			sunRadiosity,
 			moonRadiosity,
 			celestialLightIrradiance,
+			ambientIrradiance,
 			celestialLightAngularRadius
 		);
 	}

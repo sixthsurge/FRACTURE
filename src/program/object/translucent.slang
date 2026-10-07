@@ -1,7 +1,7 @@
 import aperture;
 import lib.lighting.celestial;
 import lib.lighting.emission;
-import lib.lighting.lightmap;
+import lib.lighting.simple;
 import lib.lighting.shadow;
 import lib.lighting.vxrt.write_face_data;
 import lib.lighting.vxrt.util;
@@ -204,6 +204,7 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 				  flat_normal_world,
 				  detail_normal_world,
 			  )
+			+ calculate_ambient_light(ambient_brdf, flat_normal_world, 1.0)
 			+ calculate_lightmap_skylight(
 				  ambient_brdf,
 				  input.lightmap,

@@ -7,7 +7,7 @@ import lib.atmospherics.sky;
 import lib.lighting.celestial;
 import lib.lighting.cloud_shadow;
 import lib.lighting.emission;
-import lib.lighting.lightmap;
+import lib.lighting.simple;
 import lib.lighting.shadow;
 import lib.lighting.restir_gi;
 import lib.lighting.vxrt.reference_pt;
@@ -260,6 +260,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			  detail_normal_world,
 			  cloud_shadow
 		  )
+		+ calculate_ambient_light(ambient_brdf, gbuffer.flat_normal_world, ao)
 		+ calculate_emission(material.emission);
 
 	if (!userSettings.REFERENCE_PT_ENABLED && !userSettings.RESTIR_GI_ENABLED) {
