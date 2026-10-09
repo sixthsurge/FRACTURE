@@ -68,7 +68,9 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		float4 data = tex_indirect_temporal_data_current[sample_icoord];
 		float4 value = tex_indirect_output_accumulated[sample_icoord];
 
-		float distance_weight = exp2(-0.1 * length(offset) * (pixel_age));
+		float distance_weight = exp2(
+			-0.1 * length(offset) * pixel_age * max0(rcp(rcp_view_dist) - 32.0)
+		);
 
 		float sample_depth = data.y;
 		float3 sample_normal_world = decode_octahedral(data.zw);

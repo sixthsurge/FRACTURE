@@ -149,8 +149,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 		// Normal rejection
 		float normal_weight = exp2(
-			-16.0 * (1.0 - max0(dot(normal_prev, normal_world)))
-			* rlength(pos_scene)
+			-16.0 * (1.0 - max0(dot(normal_prev, normal_world))) * view_norm
 		);
 
 		pixel_age *= depth_weight * normal_weight * float(depth_prev != 0.0);

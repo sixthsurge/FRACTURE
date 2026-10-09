@@ -181,15 +181,28 @@ TemporalData accumulate_rough_reflection(
 
 		// Depth rejection
 		float view_norm = rlength(pos_view);
-		float z0 = screen_to_view_depth(pos_screen.z);
-		float z1 = screen_to_view_depth(temporal.depth);
-		float depth_weight
-			= exp2(-abs(z0 - z1) * DEPTH_REJECTION_STRENGTH * NoV * view_norm);
+		float3 pos_world_prev
+			= view_to_scene(
+				  screen_to_view(
+					  float3(pos_prev_screen.xy, temporal.depth),
+					  ap.temporal.projectionInv
+				  ),
+				  ap.temporal.viewInv
+			  )
+			+ ap.temporal.position;
+		float depth_weight = exp2(
+			-distance(pos_world, pos_world_prev) * DEPTH_REJECTION_STRENGTH
+			* NoV * view_norm
+		);
 
 		// Normal rejection
-		float normal_weight = pow(
-			max0(dot(decode_octahedral(temporal.normal_enc), normal_world)),
-			128
+		float normal_weight = exp2(
+			-64.0
+			* (1.0
+			   - max0(
+				   dot(decode_octahedral(temporal.normal_enc), normal_world)
+			   ))
+			* view_norm
 		);
 
 		let pixel_age = min(
@@ -325,6 +338,18 @@ float3 calculate_rough_reflection<Tracer>(
 	ReflectionSampler sampler;
 	sampler.init(icoord, RAY_COUNT);
 
+	// Based on Kneemund's method.
+	float reflectance = max_of(material.f0);
+	float reflection_mul = step(
+		0.01,
+		(reflectance
+		 - reflectance * material.roughness
+			 * userSettings.REFLECTIONS_ROUGHNESS_THRESHOLD)
+	);
+	if (reflection_mul < EPS) {
+		return float3(0.0);
+	}
+
 	average_hit_distance = 0.0;
 	float w_sum = EPS;
 
@@ -368,7 +393,7 @@ float3 calculate_rough_reflection<Tracer>(
 
 	average_hit_distance /= w_sum;
 
-	return reflection * rcp(float(RAY_COUNT));
+	return reflection * reflection_mul * rcp(float(RAY_COUNT));
 }
 
 float3 calculate_mirror_reflection<Tracer>(

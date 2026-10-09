@@ -105,6 +105,8 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
+		screenReflections.option("REFLECTIONS_ROUGHNESS_THRESHOLD", OptionType.floatType(0.1f, 4.0f, 0.1f, 2.0f), true);
+
 		final var screenAtmospherics = screen.child("atmospherics");
 
 		final var screenFog = screenAtmospherics.child("fog");

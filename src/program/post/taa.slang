@@ -6,6 +6,8 @@ import lib.util.math;
 import lib.util.space_conversion;
 import settings;
 
+import lib.util.debug;
+
 RWTexture2D<float4> tex_taa_output_current;
 Texture2D<float4> tex_taa_output_prev;
 Texture2D<float3> tex_scene;
@@ -253,7 +255,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 
 	// Distance factor to favour responsiveness closer to the camera and image
 	// stability further away
-	float distance_factor = 1.0 - exp2(-0.025 * length(closest_view));
+	float distance_factor = 1.0 - exp2(-0.075 * length(closest_view));
 
 	if (userSettings.INFINITE_ACCUMULATION) {
 		// Only accumulate if didn't move.

@@ -94,6 +94,7 @@ struct Settings {
     float GTAO_RADIUS;
     float MANUAL_EXPOSURE_VALUE;
     float POM_DEPTH;
+    float REFLECTIONS_ROUGHNESS_THRESHOLD;
     int RESOURCE_PACK_RESOLUTION;
     float RSM_RADIUS;
     static const bool ATMOSPHERE_AP_LUT_ENABLED = value_ATMOSPHERE_AP_LUT_ENABLED;
