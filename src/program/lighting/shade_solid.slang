@@ -31,111 +31,66 @@ Texture2D<float3> tex_atmosphere_transmittance;
 Texture2D<float4> tex_clouds_temporal_current;
 Texture3D<float3> tex_fog_volume_integrated_light;
 Texture3D<float3> tex_fog_volume_integrated_extinction;
-Texture2D<float4> tex_qres_temporal_data_current;
-Texture2D<float4> tex_gtao_output_current;
-Texture2D<float3> tex_rsm_output_filtered;
+Texture2D<float4> tex_indirect_output_blurred;
+Texture2D<float4> tex_indirect_temporal_data_current;
 Texture2D<float> tex_cloud_shadow;
 Texture2D<float> tex_noise_blue;
 
-Texture2D tex_reserviour_spatial_1;
-Texture2D tex_reserviour_spatial_2;
-Texture2D tex_reserviour_spatial_3;
-Texture2D tex_reserviour_spatial_4;
+namespace indirect_upscaling {
+static float depth_weight(float center_depth_view, float NoV, float4 data) {
+	const float STRENGTH = 10.0;
+	return exp2(
+		-STRENGTH
+		* abs((screen_to_view_depth(data.y) - center_depth_view) * NoV)
+	);
+}
 
-struct QuarterResLighting {
-	struct Upscaled {
-		float4 gtao_output;
-		float3 rsm_output;
+static float normal_weight(float3 center_normal_world, float4 data) {
+	return pow16(max0(dot(center_normal_world, decode_octahedral(data.zw))));
+}
+
+float4 upscale(float2 pos, float3 normal_world, float depth_view, float NoV) {
+	float2 floored_pos, frac_pos = modf(pos, floored_pos);
+	int2 int_pos = int2(floored_pos);
+
+	int w, h;
+	tex_indirect_output_blurred.GetDimensions(w, h);
+
+	int2 p10 = clamp(int_pos + int2(1, 0), int2(0), int2(w, h) - 1);
+	int2 p01 = clamp(int_pos + int2(0, 1), int2(0), int2(w, h) - 1);
+	int2 p11 = clamp(int_pos + int2(1, 1), int2(0), int2(w, h) - 1);
+
+	float4 output_00 = tex_indirect_output_blurred[int_pos];
+	float4 output_01 = tex_indirect_output_blurred[p01];
+	float4 output_10 = tex_indirect_output_blurred[p10];
+	float4 output_11 = tex_indirect_output_blurred[p11];
+	float4 data_00 = tex_indirect_temporal_data_current[int_pos];
+	float4 data_01 = tex_indirect_temporal_data_current[p01];
+	float4 data_10 = tex_indirect_temporal_data_current[p10];
+	float4 data_11 = tex_indirect_temporal_data_current[p11];
+
+	float w00 = depth_weight(depth_view, NoV, data_00)
+		* normal_weight(normal_world, data_00) * (1.0 - frac_pos.x)
+		* (1.0 - frac_pos.y);
+	float w10 = depth_weight(depth_view, NoV, data_10)
+		* normal_weight(normal_world, data_10)
+		* (frac_pos.x - frac_pos.x * frac_pos.y);
+	float w01 = depth_weight(depth_view, NoV, data_01)
+		* normal_weight(normal_world, data_01)
+		* (frac_pos.y - frac_pos.x * frac_pos.y);
+	float w11 = depth_weight(depth_view, NoV, data_11)
+		* normal_weight(normal_world, data_11) * (frac_pos.x * frac_pos.y);
+	float w_sum = w00 + w10 + w01 + w11;
+	float rcp_w_sum = rcp(w_sum);
+
+	if (w_sum > EPS) {
+		return (output_00 * w00 + output_01 * w01 + output_10 * w10
+				+ output_11 * w11)
+			* rcp_w_sum;
+	} else {
+		return output_00;
 	}
-
-	float4 gtao_output_00;
-	float4 gtao_output_01;
-	float4 gtao_output_10;
-	float4 gtao_output_11;
-	float3 rsm_output_00;
-	float3 rsm_output_01;
-	float3 rsm_output_10;
-	float3 rsm_output_11;
-	float4 qres_data_00;
-	float4 qres_data_01;
-	float4 qres_data_10;
-	float4 qres_data_11;
-
-	static QuarterResLighting load(int2 qres_pos) {
-		// FIXME Try using shared memory for this.
-
-		int w, h;
-		tex_qres_temporal_data_current.GetDimensions(w, h);
-
-		int2 p10 = clamp(qres_pos + int2(1, 0), int2(0), int2(w, h) - 1);
-		int2 p01 = clamp(qres_pos + int2(0, 1), int2(0), int2(w, h) - 1);
-		int2 p11 = clamp(qres_pos + int2(1, 1), int2(0), int2(w, h) - 1);
-
-		QuarterResLighting qres;
-		if (userSettings.GTAO_ENABLED) {
-			qres.gtao_output_00 = tex_gtao_output_current[qres_pos];
-			qres.gtao_output_01 = tex_gtao_output_current[p01];
-			qres.gtao_output_10 = tex_gtao_output_current[p10];
-			qres.gtao_output_11 = tex_gtao_output_current[p11];
-		}
-		if (TOGGLE_RSM) {
-			qres.rsm_output_00 = tex_rsm_output_filtered[qres_pos];
-			qres.rsm_output_01 = tex_rsm_output_filtered[p01];
-			qres.rsm_output_10 = tex_rsm_output_filtered[p10];
-			qres.rsm_output_11 = tex_rsm_output_filtered[p11];
-		}
-		qres.qres_data_00 = tex_qres_temporal_data_current[qres_pos];
-		qres.qres_data_01 = tex_qres_temporal_data_current[p01];
-		qres.qres_data_10 = tex_qres_temporal_data_current[p10];
-		qres.qres_data_11 = tex_qres_temporal_data_current[p11];
-
-		return qres;
-	}
-
-	private static float
-	depth_weight(float center_depth_view, float NoV, float4 data) {
-		const float STRENGTH = 10.0;
-		return exp2(
-			-STRENGTH
-			* abs((screen_to_view_depth(data.y) - center_depth_view) * NoV)
-		);
-	}
-
-	private static float
-	normal_weight(float3 center_normal_world, float4 data) {
-		return pow16(
-			max0(dot(center_normal_world, decode_octahedral(data.zw)))
-		);
-	}
-
-	Upscaled
-	upscale(float3 normal_world, float depth_view, float NoV, float2 frac_pos) {
-		float w00 = depth_weight(depth_view, NoV, qres_data_00)
-			* normal_weight(normal_world, qres_data_00) * (1.0 - frac_pos.x)
-			* (1.0 - frac_pos.y);
-		float w10 = depth_weight(depth_view, NoV, qres_data_10)
-			* normal_weight(normal_world, qres_data_10)
-			* (frac_pos.x - frac_pos.x * frac_pos.y);
-		float w01 = depth_weight(depth_view, NoV, qres_data_01)
-			* normal_weight(normal_world, qres_data_01)
-			* (frac_pos.y - frac_pos.x * frac_pos.y);
-		float w11 = depth_weight(depth_view, NoV, qres_data_11)
-			* normal_weight(normal_world, qres_data_11)
-			* (frac_pos.x * frac_pos.y);
-		float w_sum = w00 + w10 + w01 + w11;
-		float rcp_w_sum = rcp(w_sum);
-
-		if (w_sum > EPS) {
-			float4 gtao_output = gtao_output_00 * w00 + gtao_output_01 * w01
-				+ gtao_output_10 * w10 + gtao_output_11 * w11;
-			float3 rsm_output = rsm_output_00 * w00 + rsm_output_01 * w01
-				+ rsm_output_10 * w10 + rsm_output_11 * w11;
-
-			return Upscaled(gtao_output * rcp_w_sum, rsm_output * rcp_w_sum);
-		} else {
-			return Upscaled(gtao_output_00, rsm_output_00);
-		}
-	}
+}
 }
 
 [shader("compute")]
@@ -181,14 +136,6 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		return;
 	}
 
-	// Sampling half-res lighting to upscale a while before using it
-	// (latency hiding).
-	float2 qres_pos = float2(icoord)
-		* (ceil(float2(ap.game.renderSize) * 0.5) / float2(ap.game.renderSize));
-	int2 qres_pos_i = int2(qres_pos);
-	float2 qres_pos_f = frac(qres_pos);
-	QuarterResLighting qres = QuarterResLighting.load(qres_pos_i);
-
 	OpaqueGbuffer gbuffer = OpaqueGbuffer.unpack(packed_gbuffer);
 
 	float3 albedo = srgb_eotf_inv(gbuffer.albedo);
@@ -198,32 +145,21 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		material.apply_specular_map(gbuffer.specular_map.get().value);
 	}
 
-	QuarterResLighting.Upscaled upscaled = qres.upscale(
-		gbuffer.flat_normal_world,
+	float3 detail_normal_world
+		= gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world);
+
+	float2 indirect_pos = float2(icoord)
+		* (ceil(float2(ap.game.renderSize) * userSettings.INDIRECT_RENDER_SCALE)
+		   / float2(ap.game.renderSize));
+	float4 indirect = indirect_upscaling.upscale(
+		indirect_pos,
+		detail_normal_world,
 		screen_to_view_depth(depth),
 		dot(gbuffer.flat_normal_world, dir_world),
-		qres_pos_f
 	);
-	float ao, ambient_sss;
-	float3 bent_normal_world;
-	if (userSettings.GTAO_ENABLED) {
-		ao = upscaled.gtao_output.x;
-		ambient_sss = upscaled.gtao_output.y;
-		bent_normal_world = mul(
-			float3x3(ap.camera.viewInv),
-			normalize(float3(
-				upscaled.gtao_output.zw,
-				sqrt(saturate(1.0 - length_squared(upscaled.gtao_output.zw)))
-			))
-		);
-	} else {
-		ao = 1.0;
-		ambient_sss = 0.0;
-		bent_normal_world = gbuffer.flat_normal_world;
-	}
 
 	if (userSettings.LABPBR_SUPPORT_ENABLED) {
-		ao *= gbuffer.texture_ao.get().value;
+		indirect.rgb *= gbuffer.texture_ao.get().value;
 	}
 
 	if (userSettings.TAA_ENABLED) {
@@ -231,9 +167,6 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		// the noise.
 		dither = r2(ap.timing.frameCounter, dither);
 	}
-
-	float3 detail_normal_world
-		= gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world);
 
 	float cloud_shadow = 1.0;
 	if (TOGGLE_CLOUD_SHADOW) {
@@ -250,8 +183,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	shadow_result.visibility
 		*= select(gbuffer.parallax_self_shadow.get().orElse(false), 0.0, 1.0);
 
-	float3 ambient_brdf
-		= material.albedo / PI * (1.0 + ambient_sss * material.sss_amount);
+	float3 ambient_brdf = material.albedo / PI;
 
 	float3 radiance
 		= calculate_celestial_light(
@@ -263,26 +195,19 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			  detail_normal_world,
 			  cloud_shadow
 		  )
-		+ calculate_ambient_light(ambient_brdf, gbuffer.flat_normal_world, ao)
-		+ calculate_emission(material.emission);
+		+ calculate_ambient_light(
+			  ambient_brdf,
+			  gbuffer.flat_normal_world,
+			  indirect.w
+		)
+		+ calculate_emission(material.emission) + indirect.rgb * ambient_brdf;
 
 	if (!userSettings.REFERENCE_PT_ENABLED && !userSettings.RESTIR_GI_ENABLED) {
-		radiance += calculate_lightmap_skylight(
-			ambient_brdf,
-			gbuffer.lightmap,
-			bent_normal_world,
-			ao,
-		);
 		radiance += calculate_lightmap_blocklight(
 			ambient_brdf,
 			gbuffer.lightmap,
-			ao
+			indirect.w,
 		);
-
-		if (TOGGLE_RSM) {
-			radiance += ambient_brdf * upscaled.rsm_output * PI
-				* buf_global.celestial_light_irradiance * cloud_shadow;
-		}
 	}
 
 	if (userSettings.ATMOSPHERE_AP_LUT_ENABLED) {
@@ -309,16 +234,6 @@ void main(int2 icoord: SV_DispatchThreadID) {
 			gbuffer.flat_normal_world,
 			detail_normal_world
 		);
-	} else if (userSettings.RESTIR_GI_ENABLED) {
-		restir_gi.Reserviour r;
-		r.load(
-			tex_reserviour_spatial_1,
-			tex_reserviour_spatial_2,
-			tex_reserviour_spatial_3,
-			tex_reserviour_spatial_4,
-			icoord
-		);
-		radiance += max0(r.sample.radiance * r.W) * material.albedo;
 	}
 
 	tex_scene_write[icoord] = radiance;

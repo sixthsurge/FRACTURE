@@ -38,6 +38,7 @@ internal extern static const int value_FOG_VOLUME_SIZE_Z;
 internal extern static const bool value_GTAO_ENABLED;
 internal extern static const int value_GTAO_HORIZON_STEP_COUNT;
 internal extern static const int value_GTAO_SLICE_COUNT;
+internal extern static const float value_INDIRECT_RENDER_SCALE;
 internal extern static const bool value_INFINITE_ACCUMULATION;
 internal extern static const bool value_LABPBR_SUPPORT_ENABLED;
 internal extern static const bool value_MIRROR_WATER;
@@ -112,6 +113,7 @@ struct Settings {
     static const bool GTAO_ENABLED = value_GTAO_ENABLED;
     static const int GTAO_HORIZON_STEP_COUNT = value_GTAO_HORIZON_STEP_COUNT;
     static const int GTAO_SLICE_COUNT = value_GTAO_SLICE_COUNT;
+    static const float INDIRECT_RENDER_SCALE = value_INDIRECT_RENDER_SCALE;
     static const bool INFINITE_ACCUMULATION = value_INFINITE_ACCUMULATION;
     static const bool LABPBR_SUPPORT_ENABLED = value_LABPBR_SUPPORT_ENABLED;
     static const bool MIRROR_WATER = value_MIRROR_WATER;

@@ -30,10 +30,18 @@ public class FractureSettings implements PackSettings {
 
 		final var screenLighting = screen.child("lighting");
 
-		final var screenPtgi = screenLighting.child("ptgi");
-		screenPtgi
+		final var screenIndirect = screenLighting.child("indirect");
+
+		screenIndirect.option(
+			"INDIRECT_RENDER_SCALE",
+			OptionType.floatType(0.01f, 1.0f, 0.01f, 0.5f),
+			false
+		);
+
+		final var screenRestirGi = screenIndirect.child("restir_gi");
+		screenRestirGi
 			.option("RESTIR_GI_ENABLED", OptionType.boolType(false), false);
-		screenPtgi.option(
+		screenRestirGi.option(
 			"RESTIR_GI_TRACER",
 			OptionType.intType(
 				new int[] {
@@ -45,25 +53,29 @@ public class FractureSettings implements PackSettings {
 			false
 		);
 
-		screenPtgi
-			.option("REFERENCE_PT_ENABLED", OptionType.boolType(false), false);
+		final var screenGtao = screenIndirect.child("gtao");
+		screenGtao.option("GTAO_ENABLED", OptionType.boolType(true), false);
+		screenGtao
+			.option("GTAO_SLICE_COUNT", OptionType.intType(1, 64, 1, 2), false);
+		screenGtao.option(
+			"GTAO_HORIZON_STEP_COUNT",
+			OptionType.intType(1, 64, 1, 4),
+			false
+		);
+		screenGtao.option(
+			"GTAO_RADIUS",
+			OptionType.floatType(0.25f, 16.0f, 0.25f, 4.0f),
+			true
+		);
 
-		final var screenVxrt = screenLighting.child("vxrt");
-		screenVxrt.option("TEST_VXRT", OptionType.boolType(false), false);
-		screenVxrt.option(
-			"VOXEL_RT_VOLUME_SIZE_X",
-			OptionType.intType(16, 1024, 16, 128),
-			false
-		);
-		screenVxrt.option(
-			"VOXEL_RT_VOLUME_SIZE_Y",
-			OptionType.intType(16, 1024, 16, 64),
-			false
-		);
-		screenVxrt.option(
-			"VOXEL_RT_VOLUME_SIZE_Z",
-			OptionType.intType(16, 1024, 16, 128),
-			false
+		final var screenRsm = screenIndirect.child("rsm");
+		screenRsm.option("RSM_ENABLED", OptionType.boolType(true), false);
+		screenRsm
+			.option("RSM_STEP_COUNT", OptionType.intType(1, 64, 1, 6), false);
+		screenRsm.option(
+			"RSM_RADIUS",
+			OptionType.floatType(0.25f, 16.0f, 0.25f, 6.0f),
+			true
 		);
 
 		final var screenShadow = screenLighting.child("shadow");
@@ -91,31 +103,6 @@ public class FractureSettings implements PackSettings {
 			"REFLECTIONS_TRACER",
 			OptionType.intType(new int[] {0, 1}, 0),
 			false
-		);
-
-		final var screenGtao = screenLighting.child("gtao");
-		screenGtao.option("GTAO_ENABLED", OptionType.boolType(true), false);
-		screenGtao
-			.option("GTAO_SLICE_COUNT", OptionType.intType(1, 64, 1, 2), false);
-		screenGtao.option(
-			"GTAO_HORIZON_STEP_COUNT",
-			OptionType.intType(1, 64, 1, 4),
-			false
-		);
-		screenGtao.option(
-			"GTAO_RADIUS",
-			OptionType.floatType(0.25f, 16.0f, 0.25f, 4.0f),
-			true
-		);
-
-		final var screenRsm = screenLighting.child("rsm");
-		screenRsm.option("RSM_ENABLED", OptionType.boolType(true), false);
-		screenRsm
-			.option("RSM_STEP_COUNT", OptionType.intType(1, 64, 1, 6), false);
-		screenRsm.option(
-			"RSM_RADIUS",
-			OptionType.floatType(0.25f, 16.0f, 0.25f, 6.0f),
-			true
 		);
 
 		final var screenAtmospherics = screen.child("atmospherics");
@@ -286,6 +273,27 @@ public class FractureSettings implements PackSettings {
 		screenDev.option(
 			"SKY_MAP_HEIGHT",
 			OptionType.intType(32, 512, 16, 128),
+			false
+		);
+
+		screenDev
+			.option("REFERENCE_PT_ENABLED", OptionType.boolType(false), false);
+
+		final var screenVxrt = screenDev.child("vxrt");
+		screenVxrt.option("TEST_VXRT", OptionType.boolType(false), false);
+		screenVxrt.option(
+			"VOXEL_RT_VOLUME_SIZE_X",
+			OptionType.intType(16, 1024, 16, 128),
+			false
+		);
+		screenVxrt.option(
+			"VOXEL_RT_VOLUME_SIZE_Y",
+			OptionType.intType(16, 1024, 16, 64),
+			false
+		);
+		screenVxrt.option(
+			"VOXEL_RT_VOLUME_SIZE_Z",
+			OptionType.intType(16, 1024, 16, 128),
 			false
 		);
 

@@ -11,8 +11,10 @@ import dev.irisshaders.aperture.api.pipeline.FrameState;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.RawProvider;
 import dev.irisshaders.aperture.api.pipeline.TextureType;
+import dev.irisshaders.aperture.api.settings.SettingsManager;
 import fracture.util.Flipper;
 import fracture.util.Util;
+import org.joml.Vector2i;
 
 public class Textures {
 	public static final int ATMOSPHERE_TRANSMITTANCE_LUT_WIDTH = 256;
@@ -92,24 +94,14 @@ public class Textures {
 	public TextureReference2D specularTemporal2Current;
 	public TextureReference2D specularTemporal2Prev;
 
-	// Quarter-res general
+	// Indirect Lighting
 
-	public final Texture2D qresTemporalDataA;
-	public final Texture2D qresTemporalDataB;
-	public final TextureReference2D qresTemporalDataCurrent;
-	public final TextureReference2D qresTemporalDataPrevious;
-
-	// GTAO
-
-	public final Texture2D gtaoOutputA;
-	public final Texture2D gtaoOutputB;
-	public final TextureReference2D gtaoOutputCurrent;
-	public final TextureReference2D gtaoOutputPrevious;
-
-	// RSM
-
-	public final Texture2D rsmOutputRaw;
-	public final Texture2D rsmOutputFiltered;
+	public final Texture2D indirectOutputAccumulated;
+	public final Texture2D indirectOutputBlurred;
+	public final Texture2D indirectTemporalDataA;
+	public final Texture2D indirectTemporalDataB;
+	public final TextureReference2D indirectTemporalDataCurrent;
+	public final TextureReference2D indirectTemporalDataPrevious;
 
 	// Restir GI
 
@@ -500,81 +492,60 @@ public class Textures {
 					  .createEmpty();
 		}
 
-		// Quarter-res general
+		// Indirect lighting
 
-		final var qresWidth = Math.ceilDiv(screen.renderWidth(), 2);
-		final var qresHeight = Math.ceilDiv(screen.renderHeight(), 2);
+		final var indirectRes
+			= getIndirectLightingResolution(screen, pipeline.settings());
 
-		qresTemporalDataA
+		indirectOutputAccumulated
 			= pipeline
 				  .texture2D(
-					  "tex_qres_temporal_data_a",
+					  "tex_indirect_output_accumulated",
 					  TextureFormat.RGBA16_SFLOAT
 				  )
-				  .size(qresWidth, qresHeight)
+				  .size(indirectRes.x, indirectRes.y)
 				  .create();
-		qresTemporalDataB
+		indirectOutputBlurred
 			= pipeline
 				  .texture2D(
-					  "tex_qres_temporal_data_b",
+					  "tex_indirect_output_blurred",
 					  TextureFormat.RGBA16_SFLOAT
 				  )
-				  .size(qresWidth, qresHeight)
+				  .size(indirectRes.x, indirectRes.y)
 				  .create();
-		qresTemporalDataCurrent
+
+		indirectTemporalDataA
+			= pipeline
+				  .texture2D(
+					  "tex_indirect_temporal_data_a",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
+				  .size(indirectRes.x, indirectRes.y)
+				  .create();
+		indirectTemporalDataB
+			= pipeline
+				  .texture2D(
+					  "tex_indirect_temporal_data_b",
+					  TextureFormat.RGBA16_SFLOAT
+				  )
+				  .size(indirectRes.x, indirectRes.y)
+				  .create();
+		indirectTemporalDataCurrent
 			= pipeline
 				  .reference2D(
-					  "tex_qres_temporal_data_current",
-					  qresTemporalDataA.format()
+					  "tex_indirect_temporal_data_current",
+					  indirectTemporalDataA.format()
 				  )
-				  .size(qresWidth, qresHeight)
+				  .size(indirectRes.x, indirectRes.y)
 				  .createEmpty();
-		qresTemporalDataPrevious
+		indirectTemporalDataPrevious
 			= pipeline
 				  .reference2D(
-					  "tex_qres_temporal_data_prev",
-					  qresTemporalDataA.format()
+					  "tex_indirect_temporal_data_prev",
+					  indirectTemporalDataA.format()
 				  )
-				  .size(qresWidth, qresHeight)
+				  .size(indirectRes.x, indirectRes.y)
 				  .createEmpty();
-
-		// GTAO
-
-		gtaoOutputA
-			= pipeline
-				  .texture2D("tex_gtao_output_a", TextureFormat.RGBA16_SFLOAT)
-				  .size(qresWidth, qresHeight)
-				  .create();
-		gtaoOutputB
-			= pipeline
-				  .texture2D("tex_gtao_output_b", TextureFormat.RGBA16_SFLOAT)
-				  .size(qresWidth, qresHeight)
-				  .create();
-		gtaoOutputCurrent
-			= pipeline
-				  .reference2D("tex_gtao_output_current", gtaoOutputA.format())
-				  .size(qresWidth, qresHeight)
-				  .createEmpty();
-		gtaoOutputPrevious
-			= pipeline.reference2D("tex_gtao_output_prev", gtaoOutputA.format())
-				  .size(qresWidth, qresHeight)
-				  .createEmpty();
-
-		// RSM
-
-		rsmOutputRaw
-			= pipeline
-				  .texture2D("tex_rsm_output_raw", TextureFormat.RGBA16_SFLOAT)
-				  .size(qresWidth, qresHeight)
-				  .create();
-		rsmOutputFiltered
-			= pipeline
-				  .texture2D(
-					  "tex_rsm_output_filtered",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(qresWidth, qresHeight)
-				  .create();
 
 		// Fog
 
@@ -702,8 +673,8 @@ public class Textures {
 		// Restir GI
 
 		if (pipeline.settings().getBoolValue("RESTIR_GI_ENABLED")) {
-			final var reserviourWidth = screen.renderWidth();
-			final var reserviourHeight = screen.renderHeight();
+			final var reserviourWidth = indirectRes.x;
+			final var reserviourHeight = indirectRes.y;
 
 			reserviourTemporal1A
 				= pipeline
@@ -980,8 +951,12 @@ public class Textures {
 		taaOutputCurrent.set(oddFrame ? taaOutputA : taaOutputB);
 		taaOutputPrevious.set(oddFrame ? taaOutputB : taaOutputA);
 
-		gtaoOutputCurrent.set(oddFrame ? gtaoOutputA : gtaoOutputB);
-		gtaoOutputPrevious.set(oddFrame ? gtaoOutputB : gtaoOutputA);
+		indirectTemporalDataCurrent.set(
+			oddFrame ? indirectTemporalDataA : indirectTemporalDataB
+		);
+		indirectTemporalDataPrevious.set(
+			oddFrame ? indirectTemporalDataB : indirectTemporalDataA
+		);
 
 		cloudsTemporalCurrent.set(oddFrame ? cloudsTemporalA : cloudsTemporalB);
 		cloudsTemporalPrevious.set(
@@ -992,13 +967,6 @@ public class Textures {
 		);
 		cloudsTemporalDataPrevious.set(
 			oddFrame ? cloudsTemporalDataB : cloudsTemporalDataA
-		);
-
-		qresTemporalDataCurrent.set(
-			oddFrame ? qresTemporalDataA : qresTemporalDataB
-		);
-		qresTemporalDataPrevious.set(
-			oddFrame ? qresTemporalDataB : qresTemporalDataA
 		);
 
 		fogVolumeLightCurrent.set(oddFrame ? fogVolumeLightA : fogVolumeLightB);
@@ -1080,5 +1048,13 @@ public class Textures {
 				oddFrame ? reserviourSpatial4B : reserviourSpatial4A
 			);
 		}
+	}
+
+	public static Vector2i
+	getIndirectLightingResolution(Screen screen, SettingsManager settings) {
+		final var scale = settings.getFloatValue("INDIRECT_RENDER_SCALE");
+		final var w = (int) Math.ceil(screen.renderWidth() * scale);
+		final var h = (int) Math.ceil(screen.renderHeight() * scale);
+		return new Vector2i(w, h);
 	}
 }

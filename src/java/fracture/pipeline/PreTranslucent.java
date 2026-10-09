@@ -2,6 +2,7 @@ package fracture.pipeline;
 
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import fracture.Resources;
+import fracture.Textures;
 import fracture.util.PipelineBuilder;
 
 public class PreTranslucent {
@@ -37,45 +38,52 @@ public class PreTranslucent {
 			);
 		}
 
+		final var indirectRes = Textures.getIndirectLightingResolution(
+			builder.screen(),
+			builder.settings()
+		);
+
+		if (builder.settings().getBoolValue("RESTIR_GI_ENABLED")) {
+			builder.compute2d(
+				"restir_gi/initial_sample_temporal_reuse",
+				"program/lighting/restir_gi/initial_sample_temporal_reuse",
+				"main",
+				indirectRes.x,
+				indirectRes.y,
+				16,
+				16
+			);
+
+			builder.compute2d(
+				"restir_gi/spatial_reuse",
+				"program/lighting/restir_gi/spatial_reuse",
+				"main",
+				indirectRes.x,
+				indirectRes.y,
+				16,
+				16
+			);
+		}
+
 		builder.compute2d(
-			"gtao_rsm",
-			"program/lighting/gtao_rsm",
+			"indirect/main",
+			"program/lighting/indirect/main",
 			"main",
-			Math.ceilDiv(builder.screen().renderWidth(), 2),
-			Math.ceilDiv(builder.screen().renderHeight(), 2),
+			indirectRes.x,
+			indirectRes.y,
 			16,
 			16
 		);
 
-		if (resources.toggles().rsm) {
-			builder.compute2d(
-				"filter_rsm",
-				"program/lighting/filter_rsm",
-				"main",
-				Math.ceilDiv(builder.screen().renderWidth(), 2),
-				Math.ceilDiv(builder.screen().renderHeight(), 2),
-				16,
-				16
-			);
-		}
-
-		if (builder.settings().getBoolValue("RESTIR_GI_ENABLED")) {
-			builder.renderSizedCompute(
-				"restir_gi/initial_sample_temporal_reuse",
-				"program/lighting/restir_gi/initial_sample_temporal_reuse",
-				"main",
-				16,
-				16
-			);
-
-			builder.renderSizedCompute(
-				"restir_gi/spatial_reuse",
-				"program/lighting/restir_gi/spatial_reuse",
-				"main",
-				16,
-				16
-			);
-		}
+		builder.compute2d(
+			"indirect/recurrent_filter",
+			"program/lighting/indirect/recurrent_filter",
+			"main",
+			indirectRes.x,
+			indirectRes.y,
+			16,
+			16
+		);
 
 		builder
 			.renderSizedCompute(

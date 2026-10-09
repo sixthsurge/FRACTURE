@@ -3,12 +3,13 @@ screen.root = General
 screen.rp = Resource Pack
 
 screen.lighting = Lighting
-screen.lighting = Lighting
+screen.indirect = Indirect Lighting
 screen.ptgi = Path Tracing
 screen.reflections = Reflections
 screen.shadow = Shadows
 screen.gtao = GTAO
 screen.rsm = RSM 
+screen.restir_gi = ReSTIR GI
 screen.vxrt = Voxel Data
 
 screen.atmospherics = Atmospherics

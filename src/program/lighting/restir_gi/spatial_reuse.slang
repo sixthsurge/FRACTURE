@@ -35,11 +35,17 @@ static const int MAX_ITERATIONS = 9;
 void main(int2 icoord: SV_DispatchThreadID) {
 	int w, h;
 	tex_reserviour_temporal_1.GetDimensions(w, h);
-	if (any(icoord >= int2(w, h))) {
+	float2 output_pixel_size = rcp(float2(w, h));
+
+	int2 fullres_icoord = int2(
+		float2(icoord) * (float2(ap.game.renderSize) * output_pixel_size)
+	);
+	if (any(icoord >= int2(w, h))
+		|| any(fullres_icoord >= ap.game.renderSize)) {
 		return;
 	}
 
-	float depth = ap.depth[icoord];
+	float depth = ap.depth[fullres_icoord];
 	if (depth == 0.0) {
 		return;
 	}
@@ -48,17 +54,17 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		tex_noise_blue[icoord & 511],
 		tex_noise_blue[(icoord + int2(93, 41)) & 511]
 	);
-	uint4 gbuffer_packed = tex_gbuffer_opaque[icoord];
+	uint4 gbuffer_packed = tex_gbuffer_opaque[fullres_icoord];
 
 	uint random_seed
-		= ap.timing.frameCounter * (ap.game.renderSize.x * ap.game.renderSize.y)
-		+ icoord.y * ap.game.renderSize.x + icoord.x;
+		= ap.timing.frameCounter * (w * h) + icoord.y * w + icoord.x;
 	// Adding one then xorshifting to make sure RNG is different to the one used
 	// for initial sampling and temporal reuse.
 	PcgRandom random = PcgRandom(xorshift(random_seed));
-	float2 ncoord = (float2(icoord) + 0.5) * rcp(float2(ap.game.renderSize));
 
-	float3 pos_screen = float3((icoord + 0.5) / ap.game.renderSize, depth);
+	float2 ncoord = (float2(icoord) + 0.5) * rcp(float2(w, h));
+
+	float3 pos_screen = float3(ncoord, depth);
 	float3 pos_view = screen_to_view(pos_screen);
 	float3 pos_scene = view_to_scene(pos_view);
 	float3 pos_world = pos_scene + ap.camera.position;
@@ -66,14 +72,14 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		scene_to_view(pos_world - ap.temporal.position, ap.temporal.view),
 		ap.temporal.projection
 	);
-	int2 icoord_prev = int2(pos_prev_screen.xy * ap.game.renderSize);
+	int2 icoord_prev = int2(pos_prev_screen.xy * float2(w, h));
 
 	OpaqueGbuffer gbuffer = OpaqueGbuffer.unpack(gbuffer_packed);
 	float3 detail_normal_world
 		= gbuffer.detail_normal_world.get().orElse(gbuffer.flat_normal_world);
 
 	restir_gi.Reserviour spatial_reserviour;
-	if (all(clamp(icoord_prev, int2(0), ap.game.renderSize - 1) == icoord_prev)
+	if (all(clamp(icoord_prev, int2(0), int2(w, h) - 1) == icoord_prev)
 		&& ap.timing.frameCounter > 0) {
 		spatial_reserviour.load_interpolated(
 			tex_reserviour_spatial_1_prev,
@@ -117,9 +123,9 @@ void main(int2 icoord: SV_DispatchThreadID) {
 					dither.y
 				);
 		int2 sample_icoord = clamp(
-			int2(sample_ncoord * ap.game.renderSize),
+			int2(sample_ncoord * float2(w, h)),
 			int2(0),
-			ap.game.renderSize - 1
+			int2(w, h) - 1
 		);
 
 		restir_gi.Reserviour reserviour_n;

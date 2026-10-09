@@ -28,18 +28,24 @@ Texture2D<float4> tex_reserviour_temporal_4_prev;
 void main(int2 icoord: SV_DispatchThreadID) {
 	int width, height;
 	tex_reserviour_temporal_1.GetDimensions(width, height);
-	if (any(icoord >= int2(width, height))) {
+	float2 output_pixel_size = rcp(float2(width, height));
+
+	int2 fullres_icoord = int2(
+		float2(icoord) * (float2(ap.game.renderSize) * output_pixel_size)
+	);
+	if (any(icoord >= int2(width, height))
+		|| any(fullres_icoord >= ap.game.renderSize)) {
 		return;
 	}
 
-	float depth = ap.depth[icoord];
+	float depth = ap.depth[fullres_icoord];
 	if (depth == 0.0) {
 		return;
 	}
 
-	uint4 gbuffer_packed = tex_gbuffer_opaque[icoord];
+	uint4 gbuffer_packed = tex_gbuffer_opaque[fullres_icoord];
 
-	float3 pos_screen = float3((icoord + 0.5) / ap.game.renderSize, depth);
+	float3 pos_screen = float3((icoord + 0.5) / float2(width, height), depth);
 	float3 pos_view = screen_to_view(pos_screen);
 	float3 pos_scene = view_to_scene(pos_view);
 	float3 dir_world
@@ -53,9 +59,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		material.apply_specular_map(gbuffer.specular_map.get().value);
 	}
 
-	uint random_seed
-		= ap.timing.frameCounter * (ap.game.renderSize.x * ap.game.renderSize.y)
-		+ icoord.y * ap.game.renderSize.x + icoord.x;
+	uint random_seed = ap.timing.frameCounter * (width * height)
+		+ icoord.y * width + icoord.x;
 	PcgRandom random = PcgRandom(random_seed);
 
 	float3 detail_normal_world
@@ -75,7 +80,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		= transform(ap.temporal.view, pos_world - ap.temporal.position);
 	float3 pos_prev_screen
 		= view_to_screen(pos_prev_view, ap.temporal.projection);
-	int2 icoord_prev = int2(pos_prev_screen.xy * ap.game.renderSize);
+	int2 icoord_prev = int2(pos_prev_screen.xy * float2(width, height));
 
 	// Target function.
 	float p_hat_q = restir_gi.target_function(sample);
@@ -85,7 +90,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	float w = p_hat_q / p_q;
 
 	restir_gi.Reserviour temporal_reserviour;
-	if (all(clamp(icoord_prev, int2(0), ap.game.renderSize - 1) == icoord_prev)
+	if (all(clamp(icoord_prev, int2(0), int2(width, height) - 1) == icoord_prev)
 		&& ap.timing.frameCounter != 0) {
 		temporal_reserviour.load_interpolated(
 			tex_reserviour_temporal_1_prev,

@@ -89,11 +89,11 @@ float3 calculate(
 			* max0(dot(reflector_vector, normal_shadow_view))
 			// Skylight trick to help with indoor leaking.
 			* linstep(0.75, 1.0, 1.0 - abs(skylight - reflector_skylight))
-			/ (dist_sq * dist_sq * PI * PI);
+			/ pow2(dist_sq);
 	}
 
 	return irradiance
-		* (PI * PI * pow2(userSettings.RSM_RADIUS)
+		* (PI * pow2(userSettings.RSM_RADIUS)
 		   * rcp(float(userSettings.RSM_STEP_COUNT)));
 }
 }
