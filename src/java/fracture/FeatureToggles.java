@@ -24,7 +24,7 @@ public class FeatureToggles {
 
 		roughSpecular
 			= pipeline.settings().getBoolValue("LABPBR_SUPPORT_ENABLED")
-			&& pipeline.settings().getBoolValue("REFLECTIONS_ENABLED");
+			&& pipeline.settings().getBoolValue("SPECULAR_ENABLED");
 
 		vxrtData = pipeline.settings().getBoolValue("REFERENCE_PT_ENABLED")
 			|| (pipeline.settings().getBoolValue("RESTIR_GI_ENABLED")

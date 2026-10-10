@@ -425,13 +425,16 @@ public class Textures {
 		// Specular
 
 		if (toggles.roughSpecular) {
+			final var roughSpecularRes
+				= getRoughSpecularResolution(screen, pipeline.settings());
+
 			specularTemporal1A
 				= pipeline
 					  .texture2D(
 						  "tex_specular_temporal_1a",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
-					  .renderSize()
+					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .create();
 			specularTemporal1B
 				= pipeline
@@ -439,7 +442,7 @@ public class Textures {
 						  "tex_specular_temporal_1b",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
-					  .renderSize()
+					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .create();
 			specularTemporal1Current
 				= pipeline
@@ -447,7 +450,7 @@ public class Textures {
 						  "tex_specular_temporal_1",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
-					  .renderSize()
+					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .createEmpty();
 			specularTemporal1Prev
 				= pipeline
@@ -455,7 +458,7 @@ public class Textures {
 						  "tex_specular_temporal_1_prev",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
-					  .renderSize()
+					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .createEmpty();
 
 			specularTemporal2A
@@ -464,7 +467,7 @@ public class Textures {
 						  "tex_specular_temporal_2a",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
-					  .renderSize()
+					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .create();
 			specularTemporal2B
 				= pipeline
@@ -472,7 +475,7 @@ public class Textures {
 						  "tex_specular_temporal_2b",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
-					  .renderSize()
+					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .create();
 			specularTemporal2Current
 				= pipeline
@@ -480,7 +483,7 @@ public class Textures {
 						  "tex_specular_temporal_2",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
-					  .renderSize()
+					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .createEmpty();
 			specularTemporal2Prev
 				= pipeline
@@ -488,7 +491,7 @@ public class Textures {
 						  "tex_specular_temporal_2_prev",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
-					  .renderSize()
+					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .createEmpty();
 		}
 
@@ -1053,6 +1056,14 @@ public class Textures {
 	public static Vector2i
 	getIndirectLightingResolution(Screen screen, SettingsManager settings) {
 		final var scale = settings.getFloatValue("INDIRECT_RENDER_SCALE");
+		final var w = (int) Math.ceil(screen.renderWidth() * scale);
+		final var h = (int) Math.ceil(screen.renderHeight() * scale);
+		return new Vector2i(w, h);
+	}
+
+	public static Vector2i
+	getRoughSpecularResolution(Screen screen, SettingsManager settings) {
+		final var scale = settings.getFloatValue("SPECULAR_ROUGH_RENDER_SCALE");
 		final var w = (int) Math.ceil(screen.renderWidth() * scale);
 		final var h = (int) Math.ceil(screen.renderHeight() * scale);
 		return new Vector2i(w, h);

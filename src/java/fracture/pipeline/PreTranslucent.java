@@ -46,7 +46,7 @@ public class PreTranslucent {
 		if (builder.settings().getBoolValue("RESTIR_GI_ENABLED")) {
 			builder.compute2d(
 				"restir_gi/initial_sample_temporal_reuse",
-				"program/lighting/restir_gi/initial_sample_temporal_reuse",
+				"program/lighting/indirect/restir_gi/initial_sample_temporal_reuse",
 				"main",
 				indirectRes.x,
 				indirectRes.y,
@@ -56,7 +56,7 @@ public class PreTranslucent {
 
 			builder.compute2d(
 				"restir_gi/spatial_reuse",
-				"program/lighting/restir_gi/spatial_reuse",
+				"program/lighting/indirect/restir_gi/spatial_reuse",
 				"main",
 				indirectRes.x,
 				indirectRes.y,

@@ -30,6 +30,24 @@ public class FractureSettings implements PackSettings {
 
 		final var screenLighting = screen.child("lighting");
 
+		final var screenShadow = screenLighting.child("shadow");
+		screenShadow.option("SHADOW_ENABLED", OptionType.boolType(true), false);
+		screenShadow.option(
+			"SHADOW_CASCADE_COUNT",
+			OptionType.intType(1, 16, 1, 4),
+			false
+		);
+		screenShadow.option(
+			"SHADOW_RESOLUTION",
+			OptionType.intType(512, 4096, 512, 2048),
+			false
+		);
+		screenShadow.option(
+			"SHADOW_DISTANCE",
+			OptionType.intType(16, 1024, 16, 160),
+			false
+		);
+
 		final var screenIndirect = screenLighting.child("indirect");
 
 		screenIndirect.option(
@@ -78,34 +96,24 @@ public class FractureSettings implements PackSettings {
 			true
 		);
 
-		final var screenShadow = screenLighting.child("shadow");
-		screenShadow.option("SHADOW_ENABLED", OptionType.boolType(true), false);
-		screenShadow.option(
-			"SHADOW_CASCADE_COUNT",
-			OptionType.intType(1, 16, 1, 4),
-			false
-		);
-		screenShadow.option(
-			"SHADOW_RESOLUTION",
-			OptionType.intType(512, 4096, 512, 2048),
-			false
-		);
-		screenShadow.option(
-			"SHADOW_DISTANCE",
-			OptionType.intType(16, 1024, 16, 160),
-			false
-		);
-
-		final var screenReflections = screenLighting.child("reflections");
-		screenReflections
-			.option("REFLECTIONS_ENABLED", OptionType.boolType(true), false);
-		screenReflections.option(
-			"REFLECTIONS_TRACER",
+		final var screenSpecular = screenLighting.child("specular");
+		screenSpecular
+			.option("SPECULAR_ENABLED", OptionType.boolType(true), false);
+		screenSpecular.option(
+			"SPECULAR_TRACER",
 			OptionType.intType(new int[] {0, 1}, 0),
 			false
 		);
-
-		screenReflections.option("REFLECTIONS_ROUGHNESS_THRESHOLD", OptionType.floatType(0.1f, 4.0f, 0.1f, 2.0f), true);
+		screenSpecular.option(
+			"SPECULAR_ROUGH_RENDER_SCALE",
+			OptionType.floatType(0.01f, 1.0f, 0.01f, 0.75f),
+			false
+		);
+		screenSpecular.option(
+			"SPECULAR_ROUGHNESS_THRESHOLD",
+			OptionType.floatType(0.1f, 4.0f, 0.1f, 2.0f),
+			true
+		);
 
 		final var screenAtmospherics = screen.child("atmospherics");
 

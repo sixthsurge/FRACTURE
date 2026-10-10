@@ -63,10 +63,9 @@ public class Fracture implements ShaderPack {
 	public void configureRenderer(RendererConfig rendererConfig) {
 		boolean enableHwrt = false;
 		enableHwrt = enableHwrt
-			|| rendererConfig.getSettings().getBoolValue("REFLECTIONS_ENABLED")
-				&& rendererConfig.getSettings().getIntValue(
-					   "REFLECTIONS_TRACER"
-				   ) == SettingsSentinels.REFLECTIONS_TRACER_HWRT
+			|| rendererConfig.getSettings().getBoolValue("SPECULAR_ENABLED")
+				&& rendererConfig.getSettings().getIntValue("SPECULAR_TRACER")
+					== SettingsSentinels.SPECULAR_TRACER_HWRT
 			|| rendererConfig.getSettings().getBoolValue("RESTIR_GI_ENABLED")
 				&& rendererConfig.getSettings().getIntValue("RESTIR_GI_TRACER")
 					== SettingsSentinels.RESTIR_GI_TRACER_HWRT

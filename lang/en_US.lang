@@ -4,8 +4,7 @@ screen.rp = Resource Pack
 
 screen.lighting = Lighting
 screen.indirect = Indirect Lighting
-screen.ptgi = Path Tracing
-screen.reflections = Reflections
+screen.specular = Specular Lighting
 screen.shadow = Shadows
 screen.gtao = GTAO
 screen.rsm = RSM 

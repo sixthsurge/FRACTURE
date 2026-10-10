@@ -1,4 +1,4 @@
-// Specular reflections, water rendering.
+// Mirror specular, upscale+combine rough specular, water rendering.
 
 import aperture;
 import lib.atmospherics.atmosphere;
@@ -14,6 +14,7 @@ import lib.surface.mat_ids;
 import lib.surface.water_waves;
 import lib.toggles;
 import lib.util.color;
+import lib.util.encoding;
 import lib.util.math;
 import lib.util.space_conversion;
 import settings;
@@ -23,6 +24,8 @@ import lib.util.debug;
 RWTexture2D<float3> tex_scene_write;
 
 Texture2D<float3> tex_scene;
+Texture2D<float4> tex_specular_temporal_1;
+Texture2D<float4> tex_specular_temporal_2;
 Texture2D<uint4> tex_gbuffer_opaque;
 Texture2D<uint2> tex_gbuffer_translucent;
 Texture2D<float4> tex_sky_map;
@@ -31,8 +34,61 @@ Texture3D<float3> tex_fog_volume_integrated_extinction;
 
 ConstantBuffer<SkyShBuffer> buf_sky_sh;
 
-struct FragmentOutput {
-	float3 radiance;
+namespace rough_specular_upscaling {
+static float depth_weight(float center_depth_view, float NoV, float4 data) {
+	const float STRENGTH = 10.0;
+	return exp2(
+		-STRENGTH
+		* abs((screen_to_view_depth(data.z) - center_depth_view) * NoV)
+	);
+}
+
+static float normal_weight(float3 center_normal_world, float4 data) {
+	return pow16(max0(dot(center_normal_world, decode_octahedral(data.xy))));
+}
+
+float3 upscale(float2 pos, float3 normal_world, float depth_view, float NoV) {
+	float2 floored_pos, frac_pos = modf(pos, floored_pos);
+	int2 int_pos = int2(floored_pos);
+
+	int w, h;
+	tex_specular_temporal_1.GetDimensions(w, h);
+
+	int2 p10 = clamp(int_pos + int2(1, 0), int2(0), int2(w, h) - 1);
+	int2 p01 = clamp(int_pos + int2(0, 1), int2(0), int2(w, h) - 1);
+	int2 p11 = clamp(int_pos + int2(1, 1), int2(0), int2(w, h) - 1);
+
+	float3 output_00 = tex_specular_temporal_1[int_pos].rgb;
+	float3 output_01 = tex_specular_temporal_1[p01].rgb;
+	float3 output_10 = tex_specular_temporal_1[p10].rgb;
+	float3 output_11 = tex_specular_temporal_1[p11].rgb;
+	float4 data_00 = tex_specular_temporal_2[int_pos];
+	float4 data_01 = tex_specular_temporal_2[p01];
+	float4 data_10 = tex_specular_temporal_2[p10];
+	float4 data_11 = tex_specular_temporal_2[p11];
+
+	float w00 = depth_weight(depth_view, NoV, data_00)
+		* normal_weight(normal_world, data_00) * (1.0 - frac_pos.x)
+		* (1.0 - frac_pos.y);
+	float w10 = depth_weight(depth_view, NoV, data_10)
+		* normal_weight(normal_world, data_10)
+		* (frac_pos.x - frac_pos.x * frac_pos.y);
+	float w01 = depth_weight(depth_view, NoV, data_01)
+		* normal_weight(normal_world, data_01)
+		* (frac_pos.y - frac_pos.x * frac_pos.y);
+	float w11 = depth_weight(depth_view, NoV, data_11)
+		* normal_weight(normal_world, data_11) * (frac_pos.x * frac_pos.y);
+	float w_sum = w00 + w10 + w01 + w11;
+	float rcp_w_sum = rcp(w_sum);
+
+	if (w_sum > EPS) {
+		return (output_00 * w00 + output_01 * w01 + output_10 * w10
+				+ output_11 * w11)
+			* rcp_w_sum;
+	} else {
+		return output_00;
+	}
+}
 }
 
 [shader("compute")]
@@ -239,33 +295,56 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		radiance = fog.apply(radiance);
 	}
 
-	if (userSettings.REFLECTIONS_ENABLED) {
+	if (userSettings.SPECULAR_ENABLED) {
 		float3 dir_world
 			= normalize(front_pos_scene - translation_part(ap.camera.viewInv));
-		if (userSettings.REFLECTIONS_TRACER == 0) {
-			radiance += specular.calculate_reflection(
-				specular.HiZScreenSpaceTracer(),
-				material,
-				icoord,
-				front_pos_screen,
-				front_pos_view,
-				front_pos_scene + ap.camera.position,
-				dir_world,
-				normal_world,
-				skylight
-			);
+		if (material.roughness <= specular.ROUGH_REFLECTION_ROUGHNESS_CUTOFF) {
+			if (userSettings.SPECULAR_TRACER == 0) {
+				specular.HiZScreenSpaceTracer tracer;
+				tracer.init(
+					front_pos_screen,
+					front_pos_view,
+					front_pos_scene + ap.camera.position,
+					normal_world,
+				);
+				radiance += specular.calculate_mirror_reflection(
+					tracer,
+					material,
+					dir_world,
+					normal_world,
+					pow2(skylight),
+				);
+			} else {
+				specular.HardwareRtTracer tracer;
+				tracer.init(
+					front_pos_screen,
+					front_pos_view,
+					front_pos_scene + ap.camera.position,
+					normal_world,
+				);
+				radiance += specular.calculate_mirror_reflection(
+					tracer,
+					material,
+					dir_world,
+					normal_world,
+					pow2(skylight),
+				);
+			}
 		} else {
-			radiance += specular.calculate_reflection(
-				specular.HardwareRtTracer(),
-				material,
-				icoord,
-				front_pos_screen,
-				front_pos_view,
-				front_pos_scene + ap.camera.position,
-				dir_world,
-				normal_world,
-				skylight
-			);
+			float2 pos = float2(icoord)
+				* (ceil(
+					   float2(ap.game.renderSize)
+					   * userSettings.SPECULAR_ROUGH_RENDER_SCALE
+				   )
+				   / float2(ap.game.renderSize));
+			float NoV = dot(dir_world, normal_world);
+			radiance += rough_specular_upscaling.upscale(
+							pos,
+							normal_world,
+							screen_to_view_depth(front_depth),
+							NoV,
+						)
+				* calculate_fresnel(material, -NoV);
 		}
 	}
 

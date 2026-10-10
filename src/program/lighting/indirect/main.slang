@@ -39,7 +39,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	int2 fullres_icoord = int2(
 		float2(icoord) * (float2(ap.game.renderSize) * output_pixel_size)
 	);
-	if (any(fullres_icoord >= ap.game.renderSize)) {
+	if (any(icoord >= int2(w, h))
+		|| any(fullres_icoord >= ap.game.renderSize)) {
 		return;
 	}
 

@@ -58,7 +58,12 @@ public class PreRender {
 			16
 		);
 
-		builder.compute("gen_sky_sh", "program/lighting/gen_sky_sh", "main")
+		builder
+			.compute(
+				"gen_sky_sh",
+				"program/lighting/indirect/gen_sky_sh",
+				"main"
+			)
 			.dispatch1D(1);
 	}
 

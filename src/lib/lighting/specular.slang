@@ -31,6 +31,8 @@ Texture2D<float3> tex_scene;
 Texture2D<float4> tex_sky_map;
 
 namespace specular {
+public static const float ROUGH_REFLECTION_ROUGHNESS_CUTOFF = 0.01;
+
 public struct TemporalData {
 	public float3 reflection_over_fresnel;
 	public float pixel_age;
@@ -77,7 +79,9 @@ struct PcgSampler : ISamplingMethod {
 
 	[mutating]
 	void init(int2 icoord, int ray_count) {
-		random = PcgRandom(pixel_seed(icoord));
+		int w, h;
+		tex_specular_temporal_1.GetDimensions(w, h);
+		random = PcgRandom(pixel_seed(icoord, int2(w, h)));
 	}
 
 	[mutating]
@@ -113,7 +117,8 @@ public interface ISpecularTracer {
 	void init(
 		float3 ray_origin_screen,
 		float3 ray_origin_view,
-		float3 ray_origin_world
+		float3 ray_origin_world,
+		float3 normal_world,
 	);
 
 	Optional<SpecularHit> trace(float3 ray_dir_world);
@@ -216,7 +221,6 @@ TemporalData accumulate_rough_reflection(
 			temporal.reflection_over_fresnel * f,
 			history_weight
 		));
-
 		return TemporalData(
 			reflection * rcp_f,
 			pixel_age + 1.0,
@@ -235,7 +239,7 @@ TemporalData accumulate_rough_reflection(
 	}
 }
 
-public float3 calculate_reflection<Tracer>(
+public void do_rough_specular<Tracer>(
 	Tracer tracer,
 	Material material,
 	int2 icoord,
@@ -247,71 +251,36 @@ public float3 calculate_reflection<Tracer>(
 	float skylight
 )
 	where Tracer : ISpecularTracer {
-	float reflection_scale = 1.0;
-	if (!TOGGLE_ROUGH_SPECULAR) {
-		// When rough specular is disabled, fade smooth SSR using roughness.
-		reflection_scale = pow2(linstep(0.5, 0.05, material.roughness));
-		if (reflection_scale < 1e-2) {
-			return float3(0.0);
-		}
-	}
-
 	float sky_visibility = pow2(skylight);
 	float NoV = -dot(dir_world, normal_world);
 
-	tracer.init(pos_screen, pos_view, pos_world);
+	tracer.init(pos_screen, pos_view, pos_world, normal_world);
 
-	float3 reflection;
-	TemporalData temporal_data;
+	float average_hit_distance;
+	var reflection = calculate_rough_reflection(
+		tracer,
+		material,
+		icoord,
+		dir_world,
+		normal_world,
+		sky_visibility,
+		average_hit_distance
+	);
 
-	if (TOGGLE_ROUGH_SPECULAR && WaveActiveAnyTrue(material.roughness > 0.01)) {
-		float average_hit_distance;
-		reflection = calculate_rough_reflection(
-			tracer,
-			material,
-			icoord,
-			dir_world,
-			normal_world,
-			sky_visibility,
-			average_hit_distance
-		);
+	let temporal_data = accumulate_rough_reflection(
+		reflection,
+		material,
+		pos_screen,
+		pos_view,
+		pos_world,
+		dir_world,
+		normal_world,
+		average_hit_distance,
+		NoV,
+		icoord
+	);
 
-		// Accumulation.
-		temporal_data = accumulate_rough_reflection(
-			reflection,
-			material,
-			pos_screen,
-			pos_view,
-			pos_world,
-			dir_world,
-			normal_world,
-			average_hit_distance,
-			NoV,
-			icoord
-		);
-	} else {
-		reflection = calculate_mirror_reflection(
-			tracer,
-			material,
-			dir_world,
-			normal_world,
-			sky_visibility
-		);
-		temporal_data = TemporalData.empty();
-		temporal_data = TemporalData(
-			float3(0.0),
-			0.0,
-			encode_octahedral(normal_world),
-			pos_screen.z,
-			material.roughness,
-		);
-	}
-
-	if (TOGGLE_ROUGH_SPECULAR) {
-		temporal_data.store(icoord);
-	}
-
-	return reflection * reflection_scale;
+	temporal_data.store(icoord);
 }
 
 float3 calculate_rough_reflection<Tracer>(
@@ -344,7 +313,7 @@ float3 calculate_rough_reflection<Tracer>(
 		0.01,
 		(reflectance
 		 - reflectance * material.roughness
-			 * userSettings.REFLECTIONS_ROUGHNESS_THRESHOLD)
+			 * userSettings.SPECULAR_ROUGHNESS_THRESHOLD)
 	);
 	if (reflection_mul < EPS) {
 		return float3(0.0);
@@ -396,7 +365,7 @@ float3 calculate_rough_reflection<Tracer>(
 	return reflection * reflection_mul * rcp(float(RAY_COUNT));
 }
 
-float3 calculate_mirror_reflection<Tracer>(
+public float3 calculate_mirror_reflection<Tracer>(
 	Tracer tracer,
 	Material material,
 	float3 dir_world,
@@ -404,6 +373,15 @@ float3 calculate_mirror_reflection<Tracer>(
 	float sky_visibility
 )
 	where Tracer : ISpecularTracer {
+	float reflection_scale = 1.0;
+	if (!TOGGLE_ROUGH_SPECULAR) {
+		// When rough specular is disabled, fade smooth SSR using roughness.
+		reflection_scale = pow2(linstep(0.5, 0.05, material.roughness));
+		if (reflection_scale < 1e-2) {
+			return float3(0.0);
+		}
+	}
+
 	float3 fresnel = calculate_fresnel(material, -dot(dir_world, normal_world));
 	if (all(fresnel < 1e-2)) {
 		return float3(0.0);
@@ -418,7 +396,7 @@ float3 calculate_mirror_reflection<Tracer>(
 			   sky_visibility,
 			   hit_distance
 		   )
-		* fresnel;
+		* fresnel * reflection_scale;
 }
 
 float3 get_radiance_along_ray<Tracer>(
@@ -446,7 +424,8 @@ public struct HiZScreenSpaceTracer : ISpecularTracer {
 	public void init(
 		float3 ray_origin_screen,
 		float3 ray_origin_view,
-		float3 ray_origin_world
+		float3 ray_origin_world,
+		float3 normal_world,
 	) {
 		this.ray_origin_screen = ray_origin_screen;
 		this.ray_origin_view = ray_origin_view;
@@ -481,21 +460,26 @@ public struct HiZScreenSpaceTracer : ISpecularTracer {
 
 public struct HardwareRtTracer : ISpecularTracer {
 	public float3 ray_origin_scene;
+	public float3 normal_world;
 
 	[mutating]
 	public void init(
 		float3 ray_origin_screen,
 		float3 ray_origin_view,
-		float3 ray_origin_world
+		float3 ray_origin_world,
+		float3 normal_world,
 	) {
 		this.ray_origin_scene = ray_origin_world - ap.camera.position;
+		this.normal_world = normal_world;
 	}
 
 	public Optional<SpecularHit> trace(float3 ray_dir_world) {
+		const float BIAS = 0.002;
+
 		var query = HWRT.startQuery(
-			ray_origin_scene,
+			ray_origin_scene + BIAS * normal_world,
 			ray_dir_world,
-			0.001,
+			BIAS,
 			max(ap.world.renderDistance, 1.0),
 			HWRT.HitType.TERRAIN | HWRT.HitType.ENTITY,
 			HWRT.RTFlags.NONE
@@ -517,12 +501,12 @@ public struct HardwareRtTracer : ISpecularTracer {
 			let pos_scene = hit.getPos();
 			let normal_world = hit.getNormal();
 			let uv = hit.getUV();
-			let albedo = hit.albedo().sampleTexture(uv) * hit.getColor();
+			let albedo = hit.albedo().sampleLevel(uv, 0) * hit.getColor();
 			var material = Material.get(srgb_eotf_inv(albedo.rgb), 0);
 
 			if (userSettings.LABPBR_SUPPORT_ENABLED
 				&& hit_type == HWRT.HitType.TERRAIN) {
-				let specular_map = blockAtlasS.sampleNearest(uv);
+				let specular_map = blockAtlasS.sampleNearestLevel(uv, 0);
 				material.apply_specular_map(specular_map);
 			}
 

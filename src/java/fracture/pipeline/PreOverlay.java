@@ -2,6 +2,7 @@ package fracture.pipeline;
 
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import fracture.Resources;
+import fracture.Textures;
 import fracture.util.PipelineBuilder;
 
 public class PreOverlay {
@@ -10,10 +11,32 @@ public class PreOverlay {
 
 		setupHiZ(builder, resources);
 
+		if (resources.toggles().roughSpecular) {
+			final var roughSpecularRes = Textures.getRoughSpecularResolution(builder.screen(), builder.settings());
+
+			builder
+				.compute2d(
+					"specular/rough",
+					"program/lighting/specular/rough",
+					"main",
+					roughSpecularRes.x,
+					roughSpecularRes.y,
+					16,
+					16
+				)
+				.overrideObject(
+					"tex_scene_write",
+					resources.textures().scene.back().name()
+				)
+				.overrideObject(
+					"tex_scene",
+					resources.textures().scene.front().name()
+				);
+		}
 		builder
 			.renderSizedCompute(
-				"specular",
-				"program/lighting/specular",
+				"specular/smooth_and_water",
+				"program/lighting/specular/mirror_and_water",
 				"main",
 				16,
 				16
