@@ -24,8 +24,8 @@ import lib.util.debug;
 RWTexture2D<float3> tex_scene_write;
 
 Texture2D<float3> tex_scene;
-Texture2D<float4> tex_specular_temporal_1;
-Texture2D<float4> tex_specular_temporal_2;
+Texture2D<float4> tex_specular_output_blurred;
+Texture2D<float4> tex_specular_temporal_data;
 Texture2D<uint4> tex_gbuffer_opaque;
 Texture2D<uint2> tex_gbuffer_translucent;
 Texture2D<float4> tex_sky_map;
@@ -52,20 +52,20 @@ float3 upscale(float2 pos, float3 normal_world, float depth_view, float NoV) {
 	int2 int_pos = int2(floored_pos);
 
 	int w, h;
-	tex_specular_temporal_1.GetDimensions(w, h);
+	tex_specular_output_blurred.GetDimensions(w, h);
 
 	int2 p10 = clamp(int_pos + int2(1, 0), int2(0), int2(w, h) - 1);
 	int2 p01 = clamp(int_pos + int2(0, 1), int2(0), int2(w, h) - 1);
 	int2 p11 = clamp(int_pos + int2(1, 1), int2(0), int2(w, h) - 1);
 
-	float3 output_00 = tex_specular_temporal_1[int_pos].rgb;
-	float3 output_01 = tex_specular_temporal_1[p01].rgb;
-	float3 output_10 = tex_specular_temporal_1[p10].rgb;
-	float3 output_11 = tex_specular_temporal_1[p11].rgb;
-	float4 data_00 = tex_specular_temporal_2[int_pos];
-	float4 data_01 = tex_specular_temporal_2[p01];
-	float4 data_10 = tex_specular_temporal_2[p10];
-	float4 data_11 = tex_specular_temporal_2[p11];
+	float3 output_00 = tex_specular_output_blurred[int_pos].rgb;
+	float3 output_01 = tex_specular_output_blurred[p01].rgb;
+	float3 output_10 = tex_specular_output_blurred[p10].rgb;
+	float3 output_11 = tex_specular_output_blurred[p11].rgb;
+	float4 data_00 = tex_specular_temporal_data[int_pos];
+	float4 data_01 = tex_specular_temporal_data[p01];
+	float4 data_10 = tex_specular_temporal_data[p10];
+	float4 data_11 = tex_specular_temporal_data[p11];
 
 	float w00 = depth_weight(depth_view, NoV, data_00)
 		* normal_weight(normal_world, data_00) * (1.0 - frac_pos.x)
@@ -330,7 +330,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 					pow2(skylight),
 				);
 			}
-		} else {
+		} else if (TOGGLE_ROUGH_SPECULAR) {
 			float2 pos = float2(icoord)
 				* (ceil(
 					   float2(ap.game.renderSize)
@@ -338,12 +338,12 @@ void main(int2 icoord: SV_DispatchThreadID) {
 				   )
 				   / float2(ap.game.renderSize));
 			float NoV = dot(dir_world, normal_world);
-			radiance += rough_specular_upscaling.upscale(
+			radiance += max0(rough_specular_upscaling.upscale(
 							pos,
 							normal_world,
 							screen_to_view_depth(front_depth),
 							NoV,
-						)
+						))
 				* calculate_fresnel(material, -NoV);
 		}
 	}

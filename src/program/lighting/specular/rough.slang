@@ -24,13 +24,13 @@ RWTexture2D<float3> tex_scene_write;
 
 Texture2D<uint4> tex_gbuffer_opaque;
 Texture2D<uint2> tex_gbuffer_translucent;
-Texture2D<float4> tex_specular_temporal_1_prev;
+Texture2D<float4> tex_specular_output_blurred;
 
 [shader("compute")]
 [numthreads(16, 16)]
 void main(int2 icoord: SV_DispatchThreadID) {
 	int w, h;
-	tex_specular_temporal_1_prev.GetDimensions(w, h);
+	tex_specular_output_blurred.GetDimensions(w, h);
 	float2 output_pixel_size = rcp(float2(w, h));
 
 	int2 fullres_icoord = int2(

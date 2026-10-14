@@ -22,10 +22,10 @@ import lib.util.debug;
 
 Texture2D blockAtlasS;
 
-RWTexture2D<float4> tex_specular_temporal_1;
-RWTexture2D<float4> tex_specular_temporal_2;
-Texture2D<float4> tex_specular_temporal_1_prev;
-Texture2D<float4> tex_specular_temporal_2_prev;
+RWTexture2D<float4> tex_specular_output_raw;
+RWTexture2D<float4> tex_specular_temporal_data;
+Texture2D<float4> tex_specular_output_blurred;
+Texture2D<float4> tex_specular_temporal_data_prev;
 Texture2D<float> tex_noise_blue;
 Texture2D<float3> tex_scene;
 Texture2D<float4> tex_sky_map;
@@ -44,14 +44,14 @@ public struct TemporalData {
 		return TemporalData(float3(0.0), 0.0, float2(0.5), 0.0, 0.0);
 	}
 
-	public static Optional<TemporalData> load(float2 uv) {
+	public static Optional<TemporalData> resample_history(float2 uv) {
 		if (any(saturate(uv) != uv)) {
 			return none;
 		}
 
 		float4 h0
-			= tex_specular_temporal_1_prev.sample_catmull_rom_fast(uv, 0, 0.0);
-		float4 h1 = tex_specular_temporal_2_prev.sampleNearestLevel(uv, 0);
+			= tex_specular_output_blurred.sample_catmull_rom_fast(uv, 0, 0.0);
+		float4 h1 = tex_specular_temporal_data_prev.sampleNearestLevel(uv, 0);
 		if (any(isnan(h0)) || any(isnan(h1))) {
 			return none;
 		}
@@ -59,10 +59,18 @@ public struct TemporalData {
 		return TemporalData(h0.rgb, h0.w, h1.xy, h1.z, h1.w);
 	}
 
+	public static TemporalData load_current(int2 icoord) {
+		float4 h0 = tex_specular_output_raw[icoord];
+		float4 h1 = tex_specular_temporal_data[icoord];
+
+		return TemporalData(h0.rgb, h0.w, h1.xy, h1.z, h1.w);
+	}
+
 	public void store(int2 icoord) {
-		tex_specular_temporal_1[icoord]
+		tex_specular_output_raw[icoord]
 			= float4(reflection_over_fresnel, pixel_age);
-		tex_specular_temporal_2[icoord] = float4(normal_enc, depth, roughness);
+		tex_specular_temporal_data[icoord]
+			= float4(normal_enc, depth, roughness);
 	}
 }
 
@@ -80,7 +88,7 @@ struct PcgSampler : ISamplingMethod {
 	[mutating]
 	void init(int2 icoord, int ray_count) {
 		int w, h;
-		tex_specular_temporal_1.GetDimensions(w, h);
+		tex_specular_output_raw.GetDimensions(w, h);
 		random = PcgRandom(pixel_seed(icoord, int2(w, h)));
 	}
 
@@ -124,18 +132,21 @@ public interface ISpecularTracer {
 	Optional<SpecularHit> trace(float3 ray_dir_world);
 }
 
-float3 reproject_reflection(
+// Virtual motion.
+float3 get_virtual_point(
 	float3 pos_world,
 	float3 dir_world,
 	float NoV,
 	float roughness,
 	float average_hit_distance
 ) {
-	// Virtual motion.
-	pos_world += dir_world * average_hit_distance
+	return pos_world
+		+ dir_world * average_hit_distance
 		* get_specular_dominant_factor(NoV, roughness);
+}
 
-	float3 pos = pos_world - ap.temporal.position;
+float3 reproject_reflection(float3 virtual_point) {
+	float3 pos = virtual_point - ap.temporal.position;
 	pos = scene_to_view(pos, ap.temporal.view);
 	pos = view_to_screen(pos, ap.temporal.projection, false);
 	return pos;
@@ -168,35 +179,37 @@ TemporalData accumulate_rough_reflection(
 	float NoV,
 	int2 icoord,
 ) {
-	let pos_prev_screen = reproject_reflection(
+	let virtual_point = get_virtual_point(
 		pos_world,
 		dir_world,
 		NoV,
 		material.roughness,
 		average_hit_distance
 	);
+	let pos_prev_screen = reproject_reflection(virtual_point);
 	let f = calculate_fresnel(material, dot(-dir_world, normal_world));
 	let rcp_f = select(f == 0.0, 0.0, rcp(f));
 
-	if (let temporal = TemporalData.load(pos_prev_screen.xy)) {
+	if (let temporal = TemporalData.resample_history(pos_prev_screen.xy)) {
 		const float DEPTH_REJECTION_STRENGTH = 64.0;
 
 		let max_accumulated_frames
-			= 40.0 * (linstep(0.0, 0.5, (material.roughness)));
+			= 40.0 * sqrt(linstep(0.0, 0.5, (material.roughness)) * 0.8 + 0.2);
 
 		// Depth rejection
 		float view_norm = rlength(pos_view);
-		float3 pos_world_prev
+		float3 virtual_point_prev
 			= view_to_scene(
 				  screen_to_view(
 					  float3(pos_prev_screen.xy, temporal.depth),
-					  ap.temporal.projectionInv
+					  ap.temporal.projectionInv,
+					  false
 				  ),
 				  ap.temporal.viewInv
 			  )
 			+ ap.temporal.position;
 		float depth_weight = exp2(
-			-distance(pos_world, pos_world_prev) * DEPTH_REJECTION_STRENGTH
+			-distance(pos_world, virtual_point_prev) * DEPTH_REJECTION_STRENGTH
 			* NoV * view_norm
 		);
 
@@ -210,17 +223,22 @@ TemporalData accumulate_rough_reflection(
 			* view_norm
 		);
 
+		// Roughness rejection
+		float roughness_weight
+			= exp2(-32.0 * abs(material.roughness - temporal.roughness));
+
 		let pixel_age = min(
-			temporal.pixel_age * depth_weight * normal_weight,
+			temporal.pixel_age * depth_weight * normal_weight
+				* roughness_weight,
 			max_accumulated_frames
 		);
 
 		let history_weight = pixel_age / (pixel_age + 1.0);
-		reflection = max0(lerp(
-			reflection,
-			temporal.reflection_over_fresnel * f,
+		reflection = pow2(max0(lerp(
+			sqrt(reflection),
+			sqrt(temporal.reflection_over_fresnel * f),
 			history_weight
-		));
+		)));
 		return TemporalData(
 			reflection * rcp_f,
 			pixel_age + 1.0,

@@ -12,7 +12,10 @@ public class PreOverlay {
 		setupHiZ(builder, resources);
 
 		if (resources.toggles().roughSpecular) {
-			final var roughSpecularRes = Textures.getRoughSpecularResolution(builder.screen(), builder.settings());
+			final var roughSpecularRes = Textures.getRoughSpecularResolution(
+				builder.screen(),
+				builder.settings()
+			);
 
 			builder
 				.compute2d(
@@ -25,13 +28,19 @@ public class PreOverlay {
 					16
 				)
 				.overrideObject(
-					"tex_scene_write",
-					resources.textures().scene.back().name()
-				)
-				.overrideObject(
 					"tex_scene",
 					resources.textures().scene.front().name()
 				);
+
+			builder.compute2d(
+				"specular/recurrent_filter",
+				"program/lighting/specular/recurrent_filter",
+				"main",
+				roughSpecularRes.x,
+				roughSpecularRes.y,
+				16,
+				16
+			);
 		}
 		builder
 			.renderSizedCompute(

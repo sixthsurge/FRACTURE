@@ -10,7 +10,7 @@ import lib.util.debug;
 
 RWTexture2D<float4> tex_indirect_output_blurred;
 Texture2D<uint4> tex_gbuffer_opaque;
-Texture2D<float4> tex_indirect_output_accumulated;
+Texture2D<float4> tex_indirect_output_raw;
 Texture2D<float4> tex_indirect_temporal_data_current;
 Texture2D<float> tex_noise_blue;
 
@@ -29,7 +29,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		float2(icoord) * (float2(ap.game.renderSize) * output_pixel_size)
 	);
 
-	float4 value_center = tex_indirect_output_accumulated[icoord];
+	float4 value_center = tex_indirect_output_raw[icoord];
 	float4 data = tex_indirect_temporal_data_current[icoord];
 	uint4 gbuffer_packed = tex_gbuffer_opaque[fullres_icoord];
 
@@ -66,7 +66,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		int2 sample_icoord = int2(sample_ncoord * float2(w, h));
 
 		float4 data = tex_indirect_temporal_data_current[sample_icoord];
-		float4 value = tex_indirect_output_accumulated[sample_icoord];
+		float4 value = tex_indirect_output_raw[sample_icoord];
 
 		float distance_weight = exp2(
 			-0.1 * length(offset) * pixel_age * max0(rcp(rcp_view_dist) - 32.0)

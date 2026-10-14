@@ -16,7 +16,7 @@ import settings;
 
 import lib.util.debug;
 
-RWTexture2D<float4> tex_indirect_output_accumulated;
+RWTexture2D<float4> tex_indirect_output_raw;
 RWTexture2D<float4> tex_indirect_temporal_data_current;
 
 Texture2D<float4> tex_indirect_output_blurred;
@@ -33,7 +33,7 @@ Texture2D tex_reserviour_spatial_4;
 [numthreads(16, 16)]
 void main(int2 icoord: SV_DispatchThreadID) {
 	int w, h;
-	tex_indirect_output_accumulated.GetDimensions(w, h);
+	tex_indirect_output_raw.GetDimensions(w, h);
 	float2 output_pixel_size = rcp(float2(w, h));
 
 	int2 fullres_icoord = int2(
@@ -52,7 +52,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	);
 
 	if (depth == 0.0) {
-		tex_indirect_output_accumulated[icoord] = float4(0.0, 0.0, 0.0, 1.0);
+		tex_indirect_output_raw[icoord] = float4(0.0, 0.0, 0.0, 1.0);
 		tex_indirect_temporal_data_current[icoord] = float4(0.0);
 		return;
 	}
@@ -162,7 +162,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		indirect = lerp(indirect, max0(indirect_output_prev), history_weight);
 	}
 
-	tex_indirect_output_accumulated[icoord] = indirect;
+	tex_indirect_output_raw[icoord] = indirect;
 	tex_indirect_temporal_data_current[icoord] = float4(
 		pixel_age + frame_weight,
 		depth,

@@ -85,18 +85,16 @@ public class Textures {
 
 	// Specular
 
-	public Texture2D specularTemporal1A;
-	public Texture2D specularTemporal1B;
-	public TextureReference2D specularTemporal1Current;
-	public TextureReference2D specularTemporal1Prev;
-	public Texture2D specularTemporal2A;
-	public Texture2D specularTemporal2B;
-	public TextureReference2D specularTemporal2Current;
-	public TextureReference2D specularTemporal2Prev;
+	public Texture2D specularOutputRaw;
+	public Texture2D specularOutputBlurred;
+	public Texture2D specularTemporalDataA;
+	public Texture2D specularTemporalDataB;
+	public TextureReference2D specularTemporalDataCurrent;
+	public TextureReference2D specularTemporalDataPrev;
 
 	// Indirect Lighting
 
-	public final Texture2D indirectOutputAccumulated;
+	public final Texture2D indirectOutputRaw;
 	public final Texture2D indirectOutputBlurred;
 	public final Texture2D indirectTemporalDataA;
 	public final Texture2D indirectTemporalDataB;
@@ -187,17 +185,21 @@ public class Textures {
 
 		// Bloom
 
-		final var bloomA
-			= pipeline.texture2D("tex_bloom_a", TextureFormat.RG11B10_UFLOAT)
-				  .renderSize()
-				  .usesMipmaps()
-				  .create();
-		final var bloomB
-			= pipeline.texture2D("tex_bloom_b", TextureFormat.RG11B10_UFLOAT)
-				  .renderSize()
-				  .usesMipmaps()
-				  .create();
-		bloom = new Flipper<Texture2D>(bloomA, bloomB);
+		{
+			final var bloomA
+				= pipeline
+					  .texture2D("tex_bloom_a", TextureFormat.RG11B10_UFLOAT)
+					  .renderSize()
+					  .usesMipmaps()
+					  .create();
+			final var bloomB
+				= pipeline
+					  .texture2D("tex_bloom_b", TextureFormat.RG11B10_UFLOAT)
+					  .renderSize()
+					  .usesMipmaps()
+					  .create();
+			bloom = new Flipper<Texture2D>(bloomA, bloomB);
+		}
 
 		// TAA
 
@@ -246,164 +248,180 @@ public class Textures {
 
 		// Hi-Z depth
 
-		// The texture must be padded so that the all lods except the last are
-		// even-sized.
-		final var maxLod = (int) Math.ceil(
-			Math.log(Math.max(screen.windowWidth(), screen.windowHeight()))
-			/ Math.log(2.0)
-		);
-		final var lodCount = Math.min(maxLod, 11);
-		// Subtract 2, because:
-		// - last mip doesn't need to be even.
-		// - the first mip in the texture is actually the 2nd mip in the whole
-		// chain.
-		final var roundFactor = Math.powExact(2, lodCount - 2);
-		final var hiZWidth
-			= Util.roundUp(Math.ceilDiv(screen.renderWidth(), 2), roundFactor);
-		final var hiZHeight
-			= Util.roundUp(Math.ceilDiv(screen.renderHeight(), 2), roundFactor);
+		{
+			// The texture must be padded so that the all lods except the last
+			// are even-sized.
+			final var maxLod = (int) Math.ceil(
+				Math.log(Math.max(screen.windowWidth(), screen.windowHeight()))
+				/ Math.log(2.0)
+			);
+			final var lodCount = Math.min(maxLod, 11);
+			// Subtract 2, because:
+			// - last mip doesn't need to be even.
+			// - the first mip in the texture is actually the 2nd mip in the
+			// whole chain.
+			final var roundFactor = Math.powExact(2, lodCount - 2);
+			final var hiZWidth = Util.roundUp(
+				Math.ceilDiv(screen.renderWidth(), 2),
+				roundFactor
+			);
+			final var hiZHeight = Util.roundUp(
+				Math.ceilDiv(screen.renderHeight(), 2),
+				roundFactor
+			);
 
-		depthHizMinMax
-			= pipeline
-				  .texture2D("tex_depth_hiz_min_max", TextureFormat.RG32_SFLOAT)
-				  .size(hiZWidth, hiZHeight)
-				  .usesMipmaps()
-				  .create();
+			depthHizMinMax
+				= pipeline
+					  .texture2D(
+						  "tex_depth_hiz_min_max",
+						  TextureFormat.RG32_SFLOAT
+					  )
+					  .size(hiZWidth, hiZHeight)
+					  .usesMipmaps()
+					  .create();
+		}
 
 		// Atmosphere
 
-		atmosphereTransmittance
-			= pipeline
-				  .texture2D(
-					  "tex_atmosphere_transmittance",
-					  TextureFormat.RG11B10_UFLOAT
-				  )
-				  .size(
-					  ATMOSPHERE_TRANSMITTANCE_LUT_WIDTH,
-					  ATMOSPHERE_TRANSMITTANCE_LUT_HEIGHT
-				  )
-				  .create();
+		{
+			atmosphereTransmittance
+				= pipeline
+					  .texture2D(
+						  "tex_atmosphere_transmittance",
+						  TextureFormat.RG11B10_UFLOAT
+					  )
+					  .size(
+						  ATMOSPHERE_TRANSMITTANCE_LUT_WIDTH,
+						  ATMOSPHERE_TRANSMITTANCE_LUT_HEIGHT
+					  )
+					  .create();
 
-		atmosphereMultiscatter
-			= pipeline
-				  .texture2D(
-					  "tex_atmosphere_multiscatter",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(
-					  ATMOSPHERE_MULTISCATTER_LUT_WIDTH,
-					  ATMOSPHERE_MULTISCATTER_LUT_HEIGHT
-				  )
-				  .create();
+			atmosphereMultiscatter
+				= pipeline
+					  .texture2D(
+						  "tex_atmosphere_multiscatter",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(
+						  ATMOSPHERE_MULTISCATTER_LUT_WIDTH,
+						  ATMOSPHERE_MULTISCATTER_LUT_HEIGHT
+					  )
+					  .create();
 
-		atmosphereSkyView
-			= pipeline
-				  .texture2D(
-					  "tex_atmosphere_sky_view",
-					  TextureFormat.RG11B10_UFLOAT
-				  )
-				  .size(
-					  ATMOSPHERE_SKY_VIEW_LUT_WIDTH,
-					  ATMOSPHERE_SKY_VIEW_LUT_HEIGHT
-				  )
-				  .create();
+			atmosphereSkyView
+				= pipeline
+					  .texture2D(
+						  "tex_atmosphere_sky_view",
+						  TextureFormat.RG11B10_UFLOAT
+					  )
+					  .size(
+						  ATMOSPHERE_SKY_VIEW_LUT_WIDTH,
+						  ATMOSPHERE_SKY_VIEW_LUT_HEIGHT
+					  )
+					  .create();
 
-		pipeline
-			.texture3D(
-				"tex_atmosphere_aerial_perspective",
-				TextureFormat.RG11B10_UFLOAT
-			)
-			.size(
-				ATMOSPHERE_AP_LUT_WIDTH,
-				ATMOSPHERE_AP_LUT_HEIGHT,
-				ATMOSPHERE_AP_LUT_DEPTH
-			)
-			.create();
-
+			pipeline
+				.texture3D(
+					"tex_atmosphere_aerial_perspective",
+					TextureFormat.RG11B10_UFLOAT
+				)
+				.size(
+					ATMOSPHERE_AP_LUT_WIDTH,
+					ATMOSPHERE_AP_LUT_HEIGHT,
+					ATMOSPHERE_AP_LUT_DEPTH
+				)
+				.create();
+		}
 		// Clouds
 
-		final var cloudsRenderScale
-			= pipeline.settings().getFloatValue("CLOUDS_RENDER_SCALE");
-		final var cloudsRenderWidth
-			= (int) Math.ceil(screen.renderWidth() * cloudsRenderScale);
-		final var cloudsRenderHeight
-			= (int) Math.ceil(screen.renderHeight() * cloudsRenderScale);
+		{
+			final var cloudsRenderScale
+				= pipeline.settings().getFloatValue("CLOUDS_RENDER_SCALE");
+			final var cloudsRenderWidth
+				= (int) Math.ceil(screen.renderWidth() * cloudsRenderScale);
+			final var cloudsRenderHeight
+				= (int) Math.ceil(screen.renderHeight() * cloudsRenderScale);
 
-		cloudsRaw
-			= pipeline.texture2D("tex_clouds_raw", TextureFormat.RGBA16_SFLOAT)
-				  .size(cloudsRenderWidth, cloudsRenderHeight)
-				  .create();
-		cloudsRawData
-			= pipeline
-				  .texture2D("tex_clouds_raw_data", TextureFormat.R16_SFLOAT)
-				  .size(cloudsRenderWidth, cloudsRenderHeight)
-				  .create();
+			cloudsRaw
+				= pipeline
+					  .texture2D("tex_clouds_raw", TextureFormat.RGBA16_SFLOAT)
+					  .size(cloudsRenderWidth, cloudsRenderHeight)
+					  .create();
+			cloudsRawData
+				= pipeline
+					  .texture2D(
+						  "tex_clouds_raw_data",
+						  TextureFormat.R16_SFLOAT
+					  )
+					  .size(cloudsRenderWidth, cloudsRenderHeight)
+					  .create();
 
-		cloudsTemporalA
-			= pipeline
-				  .texture2D(
-					  "tex_clouds_temporal_a",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .renderSize()
-				  .create();
-		cloudsTemporalB
-			= pipeline
-				  .texture2D(
-					  "tex_clouds_temporal_b",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .renderSize()
-				  .create();
-		cloudsTemporalCurrent
-			= pipeline
-				  .reference2D(
-					  "tex_clouds_temporal_current",
-					  cloudsTemporalA.format()
-				  )
-				  .renderSize()
-				  .createEmpty();
-		cloudsTemporalPrevious
-			= pipeline
-				  .reference2D(
-					  "tex_clouds_temporal_prev",
-					  cloudsTemporalA.format()
-				  )
-				  .renderSize()
-				  .createEmpty();
+			cloudsTemporalA
+				= pipeline
+					  .texture2D(
+						  "tex_clouds_temporal_a",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .create();
+			cloudsTemporalB
+				= pipeline
+					  .texture2D(
+						  "tex_clouds_temporal_b",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .create();
+			cloudsTemporalCurrent
+				= pipeline
+					  .reference2D(
+						  "tex_clouds_temporal_current",
+						  cloudsTemporalA.format()
+					  )
+					  .renderSize()
+					  .createEmpty();
+			cloudsTemporalPrevious
+				= pipeline
+					  .reference2D(
+						  "tex_clouds_temporal_prev",
+						  cloudsTemporalA.format()
+					  )
+					  .renderSize()
+					  .createEmpty();
 
-		cloudsTemporalDataA
-			= pipeline
-				  .texture2D(
-					  "tex_clouds_temporal_data_a",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .renderSize()
-				  .create();
-		cloudsTemporalDataB
-			= pipeline
-				  .texture2D(
-					  "tex_clouds_temporal_data_b",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .renderSize()
-				  .create();
-		cloudsTemporalDataCurrent
-			= pipeline
-				  .reference2D(
-					  "tex_clouds_temporal_data_current",
-					  cloudsTemporalDataA.format()
-				  )
-				  .renderSize()
-				  .createEmpty();
-		cloudsTemporalDataPrevious
-			= pipeline
-				  .reference2D(
-					  "tex_clouds_temporal_data_prev",
-					  cloudsTemporalDataA.format()
-				  )
-				  .renderSize()
-				  .createEmpty();
+			cloudsTemporalDataA
+				= pipeline
+					  .texture2D(
+						  "tex_clouds_temporal_data_a",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .create();
+			cloudsTemporalDataB
+				= pipeline
+					  .texture2D(
+						  "tex_clouds_temporal_data_b",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .renderSize()
+					  .create();
+			cloudsTemporalDataCurrent
+				= pipeline
+					  .reference2D(
+						  "tex_clouds_temporal_data_current",
+						  cloudsTemporalDataA.format()
+					  )
+					  .renderSize()
+					  .createEmpty();
+			cloudsTemporalDataPrevious
+				= pipeline
+					  .reference2D(
+						  "tex_clouds_temporal_data_prev",
+						  cloudsTemporalDataA.format()
+					  )
+					  .renderSize()
+					  .createEmpty();
+		}
 
 		skyMap = pipeline.texture2D("tex_sky_map", TextureFormat.RGBA16_SFLOAT)
 					 .size(
@@ -428,67 +446,51 @@ public class Textures {
 			final var roughSpecularRes
 				= getRoughSpecularResolution(screen, pipeline.settings());
 
-			specularTemporal1A
+			specularOutputRaw
 				= pipeline
 					  .texture2D(
-						  "tex_specular_temporal_1a",
+						  "tex_specular_output_raw",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
 					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .create();
-			specularTemporal1B
+			specularOutputBlurred
 				= pipeline
 					  .texture2D(
-						  "tex_specular_temporal_1b",
+						  "tex_specular_output_blurred",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
 					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .create();
-			specularTemporal1Current
-				= pipeline
-					  .reference2D(
-						  "tex_specular_temporal_1",
-						  TextureFormat.RGBA16_SFLOAT
-					  )
-					  .size(roughSpecularRes.x, roughSpecularRes.y)
-					  .createEmpty();
-			specularTemporal1Prev
-				= pipeline
-					  .reference2D(
-						  "tex_specular_temporal_1_prev",
-						  TextureFormat.RGBA16_SFLOAT
-					  )
-					  .size(roughSpecularRes.x, roughSpecularRes.y)
-					  .createEmpty();
 
-			specularTemporal2A
+			specularTemporalDataA
 				= pipeline
 					  .texture2D(
-						  "tex_specular_temporal_2a",
+						  "tex_specular_temporal_data_a",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
 					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .create();
-			specularTemporal2B
+			specularTemporalDataB
 				= pipeline
 					  .texture2D(
-						  "tex_specular_temporal_2b",
+						  "tex_specular_temporal_data_b",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
 					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .create();
-			specularTemporal2Current
+			specularTemporalDataCurrent
 				= pipeline
 					  .reference2D(
-						  "tex_specular_temporal_2",
+						  "tex_specular_temporal_data",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
 					  .size(roughSpecularRes.x, roughSpecularRes.y)
 					  .createEmpty();
-			specularTemporal2Prev
+			specularTemporalDataPrev
 				= pipeline
 					  .reference2D(
-						  "tex_specular_temporal_2_prev",
+						  "tex_specular_temporal_data_prev",
 						  TextureFormat.RGBA16_SFLOAT
 					  )
 					  .size(roughSpecularRes.x, roughSpecularRes.y)
@@ -497,148 +499,423 @@ public class Textures {
 
 		// Indirect lighting
 
-		final var indirectRes
-			= getIndirectLightingResolution(screen, pipeline.settings());
+		{
+			final var indirectRes
+				= getIndirectLightingResolution(screen, pipeline.settings());
 
-		indirectOutputAccumulated
-			= pipeline
-				  .texture2D(
-					  "tex_indirect_output_accumulated",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(indirectRes.x, indirectRes.y)
-				  .create();
-		indirectOutputBlurred
-			= pipeline
-				  .texture2D(
-					  "tex_indirect_output_blurred",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(indirectRes.x, indirectRes.y)
-				  .create();
+			indirectOutputRaw
+				= pipeline
+					  .texture2D(
+						  "tex_indirect_output_raw",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(indirectRes.x, indirectRes.y)
+					  .create();
+			indirectOutputBlurred
+				= pipeline
+					  .texture2D(
+						  "tex_indirect_output_blurred",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(indirectRes.x, indirectRes.y)
+					  .create();
 
-		indirectTemporalDataA
-			= pipeline
-				  .texture2D(
-					  "tex_indirect_temporal_data_a",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(indirectRes.x, indirectRes.y)
-				  .create();
-		indirectTemporalDataB
-			= pipeline
-				  .texture2D(
-					  "tex_indirect_temporal_data_b",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(indirectRes.x, indirectRes.y)
-				  .create();
-		indirectTemporalDataCurrent
-			= pipeline
-				  .reference2D(
-					  "tex_indirect_temporal_data_current",
-					  indirectTemporalDataA.format()
-				  )
-				  .size(indirectRes.x, indirectRes.y)
-				  .createEmpty();
-		indirectTemporalDataPrevious
-			= pipeline
-				  .reference2D(
-					  "tex_indirect_temporal_data_prev",
-					  indirectTemporalDataA.format()
-				  )
-				  .size(indirectRes.x, indirectRes.y)
-				  .createEmpty();
+			indirectTemporalDataA
+				= pipeline
+					  .texture2D(
+						  "tex_indirect_temporal_data_a",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(indirectRes.x, indirectRes.y)
+					  .create();
+			indirectTemporalDataB
+				= pipeline
+					  .texture2D(
+						  "tex_indirect_temporal_data_b",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(indirectRes.x, indirectRes.y)
+					  .create();
+			indirectTemporalDataCurrent
+				= pipeline
+					  .reference2D(
+						  "tex_indirect_temporal_data_current",
+						  indirectTemporalDataA.format()
+					  )
+					  .size(indirectRes.x, indirectRes.y)
+					  .createEmpty();
+			indirectTemporalDataPrevious
+				= pipeline
+					  .reference2D(
+						  "tex_indirect_temporal_data_prev",
+						  indirectTemporalDataA.format()
+					  )
+					  .size(indirectRes.x, indirectRes.y)
+					  .createEmpty();
+
+			// Restir GI
+
+			if (pipeline.settings().getBoolValue("RESTIR_GI_ENABLED")) {
+				final var reserviourWidth = indirectRes.x;
+				final var reserviourHeight = indirectRes.y;
+
+				reserviourTemporal1A
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_temporal_1a",
+							  TextureFormat.RGBA16_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourTemporal2A
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_temporal_2a",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourTemporal3A
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_temporal_3a",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourTemporal4A
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_temporal_4a",
+							  TextureFormat.RGBA8_UNORM
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+
+				reserviourTemporal1B
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_temporal_1b",
+							  TextureFormat.RGBA16_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourTemporal2B
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_temporal_2b",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourTemporal3B
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_temporal_3b",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourTemporal4B
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_temporal_4b",
+							  TextureFormat.RGBA8_UNORM
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+
+				reserviourTemporal1
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_temporal_1",
+							  TextureFormat.RGBA16_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourTemporal2
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_temporal_2",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourTemporal3
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_temporal_3",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourTemporal4
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_temporal_4",
+							  TextureFormat.RGBA8_UNORM
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+
+				reserviourTemporal1Prev
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_temporal_1_prev",
+							  TextureFormat.RGBA16_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourTemporal2Prev
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_temporal_2_prev",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourTemporal3Prev
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_temporal_3_prev",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourTemporal4Prev
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_temporal_4_prev",
+							  TextureFormat.RGBA8_UNORM
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+
+				reserviourSpatial1A
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_spatial_1a",
+							  TextureFormat.RGBA16_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourSpatial2A
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_spatial_2a",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourSpatial3A
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_spatial_3a",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourSpatial4A
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_spatial_4a",
+							  TextureFormat.RGBA8_UNORM
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+
+				reserviourSpatial1B
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_spatial_1b",
+							  TextureFormat.RGBA16_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourSpatial2B
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_spatial_2b",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourSpatial3B
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_spatial_3b",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+				reserviourSpatial4B
+					= pipeline
+						  .texture2D(
+							  "tex_reserviour_spatial_4b",
+							  TextureFormat.RGBA8_UNORM
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .create();
+
+				reserviourSpatial1
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_spatial_1",
+							  TextureFormat.RGBA16_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourSpatial2
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_spatial_2",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourSpatial3
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_spatial_3",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourSpatial4
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_spatial_4",
+							  TextureFormat.RGBA8_UNORM
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+
+				reserviourSpatial1Prev
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_spatial_1_prev",
+							  TextureFormat.RGBA16_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourSpatial2Prev
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_spatial_2_prev",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourSpatial3Prev
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_spatial_3_prev",
+							  TextureFormat.RGBA32_SFLOAT
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+				reserviourSpatial4Prev
+					= pipeline
+						  .reference2D(
+							  "tex_reserviour_spatial_4_prev",
+							  TextureFormat.RGBA8_UNORM
+						  )
+						  .size(reserviourWidth, reserviourHeight)
+						  .createEmpty();
+			}
+		}
 
 		// Fog
 
-		final var fogVolumeSizeX
-			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_X");
-		final var fogVolumeSizeY
-			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Y");
-		final var fogVolumeSizeZ
-			= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Z");
+		{
+			final var fogVolumeSizeX
+				= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_X");
+			final var fogVolumeSizeY
+				= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Y");
+			final var fogVolumeSizeZ
+				= pipeline.settings().getIntValue("FOG_VOLUME_SIZE_Z");
 
-		fogVolumeLightA
-			= pipeline
-				  .texture3D(
-					  "tex_fog_volume_light_a",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-				  .create();
-		fogVolumeLightB
-			= pipeline
-				  .texture3D(
-					  "tex_fog_volume_light_b",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-				  .create();
-		fogVolumeLightCurrent
-			= pipeline
-				  .reference3D(
-					  "tex_fog_volume_light_current",
-					  fogVolumeLightA.format()
-				  )
-				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-				  .createEmpty();
-		fogVolumeLightPrevious
-			= pipeline
-				  .reference3D(
-					  "tex_fog_volume_light_prev",
-					  fogVolumeLightA.format()
-				  )
-				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-				  .createEmpty();
+			fogVolumeLightA
+				= pipeline
+					  .texture3D(
+						  "tex_fog_volume_light_a",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+					  .create();
+			fogVolumeLightB
+				= pipeline
+					  .texture3D(
+						  "tex_fog_volume_light_b",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+					  .create();
+			fogVolumeLightCurrent
+				= pipeline
+					  .reference3D(
+						  "tex_fog_volume_light_current",
+						  fogVolumeLightA.format()
+					  )
+					  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+					  .createEmpty();
+			fogVolumeLightPrevious
+				= pipeline
+					  .reference3D(
+						  "tex_fog_volume_light_prev",
+						  fogVolumeLightA.format()
+					  )
+					  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+					  .createEmpty();
 
-		fogVolumeExtinctionA
-			= pipeline
-				  .texture3D(
-					  "tex_fog_volume_extinction_a",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-				  .create();
-		fogVolumeExtinctionB
-			= pipeline
-				  .texture3D(
-					  "tex_fog_volume_extinction_b",
-					  TextureFormat.RGBA16_SFLOAT
-				  )
-				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-				  .create();
-		fogVolumeExtinctionCurrent
-			= pipeline
-				  .reference3D(
-					  "tex_fog_volume_extinction_current",
-					  fogVolumeExtinctionA.format()
-				  )
-				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-				  .createEmpty();
-		fogVolumeExtinctionPrevious
-			= pipeline
-				  .reference3D(
-					  "tex_fog_volume_extinction_prev",
-					  fogVolumeExtinctionA.format()
-				  )
-				  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-				  .createEmpty();
+			fogVolumeExtinctionA
+				= pipeline
+					  .texture3D(
+						  "tex_fog_volume_extinction_a",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+					  .create();
+			fogVolumeExtinctionB
+				= pipeline
+					  .texture3D(
+						  "tex_fog_volume_extinction_b",
+						  TextureFormat.RGBA16_SFLOAT
+					  )
+					  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+					  .create();
+			fogVolumeExtinctionCurrent
+				= pipeline
+					  .reference3D(
+						  "tex_fog_volume_extinction_current",
+						  fogVolumeExtinctionA.format()
+					  )
+					  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+					  .createEmpty();
+			fogVolumeExtinctionPrevious
+				= pipeline
+					  .reference3D(
+						  "tex_fog_volume_extinction_prev",
+						  fogVolumeExtinctionA.format()
+					  )
+					  .size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+					  .createEmpty();
 
-		pipeline
-			.texture3D(
-				"tex_fog_volume_integrated_light",
-				TextureFormat.RG11B10_UFLOAT
-			)
-			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-			.create();
-		pipeline
-			.texture3D(
-				"tex_fog_volume_integrated_extinction",
-				TextureFormat.RG11B10_UFLOAT
-			)
-			.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
-			.create();
+			pipeline
+				.texture3D(
+					"tex_fog_volume_integrated_light",
+					TextureFormat.RG11B10_UFLOAT
+				)
+				.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+				.create();
+			pipeline
+				.texture3D(
+					"tex_fog_volume_integrated_extinction",
+					TextureFormat.RG11B10_UFLOAT
+				)
+				.size(fogVolumeSizeX, fogVolumeSizeY, fogVolumeSizeZ)
+				.create();
+		}
 
 		shadowColor
 			= pipeline
@@ -671,277 +948,6 @@ public class Textures {
 					pipeline.settings().getIntValue("VOXEL_RT_VOLUME_SIZE_Z")
 				)
 				.create();
-		}
-
-		// Restir GI
-
-		if (pipeline.settings().getBoolValue("RESTIR_GI_ENABLED")) {
-			final var reserviourWidth = indirectRes.x;
-			final var reserviourHeight = indirectRes.y;
-
-			reserviourTemporal1A
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_temporal_1a",
-						  TextureFormat.RGBA16_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourTemporal2A
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_temporal_2a",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourTemporal3A
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_temporal_3a",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourTemporal4A
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_temporal_4a",
-						  TextureFormat.RGBA8_UNORM
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-
-			reserviourTemporal1B
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_temporal_1b",
-						  TextureFormat.RGBA16_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourTemporal2B
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_temporal_2b",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourTemporal3B
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_temporal_3b",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourTemporal4B
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_temporal_4b",
-						  TextureFormat.RGBA8_UNORM
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-
-			reserviourTemporal1
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_temporal_1",
-						  TextureFormat.RGBA16_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourTemporal2
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_temporal_2",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourTemporal3
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_temporal_3",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourTemporal4
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_temporal_4",
-						  TextureFormat.RGBA8_UNORM
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-
-			reserviourTemporal1Prev
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_temporal_1_prev",
-						  TextureFormat.RGBA16_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourTemporal2Prev
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_temporal_2_prev",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourTemporal3Prev
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_temporal_3_prev",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourTemporal4Prev
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_temporal_4_prev",
-						  TextureFormat.RGBA8_UNORM
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-
-			reserviourSpatial1A
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_spatial_1a",
-						  TextureFormat.RGBA16_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourSpatial2A
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_spatial_2a",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourSpatial3A
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_spatial_3a",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourSpatial4A
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_spatial_4a",
-						  TextureFormat.RGBA8_UNORM
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-
-			reserviourSpatial1B
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_spatial_1b",
-						  TextureFormat.RGBA16_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourSpatial2B
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_spatial_2b",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourSpatial3B
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_spatial_3b",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-			reserviourSpatial4B
-				= pipeline
-					  .texture2D(
-						  "tex_reserviour_spatial_4b",
-						  TextureFormat.RGBA8_UNORM
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .create();
-
-			reserviourSpatial1
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_spatial_1",
-						  TextureFormat.RGBA16_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourSpatial2
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_spatial_2",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourSpatial3
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_spatial_3",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourSpatial4
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_spatial_4",
-						  TextureFormat.RGBA8_UNORM
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-
-			reserviourSpatial1Prev
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_spatial_1_prev",
-						  TextureFormat.RGBA16_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourSpatial2Prev
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_spatial_2_prev",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourSpatial3Prev
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_spatial_3_prev",
-						  TextureFormat.RGBA32_SFLOAT
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
-			reserviourSpatial4Prev
-				= pipeline
-					  .reference2D(
-						  "tex_reserviour_spatial_4_prev",
-						  TextureFormat.RGBA8_UNORM
-					  )
-					  .size(reserviourWidth, reserviourHeight)
-					  .createEmpty();
 		}
 	}
 
@@ -984,19 +990,12 @@ public class Textures {
 			oddFrame ? fogVolumeExtinctionB : fogVolumeExtinctionA
 		);
 
-		if (specularTemporal1Current != null) {
-			specularTemporal1Current.set(
-				oddFrame ? specularTemporal1A : specularTemporal1B
+		if (specularTemporalDataCurrent != null) {
+			specularTemporalDataCurrent.set(
+				oddFrame ? specularTemporalDataA : specularTemporalDataB
 			);
-			specularTemporal1Prev.set(
-				oddFrame ? specularTemporal1B : specularTemporal1A
-			);
-
-			specularTemporal2Current.set(
-				oddFrame ? specularTemporal2A : specularTemporal2B
-			);
-			specularTemporal2Prev.set(
-				oddFrame ? specularTemporal2B : specularTemporal2A
+			specularTemporalDataPrev.set(
+				oddFrame ? specularTemporalDataB : specularTemporalDataA
 			);
 		}
 
