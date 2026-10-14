@@ -143,6 +143,7 @@ struct Object : Shader<VertexOutput, FragmentOutput> {
 			input.pos_scene,
 			flat_normal_world,
 			dither,
+			input.lightmap.y,
 			material.sss_amount > EPS
 		);
 

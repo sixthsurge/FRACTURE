@@ -266,13 +266,14 @@ public void do_rough_specular<Tracer>(
 	float3 pos_world,
 	float3 dir_world,
 	float3 normal_world,
+	float3 flat_normal_world,
 	float skylight
 )
 	where Tracer : ISpecularTracer {
 	float sky_visibility = pow2(skylight);
 	float NoV = -dot(dir_world, normal_world);
 
-	tracer.init(pos_screen, pos_view, pos_world, normal_world);
+	tracer.init(pos_screen, pos_view, pos_world, flat_normal_world);
 
 	float average_hit_distance;
 	var reflection = calculate_rough_reflection(
@@ -281,6 +282,7 @@ public void do_rough_specular<Tracer>(
 		icoord,
 		dir_world,
 		normal_world,
+		flat_normal_world,
 		sky_visibility,
 		average_hit_distance
 	);
@@ -307,6 +309,7 @@ float3 calculate_rough_reflection<Tracer>(
 	int2 icoord,
 	float3 dir_world,
 	float3 normal_world,
+	float3 flat_normal_world,
 	float sky_visibility,
 	out float average_hit_distance
 )
@@ -349,11 +352,10 @@ float3 calculate_rough_reflection<Tracer>(
 			),
 			tbn
 		);
-
 		float3 ray_dir_world = reflect(dir_world, microfacet_normal);
 
 		float NoL = dot(normal_world, ray_dir_world);
-		if (NoL < EPS) {
+		if (NoL < EPS || dot(flat_normal_world, ray_dir_world) < EPS) {
 			continue;
 		}
 
@@ -492,15 +494,13 @@ public struct HardwareRtTracer : ISpecularTracer {
 	}
 
 	public Optional<SpecularHit> trace(float3 ray_dir_world) {
-		const float BIAS = 0.002;
-
 		var query = HWRT.startQuery(
-			ray_origin_scene + BIAS * normal_world,
+			ray_origin_scene,
 			ray_dir_world,
-			BIAS,
+			0.002,
 			max(ap.world.renderDistance, 1.0),
 			HWRT.HitType.TERRAIN | HWRT.HitType.ENTITY,
-			HWRT.RTFlags.NONE
+			HWRT.RTFlags.CULL_BACK_FACES,
 		);
 		while (query.proceed()) {
 			let candidate = query.getCandidate();

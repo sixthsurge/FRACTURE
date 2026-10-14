@@ -154,6 +154,7 @@ Result calculate(
 	float3 pos_scene,
 	float3 flat_normal_world,
 	float2 dither,
+	float skylight,
 	bool has_sss,
 	float cloud_shadow = 1.0
 ) {
@@ -171,7 +172,13 @@ Result calculate(
 		return result;
 	}
 
-	pos_scene += 0.08 * flat_normal_world;
+	// Light leaking prevention from Complementary Reimagined, used with
+	// permission
+	float3 edge_factor = 0.1
+		- 0.2 * frac(pos_scene + ap.camera.position + flat_normal_world * 0.01);
+	pos_scene += edge_factor * (1.0 - skylight);
+
+	pos_scene += flat_normal_world * 0.08;
 
 	float3 pos_shadow_view = transform(ap.celestial.view, pos_scene);
 
@@ -223,6 +230,12 @@ Result calculate_simple(float3 pos_scene, float3 flat_normal_world) {
 		result.visibility = float3(0.0);
 		return result;
 	}
+
+	// Light leaking prevention from Complementary Reimagined, used with
+	// permission
+	float3 edge_factor = 0.1
+		- 0.2 * frac(pos_scene + ap.camera.position + flat_normal_world * 0.01);
+	pos_scene += edge_factor;
 
 	pos_scene += 0.08 * flat_normal_world;
 

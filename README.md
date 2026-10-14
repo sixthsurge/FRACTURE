@@ -28,6 +28,7 @@ This shader pack currently implements the following techniques:
 
 ## Acknowledgements
 * [Jessie](https://github.com/Jessie-LC) - f0 and f82 values for labPBR hardcoded metals
+* [Emin](https://github.com/EminGT) - Shadow leak prevention method from [Complementary Reimagined](https://www.complementary.dev/shaders/) 
 * http://momentsingrapics.de/ - Blue noise texture
 * [NASA Scientific Visualization Studio](https://svs.gsfc.nasa.gov/4851) - Milky way starmap
 

@@ -60,7 +60,7 @@ struct OpaqueGbuffer {
 	}
 }
 
-// Only stores data needed for SSR and water rendering.
+// Only stores data needed for specular and water rendering.
 struct TranslucentGbuffer {
 	float3 normal_world;
 	int mat_id;

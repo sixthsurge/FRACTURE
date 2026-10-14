@@ -177,6 +177,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		pos_scene,
 		gbuffer.flat_normal_world,
 		dither,
+		gbuffer.lightmap.y,
 		material.sss_amount > EPS,
 		cloud_shadow
 	);

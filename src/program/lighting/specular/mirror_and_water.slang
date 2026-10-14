@@ -131,6 +131,8 @@ void main(int2 icoord: SV_DispatchThreadID) {
 	int mat_id;
 	float2 specular_map_rg;
 	float3 albedo = float3(0.0);
+	float3 flat_normal_world
+		= normalize(cross(ddx(front_pos_scene), ddy(front_pos_scene)));
 
 	if (front_depth > back_depth) {
 		// Translucent.
@@ -152,6 +154,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 		);
 		skylight = gbuffer.lightmap.y;
 		mat_id = gbuffer.mat_id;
+		flat_normal_world = gbuffer.flat_normal_world;
 		if (userSettings.LABPBR_SUPPORT_ENABLED) {
 			specular_map_rg = gbuffer.specular_map.get().value.rg;
 			albedo = gbuffer.albedo;
@@ -305,7 +308,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 					front_pos_screen,
 					front_pos_view,
 					front_pos_scene + ap.camera.position,
-					normal_world,
+					flat_normal_world,
 				);
 				radiance += specular.calculate_mirror_reflection(
 					tracer,
@@ -320,7 +323,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 					front_pos_screen,
 					front_pos_view,
 					front_pos_scene + ap.camera.position,
-					normal_world,
+					flat_normal_world,
 				);
 				radiance += specular.calculate_mirror_reflection(
 					tracer,

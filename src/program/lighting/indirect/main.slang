@@ -95,7 +95,7 @@ void main(int2 icoord: SV_DispatchThreadID) {
 				+ calculate_lightmap_skylight(
 					float3(1.0),
 					gbuffer.lightmap,
-					gtao_result.bent_normal,
+					mul(float3x3(ap.camera.viewInv), gtao_result.bent_normal),
 					gtao_result.ao
 				),
 			gtao_result.ao
